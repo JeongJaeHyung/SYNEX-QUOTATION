@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  # FastAPI 애플리케이션
+  fastapi:
+    build: .
+    container_name: synex-quotation
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./app:/app
+    env_file:
+      - .env
+    restart: unless-stopped
