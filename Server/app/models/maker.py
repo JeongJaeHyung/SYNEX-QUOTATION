@@ -1,7 +1,8 @@
+# SYNEX+QUOTATION/Server/app/models/maker.py
 from sqlalchemy import Column, String, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.database import Base
+from database import Base
 
 class Maker(Base):
     __tablename__ = "maker"

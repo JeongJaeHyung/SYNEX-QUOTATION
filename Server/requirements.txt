@@ -1,3 +1,5 @@
+# SYNEX+QUOTATION/Server/requirements.txt
+
 # FastAPI 프레임워크 (최신 안정화 버전)
 fastapi==0.115.5
 

@@ -1,7 +1,8 @@
+# SYNEX+QUOTATION/Server/app/models/resources.py
 from sqlalchemy import Column, String, Integer, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.database import Base
+from database import Base
 
 class Resources(Base):
     __tablename__ = "resources"

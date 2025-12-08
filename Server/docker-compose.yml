@@ -1,4 +1,4 @@
-# version 제거 (obsolete)
+# SYNEX+QUOTATION/Server/docker-compose.yml
 
 services:
   fastapi:

@@ -1,7 +1,9 @@
-from app.database import Base
-from app.models.category import Category
-from app.models.maker import Maker
-from app.models.resources import Resources
-from app.models.certification import Certification
+# SYNEX+QUOTATION/Server/app/models/__init__.py
+
+from database import Base
+from models.category import Category
+from models.maker import Maker
+from models.resources import Resources
+from models.certification import Certification
 
 __all__ = ["Base", "Category", "Maker", "Resources", "Certification"]

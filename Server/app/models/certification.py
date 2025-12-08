@@ -1,7 +1,8 @@
+# SYNEX+QUOTATION/Server/app/models/certification.py
 from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKeyConstraint, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.database import Base
+from database import Base
 
 class Certification(Base):
     __tablename__ = "certification"
