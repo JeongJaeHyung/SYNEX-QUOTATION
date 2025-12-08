@@ -1,7 +1,6 @@
-version: '3.8'
+# version 제거 (obsolete)
 
 services:
-  # FastAPI 애플리케이션
   fastapi:
     build: .
     container_name: synex-quotation
@@ -11,4 +10,11 @@ services:
       - ./app:/app
     env_file:
       - .env
+    networks:
+      - synex-network
+    # depends_on 제거! (다른 compose 프로젝트라 안 됨)
     restart: unless-stopped
+
+networks:
+  synex-network:
+    external: true
