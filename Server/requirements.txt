@@ -1,26 +1,19 @@
 # SYNEX+QUOTATION/Server/requirements.txt
 
-# FastAPI 프레임워크 (최신 안정화 버전)
+# 프레임워크 & 서버
 fastapi==0.115.5
-
-# ASGI 서버 (최신 안정화 버전)
 uvicorn[standard]==0.32.1
 
-# 데이터베이스 ORM (SQLAlchemy 2.0 = 메이저 버전, 장기 지원)
+# 데이터베이스
 sqlalchemy==2.0.36
-
-# PostgreSQL 드라이버 (최신 안정화 버전)
 psycopg2-binary==2.9.10
+alembic==1.13.1
 
-# 환경변수 관리 (안정화 버전)
-python-dotenv==1.0.1
-
-# 데이터 검증 (Pydantic v2 = 메이저 버전, 장기 지원)
+# 데이터 검증
 pydantic==2.10.3
 pydantic-settings==2.6.1
 
-# 템플릿 엔진 (안정화 버전)
-Jinja2==3.1.4
-
-# 파일 업로드
+# 유틸리티
+python-dotenv==1.0.1
 python-multipart==0.0.12
+Jinja2==3.1.4
