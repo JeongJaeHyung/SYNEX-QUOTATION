@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테스트 페이지</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>CSS 테스트</h1>
+    <p>이 텍스트가 보이나요?</p>
+    
+    <div style="background-color: red; padding: 20px; color: white;">
+        <h2>인라인 스타일 테스트</h2>
+        <p>빨간 배경이 보이나요?</p>
+    </div>
+    
+    <div class="btn btn-primary">버튼 테스트</div>
+    
+    <hr>
+    
+    <h2>전달받은 데이터:</h2>
+    <pre style="background: #f5f5f5; padding: 10px; overflow: auto;">
+{{ machines }}
+    </pre>
+    
+    <hr>
+    
+    <h2>간단한 테이블 테스트:</h2>
+    <table border="1" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #e0e0e0;">
+                <th style="padding: 10px;">명칭명</th>
+                <th style="padding: 10px;">최종 수정일</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for machine in machines %}
+            <tr>
+                <td style="padding: 10px;">{{ machine.name }}</td>
+                <td style="padding: 10px;">{{ machine.updated_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

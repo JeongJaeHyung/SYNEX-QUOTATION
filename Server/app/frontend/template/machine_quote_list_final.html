@@ -1,0 +1,120 @@
+{% extends "template/base.html" %}
+
+{% block title %}정비 견적서 - SYNEX+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 상단 액션 바 #}
+    <div class="action-bar">
+        <div class="action-bar-left">
+            <button class="btn btn-primary" onclick="openCreatePopup()">
+                <span>+</span> 견적 생성
+            </button>
+        </div>
+        <div class="action-bar-right">
+            <input type="text" class="input-search" placeholder="검색어를 입력해 주세요" id="searchInput">
+            <button class="btn btn-primary" onclick="searchMachines()">검색하기</button>
+        </div>
+    </div>
+
+    {# 테이블 - 직접 작성 #}
+    <div class="table-container">
+        <table class="data-table" id="machineTable">
+            <thead>
+                <tr>
+                    <th class="col-left" style="width: 70%">명칭명</th>
+                    <th class="col-center" style="width: 30%">최종 수정일</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if machines and machines|length > 0 %}
+                    {% for machine in machines %}
+                    <tr class="clickable" onclick="goToDetail('{{ machine.id }}')">
+                        <td class="col-left">{{ machine.name }}</td>
+                        <td class="col-center">
+                            {% set date_str = machine.updated_at|string %}
+                            {{ date_str[:10].replace('-', '. ') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr class="empty-row">
+                        <td colspan="2" class="text-center">
+                            <div class="empty-state">
+                                등록된 견적서가 없습니다
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// 상세 페이지로 이동
+function goToDetail(id) {
+    alert('상세 페이지로 이동: ' + id);
+    // window.location.href = `/service/quotation/maintenance/${id}`;
+}
+
+// 견적 생성 팝업
+function openCreatePopup() {
+    alert('견적 생성 팝업 (구현 예정)');
+}
+
+// 검색
+function searchMachines() {
+    const query = document.getElementById('searchInput').value;
+    if (query) {
+        window.location.href = `/test1?search=${query}`;
+    }
+}
+</script>
+
+<style>
+/* 페이지 컨텐츠 */
+.page-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 액션 바 */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+}
+
+.action-bar-left,
+.action-bar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-bar-right .input-search {
+    min-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-bar-left,
+    .action-bar-right {
+        width: 100%;
+    }
+    
+    .input-search {
+        flex: 1;
+    }
+}
+</style>
+{% endblock %}
