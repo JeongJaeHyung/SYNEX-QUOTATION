@@ -11,7 +11,6 @@ services:
       TZ: Asia/Seoul
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d:ro  # 추가!
     networks:
       - synex-network
     restart: unless-stopped

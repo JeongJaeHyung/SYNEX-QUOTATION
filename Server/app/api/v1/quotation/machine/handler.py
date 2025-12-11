@@ -1,99 +1,177 @@
-# SYNEX+QUOTATION/Server/app/api/v1/quotation/machine/handler.py
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+# api/v1/quotation/machine/handler.py
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
-
 from database import get_db
-from . import crud, schemas
+from api.v1.quotation.machine import schemas, crud
 
 handler = APIRouter()
 
+# ============================================================
+# Schema 생성 함수
+# ============================================================
 
-@handler.post(
-    "",
-    response_model=schemas.MachineResponse,
-    status_code=201,
-    summary="Machine 등록",
-    description="새로운 기계와 구성 부품을 등록합니다. quantity가 0인 부품은 자동으로 제외됩니다."
-)
-async def create_machine(
-    machine_data: schemas.MachineCreate,
+def get_machine_list_schema() -> dict:
+    """Machine 목록 조회 Schema"""
+    return {
+        "name": {
+            "title": "장비명",
+            "type": "string",
+            "ratio": 5
+        },
+        "creator": {
+            "title": "작성자",
+            "type": "string",
+            "ratio": 1
+        },
+        "updated_at": {
+            "title": "최종수정일",
+            "type": "datetime",
+            "format": "YYYY-MM-DD HH:mm",
+            "ratio": 2
+        },
+        "description": {
+            "title": "비고",
+            "type": "string",
+            "ratio": 5
+        }
+    }
+
+def get_machine_resources_schema() -> dict:
+    """Machine Resources Schema"""
+    return {
+        "item_code": {
+            "title": "품목코드",
+            "type": "string",
+            "ratio": 2
+        },
+        "maker_name": {
+            "title": "제조사",
+            "type": "string",
+            "ratio": 2
+        },
+        "category_major": {
+            "title": "대분류",
+            "type": "string",
+            "ratio": 2
+        },
+        "category_minor": {
+            "title": "중분류",
+            "type": "string",
+            "ratio": 2
+        },
+        "model_name": {
+            "title": "모델명",
+            "type": "string",
+            "ratio": 3
+        },
+        "unit": {
+            "title": "단위",
+            "type": "string",
+            "ratio": 1
+        },
+        "solo_price": {
+            "title": "단가",
+            "type": "integer",
+            "format": "currency",
+            "ratio": 2
+        },
+        "quantity": {
+            "title": "수량",
+            "type": "integer",
+            "ratio": 1
+        },
+        "subtotal": {
+            "title": "소계",
+            "type": "integer",
+            "format": "currency",
+            "ratio": 2
+        }
+    }
+
+# ============================================================
+# Machine Endpoints
+# ============================================================
+
+@handler.post("/", response_model=schemas.MachineCreateResponse, status_code=201)
+def register_machine(
+    machine: schemas.MachineCreate,
     db: Session = Depends(get_db)
 ):
     """
     Machine 등록
     
-    - **name**: 기계명 (최대 100자)
-    - **resources**: 구성 부품 목록
-      - quantity >= 1인 부품만 등록됨
-      - quantity = 0인 부품은 자동 제외
+    - name: 장비명 (필수)
+    - creator: 작성자명 (필수)
+    - description: 비고 (선택)
+    - resources: 구성 부품 목록 (필수)
     """
-    # 모든 부품이 존재하는지 확인
-    for resource in machine_data.resources:
-        if not crud.check_resources_exist(db, resource.maker_id, resource.resources_id):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Resource not found: {resource.resources_id} (Maker: {resource.maker_id})"
-            )
+    # Resources 존재 확인 생략 (CRUD에서 FK 제약조건으로 처리)
     
     # Machine 생성
-    resources_data = [resource.model_dump() for resource in machine_data.resources]
-    machine = crud.create_machine(
+    resources_data = [r.dict() for r in machine.resources]
+    db_machine = crud.create_machine(
         db=db,
-        name=machine_data.name,
-        resources_data=resources_data
+        name=machine.name,
+        creator=machine.creator,
+        description=machine.description,
+        resources=resources_data
     )
     
-    # 상세 조회하여 응답
-    machine = crud.get_machine_by_id(db, machine.id)
+    # Resources 상세 정보 조회
+    resources_detail = crud.get_machine_resources_detail(db, db_machine.id)
     
-    # 응답 형식으로 변환
-    formatted_resources = [
-        crud.format_machine_resource_response(mr)
-        for mr in machine.machine_resources
-    ]
-    
-    total_price = crud.calculate_total_price(machine.machine_resources)
+    # 총액 계산
+    total_price = sum(r['subtotal'] for r in resources_detail)
     
     return {
-        "id": machine.id,
-        "name": machine.name,
-        "created_at": machine.created_at,
-        "updated_at": machine.updated_at,
+        "id": db_machine.id,
+        "name": db_machine.name,
+        "creator": db_machine.creator,
+        "description": db_machine.description,
+        "created_at": db_machine.created_at,
         "total_price": total_price,
-        "resource_count": len(formatted_resources),
-        "resources": formatted_resources
+        "resource_count": len(resources_detail),
+        "resources": resources_detail
     }
 
 
-@handler.get(
-    "",
-    response_model=schemas.MachineListResponse,
-    summary="Machine 목록 조회",
-    description="전체 기계 목록을 조회합니다. 최근 업데이트 순으로 정렬됩니다."
-)
-async def get_machine_list(
-    skip: int = Query(0, ge=0, description="건너뛸 개수"),
-    limit: int = Query(20, ge=1, le=100, description="가져올 개수 (최대 100)"),
+@handler.get("/", response_model=schemas.MachineListResponse)
+def get_machines(
+    include_schema: bool = Query(False, description="schema 포함 여부"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """
-    Machine 목록 조회
+    Machine 목록 조회 (updated_at DESC)
     
-    - 최근 업데이트 순 정렬 (updated_at DESC)
-    - 페이징 지원 (무한 스크롤 대응)
+    - include_schema: true면 schema 포함
+    - skip: 건너뛸 개수
+    - limit: 가져올 개수
     """
-    machines, total = crud.get_machine_list(db, skip=skip, limit=limit)
+    total, machines = crud.get_machines(db, skip=skip, limit=limit)
     
     items = [
         {
-            "id": machine.id,
-            "name": machine.name,
-            "updated_at": machine.updated_at
+            "id": m.id,
+            "name": m.name,
+            "creator": m.creator,
+            "description": m.description,
+            "updated_at": m.updated_at
         }
-        for machine in machines
+        for m in machines
     ]
+    
+    if include_schema:
+        return {
+            "schema": get_machine_list_schema(),
+            "total": total,
+            "items": items,
+            "skip": skip,
+            "limit": limit
+        }
     
     return {
         "total": total,
@@ -103,35 +181,43 @@ async def get_machine_list(
     }
 
 
-@handler.get(
-    "/search",
-    response_model=schemas.MachineListResponse,
-    summary="Machine 검색",
-    description="기계명으로 검색합니다. 부분 매칭을 지원합니다."
-)
-async def search_machines(
+@handler.get("/search", response_model=schemas.MachineListResponse)
+def search_machines(
     search: str = Query(..., min_length=1, description="검색어"),
-    skip: int = Query(0, ge=0, description="건너뛸 개수"),
-    limit: int = Query(20, ge=1, le=100, description="가져올 개수 (최대 100)"),
+    include_schema: bool = Query(False, description="schema 포함 여부"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """
-    Machine 검색
+    Machine 검색 (name 부분 매칭)
     
-    - 기계명 부분 매칭 (LIKE '%search%')
-    - 최근 업데이트 순 정렬 (updated_at DESC)
-    - 페이징 지원
+    - search: 검색어 (필수)
+    - include_schema: true면 schema 포함
+    - skip: 건너뛸 개수
+    - limit: 가져올 개수
     """
-    machines, total = crud.search_machines(db, search_query=search, skip=skip, limit=limit)
+    total, machines = crud.search_machines(db, search=search, skip=skip, limit=limit)
     
     items = [
         {
-            "id": machine.id,
-            "name": machine.name,
-            "updated_at": machine.updated_at
+            "id": m.id,
+            "name": m.name,
+            "creator": m.creator,
+            "description": m.description,
+            "updated_at": m.updated_at
         }
-        for machine in machines
+        for m in machines
     ]
+    
+    if include_schema:
+        return {
+            "schema": get_machine_list_schema(),
+            "total": total,
+            "items": items,
+            "skip": skip,
+            "limit": limit
+        }
     
     return {
         "total": total,
@@ -141,110 +227,96 @@ async def search_machines(
     }
 
 
-@handler.get(
-    "/{machine_id}",
-    response_model=schemas.MachineResponse,
-    summary="Machine 상세 조회",
-    description="특정 기계의 상세 정보와 구성 부품 목록을 조회합니다."
-)
-async def get_machine_by_id(
-    machine_id: UUID = Path(..., description="Machine UUID"),
+@handler.get("/{machine_id}", response_model=schemas.MachineDetailResponse)
+def get_machine(
+    machine_id: UUID,
+    include_schema: bool = Query(False, description="schema 포함 여부"),
     db: Session = Depends(get_db)
 ):
     """
     Machine 상세 조회
     
-    - 기계 기본 정보
-    - 구성 부품 전체 목록 (JOIN)
-    - 부품별 상세 정보 (제조사, 카테고리, 인증 등)
-    - 총 금액 계산
+    - machine_id: Machine ID (UUID)
+    - include_schema: true면 resources에 schema 포함
     """
     machine = crud.get_machine_by_id(db, machine_id)
-    
     if not machine:
-        raise HTTPException(status_code=404, detail=f"Machine not found: {machine_id}")
+        raise HTTPException(status_code=404, detail="Machine not found")
     
-    # 응답 형식으로 변환
-    formatted_resources = [
-        crud.format_machine_resource_response(mr)
-        for mr in machine.machine_resources
-    ]
+    # Resources 상세 정보
+    resources_detail = crud.get_machine_resources_detail(db, machine_id)
+    total_price = sum(r['subtotal'] for r in resources_detail)
     
-    total_price = crud.calculate_total_price(machine.machine_resources)
+    if include_schema:
+        return {
+            "id": machine.id,
+            "name": machine.name,
+            "creator": machine.creator,
+            "description": machine.description,
+            "created_at": machine.created_at,
+            "updated_at": machine.updated_at,
+            "total_price": total_price,
+            "resource_count": len(resources_detail),
+            "resources": {
+                "schema": get_machine_resources_schema(),
+                "items": resources_detail
+            }
+        }
     
     return {
         "id": machine.id,
         "name": machine.name,
+        "creator": machine.creator,
+        "description": machine.description,
         "created_at": machine.created_at,
         "updated_at": machine.updated_at,
         "total_price": total_price,
-        "resource_count": len(formatted_resources),
-        "resources": formatted_resources
+        "resource_count": len(resources_detail),
+        "resources": resources_detail
     }
 
 
-@handler.put(
-    "/{machine_id}",
-    response_model=schemas.MachineResponse,
-    summary="Machine 수정",
-    description="기계 정보 및/또는 구성 부품을 수정합니다. 부품 목록은 전체 교체됩니다."
-)
-async def update_machine(
-    machine_id: UUID = Path(..., description="Machine UUID"),
-    machine_data: schemas.MachineUpdate = ...,
+@handler.put("/{machine_id}", response_model=schemas.MachineUpdateResponse)
+def update_machine(
+    machine_id: UUID,
+    machine_update: schemas.MachineUpdate,
     db: Session = Depends(get_db)
 ):
     """
     Machine 수정
     
-    - **name**: 기계명 수정 (Optional)
-    - **resources**: 구성 부품 전체 교체 (Optional)
-      - 기존 부품은 모두 삭제되고 새로 등록됨
-      - quantity >= 1인 부품만 등록됨
+    - name: 장비명 (선택)
+    - description: 비고 (선택)
+    - resources: 구성 부품 목록 (선택)
     """
-    # Machine 존재 확인
-    existing_machine = crud.get_machine_by_id(db, machine_id)
-    if not existing_machine:
-        raise HTTPException(status_code=404, detail=f"Machine not found: {machine_id}")
-    
-    # 부품 존재 여부 확인
-    if machine_data.resources:
-        for resource in machine_data.resources:
-            if not crud.check_resources_exist(db, resource.maker_id, resource.resources_id):
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Resource not found: {resource.resources_id} (Maker: {resource.maker_id})"
-                )
-    
-    # Machine 수정
+    # Resources 데이터 변환
     resources_data = None
-    if machine_data.resources:
-        resources_data = [resource.model_dump() for resource in machine_data.resources]
+    if machine_update.resources:
+        resources_data = [r.dict() for r in machine_update.resources]
     
-    machine = crud.update_machine(
+    # 수정
+    updated_machine = crud.update_machine(
         db=db,
         machine_id=machine_id,
-        name=machine_data.name,
-        resources_data=resources_data
+        name=machine_update.name,
+        description=machine_update.description,
+        resources=resources_data
     )
     
-    # 상세 조회하여 응답
-    machine = crud.get_machine_by_id(db, machine.id)
+    if not updated_machine:
+        raise HTTPException(status_code=404, detail="Machine not found")
     
-    # 응답 형식으로 변환
-    formatted_resources = [
-        crud.format_machine_resource_response(mr)
-        for mr in machine.machine_resources
-    ]
-    
-    total_price = crud.calculate_total_price(machine.machine_resources)
+    # Resources 상세 정보
+    resources_detail = crud.get_machine_resources_detail(db, machine_id)
+    total_price = sum(r['subtotal'] for r in resources_detail)
     
     return {
-        "id": machine.id,
-        "name": machine.name,
-        "created_at": machine.created_at,
-        "updated_at": machine.updated_at,
+        "id": updated_machine.id,
+        "name": updated_machine.name,
+        "creator": updated_machine.creator,
+        "description": updated_machine.description,
+        "updated_at": updated_machine.updated_at,
         "total_price": total_price,
-        "resource_count": len(formatted_resources),
-        "resources": formatted_resources
+        "resource_count": len(resources_detail),
+        "resources": resources_detail
     }

@@ -1,0 +1,122 @@
+{% extends "template/base.html" %}
+{% from "widget/data_table.html" import data_table %}
+
+{% block title %}부품/자재 목록 - SYNEX+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 상단 액션 바 #}
+    <div class="action-bar">
+        <div class="action-bar-left">
+            <button class="btn btn-primary" onclick="openRegisterPopup()">
+                <span>+</span> 부품 등록
+            </button>
+            <button class="btn btn-secondary" onclick="deleteSelected()">
+                <span>🗑</span> 선택 삭제
+            </button>
+        </div>
+        <div class="action-bar-right">
+            <select class="input-dropdown" id="categoryFilter">
+                <option value="">전체 카테고리</option>
+                <option value="1">판넬</option>
+                <option value="8">잡재료 및 케이블</option>
+            </select>
+            <input type="text" class="input-search" placeholder="부품명 검색..." id="searchInput">
+            <button class="btn btn-primary" onclick="searchParts()">검색</button>
+        </div>
+    </div>
+
+    {# 테이블 #}
+    {{ data_table(
+        columns=[
+            {"key": "id", "label": "부품 ID", "width": "8%", "sortable": true},
+            {"key": "maker.name", "label": "제조사", "width": "12%", "sortable": true},
+            {"key": "category.major", "label": "카테고리", "width": "12%"},
+            {"key": "category.minor", "label": "세부분류", "width": "12%"},
+            {"key": "name", "label": "부품명", "width": "20%"},
+            {"key": "unit", "label": "단위", "width": "6%", "align": "center"},
+            {"key": "solo_price", "label": "단가", "width": "10%", "align": "right", "type": "number"},
+            {"key": "certification.ul", "label": "UL", "width": "5%", "align": "center", "type": "badge"},
+            {"key": "certification.ce", "label": "CE", "width": "5%", "align": "center", "type": "badge"},
+            {"key": "certification.kc", "label": "KC", "width": "5%", "align": "center", "type": "badge"}
+        ],
+        data=parts,
+        checkable=true,
+        clickable=true,
+        on_row_click="goToDetail(id)",
+        table_id="partsTable",
+        empty_message="등록된 부품이 없습니다"
+    ) }}
+    
+    {# 페이지네이션 #}
+    <div class="pagination">
+        <button class="btn btn-secondary" onclick="prevPage()">이전</button>
+        <span class="page-info">1 / 10</span>
+        <button class="btn btn-secondary" onclick="nextPage()">다음</button>
+    </div>
+</div>
+
+<script>
+// 상세 페이지로 이동
+function goToDetail(id) {
+    window.location.href = `/service/parts/${id}`;
+}
+
+// 부품 등록 팝업
+function openRegisterPopup() {
+    alert('부품 등록 팝업 (구현 예정)');
+}
+
+// 선택 삭제
+function deleteSelected() {
+    const selected = getSelectedRows('partsTable');
+    if (selected.length === 0) {
+        alert('삭제할 항목을 선택해주세요');
+        return;
+    }
+    if (confirm(`선택한 ${selected.length}개 항목을 삭제하시겠습니까?`)) {
+        console.log('Delete:', selected);
+        // TODO: API 호출
+    }
+}
+
+// 검색
+function searchParts() {
+    const query = document.getElementById('searchInput').value;
+    const category = document.getElementById('categoryFilter').value;
+    
+    let url = '/service/parts/list?';
+    if (query) url += `search=${query}&`;
+    if (category) url += `category=${category}`;
+    
+    window.location.href = url;
+}
+
+// 페이지네이션
+function prevPage() {
+    console.log('Previous page');
+}
+
+function nextPage() {
+    console.log('Next page');
+}
+</script>
+
+<style>
+/* 페이지네이션 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+}
+
+.page-info {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    min-width: 60px;
+    text-align: center;
+}
+</style>
+{% endblock %}

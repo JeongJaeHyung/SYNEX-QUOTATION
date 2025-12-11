@@ -1,4 +1,4 @@
-# SYNEX+QUOTATION/Server/app/models/__init__.py
+# app/models/__init__.py
 
 from database import Base
 from models.category import Category
@@ -7,6 +7,7 @@ from models.resources import Resources
 from models.certification import Certification
 from models.machine import Machine
 from models.machine_resources import MachineResources
+from models.account import Account
 
 __all__ = [
     "Base", 
@@ -15,5 +16,6 @@ __all__ = [
     "Resources", 
     "Certification",
     "Machine",
-    "MachineResources"
+    "MachineResources",
+    "Account"
 ]

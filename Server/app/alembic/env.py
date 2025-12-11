@@ -17,6 +17,7 @@ from models.resources import Resources
 from models.certification import Certification
 from models.machine import Machine
 from models.machine_resources import MachineResources
+from models.account import Account
 
 # Alembic Config
 config = context.config
