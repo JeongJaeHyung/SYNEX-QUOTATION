@@ -1,0 +1,175 @@
+.
+├── app
+│   ├── api
+│   │   ├── router.py
+│   │   ├── v1
+│   │   │   ├── parts
+│   │   │   │   ├── crud.py
+│   │   │   │   ├── handler.py
+│   │   │   │   └── schemas.py
+│   │   │   ├── quotation
+│   │   │   │   ├── default
+│   │   │   │   │   ├── crud.py
+│   │   │   │   │   ├── handler.py
+│   │   │   │   │   └── schemas.py
+│   │   │   │   ├── machine
+│   │   │   │   │   ├── crud.py
+│   │   │   │   │   ├── handler.py
+│   │   │   │   │   └── schemas.py
+│   │   │   │   └── router.py
+│   │   │   └── router.py
+│   │   └── v2
+│   ├── database.py
+│   ├── frontend
+│   │   ├── assets
+│   │   │   ├── fonts
+│   │   │   └── images
+│   │   │       └── jlt-logo.svg
+│   │   ├── element
+│   │   │   ├── button.html
+│   │   │   └── input.html
+│   │   ├── static
+│   │   │   ├── css
+│   │   │   │   └── style.css
+│   │   │   └── js
+│   │   │       └── script.js
+│   │   ├── template
+│   │   │   ├── base.html
+│   │   │   └── empty_page_example.html
+│   │   └── widget
+│   ├── __init__.py
+│   ├── main.py
+│   ├── models
+│   │   ├── category.py
+│   │   ├── certification.py
+│   │   ├── __init__.py
+│   │   ├── maker.py
+│   │   ├── __pycache__
+│   │   │   ├── category.cpython-312.pyc
+│   │   │   ├── certification.cpython-312.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── maker.cpython-312.pyc
+│   │   │   └── resources.cpython-312.pyc
+│   │   └── resources.py
+│   ├── __pycache__
+│   │   ├── database.cpython-312.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── main.cpython-311.pyc
+│   │   └── main.cpython-312.pyc
+│   └── service
+│       ├── parts
+│       │   ├── handler.py
+│       │   └── __pycache__  [error opening dir]
+│       ├── __pycache__  [error opening dir]
+│       ├── quotation
+│       │   ├── default
+│       │   │   ├── handler.py
+│       │   │   └── __pycache__  [error opening dir]
+│       │   ├── machine
+│       │   │   ├── handler.py
+│       │   │   └── __pycache__  [error opening dir]
+│       │   ├── __pycache__  [error opening dir]
+│       │   └── router.py
+│       └── router.py
+├── docker-compose.yml
+├── Dockerfile
+└── requirements.txt.
+├── app
+│   ├── alembic
+│   │   ├── env.py
+│   │   ├── __pycache__  [error opening dir]
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   │       ├── 1a69a14ec676_add_machine_and_machine_resources_tables.py
+│   │       └── __pycache__  [error opening dir]
+│   ├── alembic.ini
+│   ├── api
+│   │   ├── __pycache__  [error opening dir]
+│   │   ├── router.py
+│   │   ├── v1
+│   │   │   ├── parts
+│   │   │   │   ├── crud.py
+│   │   │   │   ├── handler.py
+│   │   │   │   ├── __pycache__  [error opening dir]
+│   │   │   │   └── schemas.py
+│   │   │   ├── __pycache__  [error opening dir]
+│   │   │   ├── quotation
+│   │   │   │   ├── default
+│   │   │   │   │   ├── crud.py
+│   │   │   │   │   ├── handler.py
+│   │   │   │   │   └── schemas.py
+│   │   │   │   ├── machine
+│   │   │   │   │   ├── crud.py
+│   │   │   │   │   ├── handler.py
+│   │   │   │   │   └── schemas.py
+│   │   │   │   ├── __pycache__  [error opening dir]
+│   │   │   │   └── router.py
+│   │   │   └── router.py
+│   │   └── v2
+│   ├── database.py
+│   ├── frontend
+│   │   ├── assets
+│   │   │   ├── fonts
+│   │   │   └── images
+│   │   │       └── jlt-logo.svg
+│   │   ├── element
+│   │   │   ├── button.html
+│   │   │   └── input.html
+│   │   ├── static
+│   │   │   ├── css
+│   │   │   │   └── style.css
+│   │   │   └── js
+│   │   │       └── script.js
+│   │   ├── template
+│   │   │   ├── base.html
+│   │   │   └── empty_page_example.html
+│   │   └── widget
+│   ├── __init__.py
+│   ├── main.py
+│   ├── models
+│   │   ├── category.py
+│   │   ├── certification.py
+│   │   ├── __init__.py
+│   │   ├── machine.py
+│   │   ├── machine_resources.py
+│   │   ├── maker.py
+│   │   ├── __pycache__
+│   │   │   ├── category.cpython-311.pyc
+│   │   │   ├── category.cpython-312.pyc
+│   │   │   ├── certification.cpython-311.pyc
+│   │   │   ├── certification.cpython-312.pyc
+│   │   │   ├── __init__.cpython-311.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── machine.cpython-311.pyc
+│   │   │   ├── machine_resources.cpython-311.pyc
+│   │   │   ├── maker.cpython-311.pyc
+│   │   │   ├── maker.cpython-312.pyc
+│   │   │   ├── resources.cpython-311.pyc
+│   │   │   └── resources.cpython-312.pyc
+│   │   └── resources.py
+│   ├── __pycache__
+│   │   ├── database.cpython-311.pyc
+│   │   ├── database.cpython-312.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── main.cpython-311.pyc
+│   │   └── main.cpython-312.pyc
+│   └── service
+│       ├── parts
+│       │   ├── handler.py
+│       │   └── __pycache__  [error opening dir]
+│       ├── __pycache__  [error opening dir]
+│       ├── quotation
+│       │   ├── default
+│       │   │   ├── handler.py
+│       │   │   └── __pycache__  [error opening dir]
+│       │   ├── machine
+│       │   │   ├── handler.py
+│       │   │   └── __pycache__  [error opening dir]
+│       │   ├── __pycache__  [error opening dir]
+│       │   └── router.py
+│       └── router.py
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── tree.txt

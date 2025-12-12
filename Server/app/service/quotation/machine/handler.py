@@ -48,10 +48,7 @@ async def redirect_create(request: Request):
 
 @handler.get("/{machine_id}")
 async def redirect_view(machine_id: str):
-    """상세 페이지 리다이렉트 (레거시)
-    
-    Note: 이 라우트는 가장 마지막에 배치해야 함
-    """
+    """상세 페이지 리다이렉트 (레거시)"""
     return RedirectResponse(
         url=f"/service/quotation/machine/form?mode=view&id={machine_id}",
         status_code=302
