@@ -1,11 +1,11 @@
 # api/v1/parts/crud.py
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Optional
 from models.resources import Resources
 from models.maker import Maker
-from models.category import Category
 from models.certification import Certification
+from .schemas import PartsFilter
 
 # ============================================================
 # Helper Functions
@@ -14,13 +14,6 @@ from models.certification import Certification
 def get_maker_by_name(db: Session, maker_name: str) -> Optional[Maker]:
     """제조사명으로 Maker 조회"""
     return db.query(Maker).filter(Maker.name == maker_name).first()
-
-
-def get_category_by_major_minor(db: Session, major: str, minor: str) -> Optional[Category]:
-    """대분류+소분류로 Category 조회"""
-    return db.query(Category).filter(
-        and_(Category.major == major, Category.minor == minor)
-    ).first()
 
 
 def get_next_parts_id(db: Session, maker_id: str) -> str:
@@ -51,7 +44,8 @@ def create_parts(
     db: Session,
     parts_id: str,
     maker_id: str,
-    category_id: int,
+    major: str,  # ✅ category_id 대신 major
+    minor: str,  # ✅ category_id 대신 minor
     name: str,
     unit: str,
     solo_price: int,
@@ -63,14 +57,15 @@ def create_parts(
     """
     Parts 생성
     
-    - Resources 생성
+    - Resources 생성 (major/minor 직접 저장)
     - Certification 생성 (별도 테이블)
     """
     # Resources 생성
     resource = Resources(
         id=parts_id,
         maker_id=maker_id,
-        category_id=category_id,
+        major=major,  # ✅
+        minor=minor,  # ✅
         name=name,
         unit=unit,
         solo_price=solo_price
@@ -103,46 +98,45 @@ def get_parts_by_id(db: Session, parts_id: str, maker_id: str) -> Optional[Resou
 
 def get_parts_list(
     db: Session,
+    filters: PartsFilter,
     skip: int = 0,
-    limit: int = 100,
-    filters: Optional[Dict[str, Any]] = None
-) -> Tuple[int, List[Resources]]:
+    limit: int = 100
+) -> Tuple[List[Resources], int]:
     """
     Parts 목록 조회 + 필터링
     
     - 11개 필터 파라미터 지원
     - updated_at DESC 정렬
     """
-    query = db.query(Resources).join(Resources.maker).join(Resources.category)
+    query = db.query(Resources).join(Resources.maker)  # ✅ Category JOIN 제거
     
-    # 필터 적용
-    if filters:
-        if 'id' in filters:
-            query = query.filter(Resources.id.ilike(f"%{filters['id']}%"))
-        if 'maker_id' in filters:
-            query = query.filter(Resources.maker_id == filters['maker_id'])
-        if 'name' in filters:
-            query = query.filter(Resources.name.ilike(f"%{filters['name']}%"))
-        if 'unit' in filters:
-            query = query.filter(Resources.unit == filters['unit'])
-        if 'min_price' in filters:
-            query = query.filter(Resources.solo_price >= filters['min_price'])
-        if 'max_price' in filters:
-            query = query.filter(Resources.solo_price <= filters['max_price'])
-        if 'major' in filters:
-            query = query.filter(Category.major.ilike(f"%{filters['major']}%"))
-        if 'minor' in filters:
-            query = query.filter(Category.minor.ilike(f"%{filters['minor']}%"))
-        
-        # Certification 필터 (JOIN 필요)
-        if 'ul' in filters or 'ce' in filters or 'kc' in filters:
-            query = query.join(Resources.certification)
-            if 'ul' in filters:
-                query = query.filter(Certification.ul == filters['ul'])
-            if 'ce' in filters:
-                query = query.filter(Certification.ce == filters['ce'])
-            if 'kc' in filters:
-                query = query.filter(Certification.kc == filters['kc'])
+    # 필터 적용 (Pydantic 객체)
+    if filters.id is not None:
+        query = query.filter(Resources.id.ilike(f"%{filters.id}%"))
+    if filters.maker_id is not None:
+        query = query.filter(Resources.maker_id == filters.maker_id)
+    if filters.name is not None:
+        query = query.filter(Resources.name.ilike(f"%{filters.name}%"))
+    if filters.unit is not None:
+        query = query.filter(Resources.unit == filters.unit)
+    if filters.min_price is not None:
+        query = query.filter(Resources.solo_price >= filters.min_price)
+    if filters.max_price is not None:
+        query = query.filter(Resources.solo_price <= filters.max_price)
+    if filters.major is not None:
+        query = query.filter(Resources.major.ilike(f"%{filters.major}%"))  # ✅ 직접 필터
+    if filters.minor is not None:
+        query = query.filter(Resources.minor.ilike(f"%{filters.minor}%"))  # ✅ 직접 필터
+    
+    # Certification 필터 (JOIN 필요)
+    if filters.ul is not None or filters.ce is not None or filters.kc is not None:
+        query = query.join(Resources.certification)
+        if filters.ul is not None:
+            query = query.filter(Certification.ul == filters.ul)
+        if filters.ce is not None:
+            query = query.filter(Certification.ce == filters.ce)
+        if filters.kc is not None:
+            query = query.filter(Certification.kc == filters.kc)
     
     # Total count
     total = query.count()
@@ -150,7 +144,7 @@ def get_parts_list(
     # 정렬 + 페이징
     parts_list = query.order_by(Resources.updated_at.desc()).offset(skip).limit(limit).all()
     
-    return total, parts_list
+    return parts_list, total
 
 
 def search_parts(
@@ -159,13 +153,13 @@ def search_parts(
     search_fields: List[str],
     skip: int = 0,
     limit: int = 20
-) -> Tuple[int, List[Resources]]:
+) -> Tuple[List[Resources], int]:
     """
     Parts 검색 (여러 필드 OR 조건)
     
     - search_fields: name, id, maker_name, major, minor
     """
-    query_obj = db.query(Resources).join(Resources.maker).join(Resources.category)
+    query_obj = db.query(Resources).join(Resources.maker)  # ✅ Category JOIN 제거
     
     conditions = []
     
@@ -176,9 +170,9 @@ def search_parts(
     if 'maker_name' in search_fields:
         conditions.append(Maker.name.ilike(f"%{query}%"))
     if 'major' in search_fields:
-        conditions.append(Category.major.ilike(f"%{query}%"))
+        conditions.append(Resources.major.ilike(f"%{query}%"))  # ✅ 직접 검색
     if 'minor' in search_fields:
-        conditions.append(Category.minor.ilike(f"%{query}%"))
+        conditions.append(Resources.minor.ilike(f"%{query}%"))  # ✅ 직접 검색
     
     if conditions:
         query_obj = query_obj.filter(or_(*conditions))
@@ -189,14 +183,15 @@ def search_parts(
     # 정렬 + 페이징
     parts_list = query_obj.order_by(Resources.updated_at.desc()).offset(skip).limit(limit).all()
     
-    return total, parts_list
+    return parts_list, total
 
 
 def update_parts(
     db: Session,
     parts_id: str,
     maker_id: str,
-    category_id: Optional[int] = None,
+    major: Optional[str] = None,  # ✅ category_id 대신 major
+    minor: Optional[str] = None,  # ✅ category_id 대신 minor
     name: Optional[str] = None,
     unit: Optional[str] = None,
     solo_price: Optional[int] = None,
@@ -217,8 +212,10 @@ def update_parts(
         return None
     
     # Resources 업데이트
-    if category_id is not None:
-        resource.category_id = category_id
+    if major is not None:
+        resource.major = major  # ✅
+    if minor is not None:
+        resource.minor = minor  # ✅
     if name is not None:
         resource.name = name
     if unit is not None:

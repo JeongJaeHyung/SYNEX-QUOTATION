@@ -1,0 +1,1626 @@
+{% extends "template/base.html" %}
+
+{% block title %}장비 견적서 생성 - SYNEX+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 상단 정보 입력 #}
+    <div class="create-header">
+        <h2>장비 견적서 생성</h2>
+        <div class="header-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="machineName">장비명 <span class="required">*</span></label>
+                    <input type="text" id="machineName" class="form-input" placeholder="장비명을 입력하세요" required>
+                </div>
+                <div class="form-group">
+                    <label for="manufacturer">장비사</label>
+                    <input type="text" id="manufacturer" class="form-input" placeholder="장비사를 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="client">고객사</label>
+                    <input type="text" id="client" class="form-input" placeholder="고객사를 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="creator">작성자 <span class="required">*</span></label>
+                    <input type="text" id="creator" class="form-input" placeholder="작성자명을 입력하세요" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="totalPrice">금액</label>
+                    <input type="text" id="totalPrice" class="form-input" value="0원" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="createdAt">생성일</label>
+                    <input type="text" id="createdAt" class="form-input" value="-" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="updatedAt">수정일</label>
+                    <input type="text" id="updatedAt" class="form-input" value="-" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="description">비고</label>
+                    <input type="text" id="description" class="form-input" placeholder="비고를 입력하세요">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    {# 부품 검색 #}
+    <div class="action-bar">
+        <div class="action-bar-left">
+            <h3>부품 선택</h3>
+        </div>
+        <div class="action-bar-right">
+            <select class="input-select" id="categoryFilter" onchange="loadParts()">
+                <option value="">전체 카테고리</option>
+                <option value="판넬">판넬</option>
+                <option value="잡재료 및 케이블">잡재료 및 케이블</option>
+            </select>
+            <input type="text" class="input-search" placeholder="부품명 검색" id="searchInput" onkeypress="handleSearch(event)">
+            <button class="btn btn-primary" onclick="loadParts()">검색하기</button>
+        </div>
+    </div>
+
+    {# 로딩 인디케이터 #}
+    <div id="loading" style="display: none; text-align: center; padding: 40px;">
+        <p>데이터를 불러오는 중...</p>
+    </div>
+
+    {# 부품 선택 테이블 #}
+    <div id="tableContainer"></div>
+
+    {# 집계 테이블 #}
+    <div class="summary-table-section" style="margin-top: 24px;">
+        <div class="table-container">
+            <table class="data-table create-table" id="summaryTable">
+                <thead>
+                    <tr>
+                        <th class="col-center" style="width: 120px">Unit</th>
+                        <th class="col-left" style="width: 120px">품목</th>
+                        <th class="col-left" style="width: 200px">모델명/규격</th>
+                        <th class="col-left" style="width: 100px">Maker</th>
+                        <th class="col-center" style="width: 50px">UL</th>
+                        <th class="col-center" style="width: 50px">CE</th>
+                        <th class="col-center" style="width: 50px">KC</th>
+                        <th class="col-center" style="width: 100px">기타</th>
+                        <th class="col-center" style="width: 60px">단위</th>
+                        <th class="col-right" style="width: 120px">금액</th>
+                        <th class="col-center" style="width: 100px">수량</th>
+                        <th class="col-right" style="width: 120px">합계 금액</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    {# 전장/제어부 집계 그룹 #}
+                    <tr data-summary-type="auto" data-category="전장 판넬 판금 및 명판">
+                        <td class="col-center category-cell" rowspan="9"><strong>전장/제어부<br>집계</strong></td>
+                        <td class="col-left summary-readonly" colspan="8"><strong>전장 판넬 판금 및 명판</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="auto" data-category="판넬 차단기류">
+                        <td class="col-left summary-readonly" colspan="8"><strong>판넬 차단기류</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="auto" data-category="PLC Set">
+                        <td class="col-left summary-readonly" colspan="8"><strong>PLC Set</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="auto" data-category="Touch Screen">
+                        <td class="col-left summary-readonly" colspan="8"><strong>Touch Screen</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="auto" data-category="판넬 주요자재">
+                        <td class="col-left summary-readonly" colspan="8"><strong>판넬 주요자재</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="auto" data-category="판넬 기타자재">
+                        <td class="col-left summary-readonly" colspan="8"><strong>판넬 기타자재</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="auto" data-category="케이블 및 기타 잡자재">
+                        <td class="col-left summary-readonly" colspan="8"><strong>케이블 및 기타 잡자재</strong></td>
+                        <td class="col-right summary-readonly">-</td>
+                        <td class="col-center summary-readonly">-</td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="manual" data-item="LOCAL_MAT" class="manual-input-row">
+                        <td class="col-left" colspan="8"><strong>Local 자재</strong></td>
+                        <td class="col-right">
+                            <input type="number" class="price-input manual-summary-input" data-item="LOCAL_MAT" value="0" min="0" onchange="updateManualSummary('LOCAL_MAT', 'price', this.value)">
+                        </td>
+                        <td class="col-center">
+                            <input type="number" class="quantity-input manual-summary-input" data-item="LOCAL_MAT" value="0" min="0" onchange="updateManualSummary('LOCAL_MAT', 'quantity', this.value)">
+                        </td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    <tr data-summary-type="manual" data-item="OPERATION_PC" class="manual-input-row">
+                        <td class="col-left" colspan="8"><strong>운영 PC/주액 PC</strong></td>
+                        <td class="col-right">
+                            <input type="number" class="price-input manual-summary-input" data-item="OPERATION_PC" value="0" min="0" onchange="updateManualSummary('OPERATION_PC', 'price', this.value)">
+                        </td>
+                        <td class="col-center">
+                            <input type="number" class="quantity-input manual-summary-input" data-item="OPERATION_PC" value="0" min="0" onchange="updateManualSummary('OPERATION_PC', 'quantity', this.value)">
+                        </td>
+                        <td class="col-right summary-amount">0</td>
+                    </tr>
+                    
+                    {# 자재 합계 #}
+                    <tr class="material-total-row">
+                        <td class="col-center" colspan="11"><strong>자재 합계</strong></td>
+                        <td class="col-right"><strong id="materialTotalAmount">0</strong></td>
+                    </tr>
+                    
+                    {# 인건비 입력 필드 컨테이너 - tbody 제거 #}
+                    <!-- laborItemsContainer -->
+                    
+                    {# 인건비 합계 #}
+                    <tr class="labor-total-row">
+                        <td class="col-center"><strong>인건비 합계</strong></td>
+                        <td class="col-left" colspan="10"></td>
+                        <td class="col-right"><strong id="laborTotalAmount">0</strong></td>
+                    </tr>
+                    
+                    {# 자재 & 인건비 합계 #}
+                    <tr class="grand-total-row">
+                        <td class="col-center" colspan="11"><strong>자재 & 인건비 합계</strong></td>
+                        <td class="col-right"><strong id="grandTotalAmount">0</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    {# 등록 버튼 #}
+    <div class="action-footer">
+        <button class="btn btn-secondary btn-lg" onclick="goBack()">취소</button>
+        <button class="btn btn-success btn-lg" onclick="submitMachine()" id="submitBtn">등록완료</button>
+    </div>
+</div>
+
+<script>
+let partsData = [];
+let selectedParts = new Map(); // key: item_code, value: {part, quantity, price}
+let currentSortKey = null;
+let currentSortOrder = 'asc';
+let currentCategoryOrder = null; // 현재 대분류 순서 저장
+let manualSummaryItems = {
+    LOCAL_MAT: { price: 0, quantity: 0, subtotal: 0 },
+    OPERATION_PC: { price: 0, quantity: 0, subtotal: 0 }
+};
+let laborItems = []; // 인건비 항목들
+let laborItemCounter = 0; // 인건비 항목 ID 카운터
+
+// 페이지 모드 및 ID
+let pageMode = 'create'; // create, view, edit
+let machineId = null;
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    // URL 파라미터에서 모드와 ID 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    pageMode = urlParams.get('mode') || 'create';
+    machineId = urlParams.get('id') || null;
+    
+    // 페이지 초기화
+    initializePage();
+    
+    // 부품 목록 로드
+    loadParts();
+    
+    // 초기 요약 렌더링
+    updateSummary();
+});
+
+// 페이지 초기화
+function initializePage() {
+    const titleElement = document.querySelector('.create-header h2');
+    const submitBtn = document.getElementById('submitBtn');
+    const actionButtons = document.querySelector('.action-footer');
+    
+    if (pageMode === 'create') {
+        // 생성 모드
+        titleElement.textContent = '장비 견적서 생성';
+        submitBtn.textContent = '등록완료';
+        submitBtn.onclick = submitMachine;
+        
+        // 읽기 전용 필드는 비활성화
+        document.getElementById('totalPrice').readOnly = true;
+        document.getElementById('createdAt').readOnly = true;
+        document.getElementById('updatedAt').readOnly = true;
+        
+    } else if (pageMode === 'view') {
+        // 조회 모드 - 모든 필드 비활성화
+        titleElement.textContent = '장비 견적서 조회';
+        
+        // 입력 필드 모두 비활성화
+        disableAllInputs();
+        
+        // 버튼 변경
+        actionButtons.innerHTML = `
+            <button class="btn btn-secondary btn-lg" onclick="goBack()">목록으로</button>
+            <button class="btn btn-primary btn-lg" onclick="switchToEditMode()">수정하기</button>
+        `;
+        
+        // 기존 데이터 로드
+        if (machineId) {
+            loadMachineData(machineId);
+        }
+        
+    } else if (pageMode === 'edit') {
+        // 수정 모드
+        titleElement.textContent = '장비 견적서 수정';
+        submitBtn.textContent = '수정완료';
+        submitBtn.onclick = updateMachine;
+        
+        // 읽기 전용 필드 비활성화
+        document.getElementById('totalPrice').readOnly = true;
+        document.getElementById('createdAt').readOnly = true;
+        document.getElementById('updatedAt').readOnly = true;
+        
+        // 취소 버튼 텍스트 변경
+        actionButtons.querySelector('.btn-secondary').textContent = '취소';
+        
+        // 기존 데이터 로드
+        if (machineId) {
+            loadMachineData(machineId);
+        }
+    }
+}
+
+// 모든 입력 필드 비활성화 (View 모드)
+function disableAllInputs() {
+    // 상단 입력 필드
+    document.getElementById('machineName').readOnly = true;
+    document.getElementById('manufacturer').readOnly = true;
+    document.getElementById('client').readOnly = true;
+    document.getElementById('creator').readOnly = true;
+    document.getElementById('description').readOnly = true;
+    
+    // 검색 및 버튼 비활성화
+    document.getElementById('categoryFilter').disabled = true;
+    document.getElementById('searchInput').disabled = true;
+    document.querySelector('.action-bar-right .btn-primary').disabled = true;
+    
+    // 집계 테이블 수동 입력 필드 비활성화
+    document.querySelectorAll('.manual-summary-input').forEach(input => {
+        input.readOnly = true;
+        input.style.backgroundColor = '#f9fafb';
+        input.style.cursor = 'not-allowed';
+    });
+    
+    // 인건비 추가 버튼 숨기기
+    const addLaborBtn = document.querySelector('.summary-table-section .btn-secondary');
+    if (addLaborBtn) {
+        addLaborBtn.style.display = 'none';
+    }
+}
+
+// View → Edit 모드 전환
+function switchToEditMode() {
+    window.location.href = `?mode=edit&id=${machineId}`;
+}
+
+// 기존 Machine 데이터 로드
+async function loadMachineData(id) {
+    try {
+        const response = await fetch(`/api/v1/quotation/machine/${id}?include_schema=true`);
+        
+        if (!response.ok) {
+            throw new Error('데이터 로드 실패');
+        }
+        
+        const data = await response.json();
+        
+        // 상단 정보 설정
+        document.getElementById('machineName').value = data.name || '';
+        document.getElementById('manufacturer').value = data.manufacturer || '';
+        document.getElementById('client').value = data.client || '';
+        document.getElementById('creator').value = data.creator || '';
+        document.getElementById('description').value = data.description || '';
+        document.getElementById('totalPrice').value = (data.total_price || 0).toLocaleString('ko-KR') + '원';
+        
+        // 날짜 포맷팅
+        if (data.created_at) {
+            const createdDate = new Date(data.created_at);
+            document.getElementById('createdAt').value = formatDateTime(createdDate);
+        }
+        if (data.updated_at) {
+            const updatedDate = new Date(data.updated_at);
+            document.getElementById('updatedAt').value = formatDateTime(updatedDate);
+        }
+        
+        // Resources 복원
+        const resources = data.resources.items || data.resources;
+        
+        resources.forEach(resource => {
+            const itemCode = resource.item_code;
+            
+            // maker_id로 구분
+            if (resource.maker_id === 'SUMMARY') {
+                // Local 자재, 운영 PC
+                const key = resource.resources_id;
+                if (manualSummaryItems[key]) {
+                    manualSummaryItems[key].price = resource.solo_price;
+                    manualSummaryItems[key].quantity = resource.quantity;
+                    manualSummaryItems[key].subtotal = resource.solo_price * resource.quantity;
+                    
+                    // 입력 필드에 값 설정
+                    const priceInput = document.querySelector(`input.price-input[data-item="${key}"]`);
+                    const quantityInput = document.querySelector(`input.quantity-input[data-item="${key}"]`);
+                    if (priceInput) priceInput.value = resource.solo_price;
+                    if (quantityInput) quantityInput.value = resource.quantity;
+                }
+            } else if (resource.maker_id === 'LABOR') {
+                // 인건비
+                const id = laborItemCounter++;
+                laborItems.push({
+                    id: id,
+                    name: resource.model_name || '인건비',
+                    unit: resource.unit || 'M/D',
+                    price: resource.solo_price,
+                    quantity: resource.quantity,
+                    subtotal: resource.solo_price * resource.quantity
+                });
+            } else {
+                // 일반 부품
+                selectedParts.set(itemCode, {
+                    part: resource,
+                    quantity: resource.quantity,
+                    solo_price: resource.solo_price,
+                    subtotal: resource.solo_price * resource.quantity
+                });
+            }
+        });
+        
+        // 테이블 다시 렌더링
+        renderTable(null, partsData);
+        renderLaborItems();
+        updateSummary();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('데이터를 불러오는데 실패했습니다.');
+    }
+}
+
+// 날짜 포맷팅
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+// 부품 목록 로드
+async function loadParts() {
+    const loading = document.getElementById('loading');
+    const tableContainer = document.getElementById('tableContainer');
+    
+    loading.style.display = 'block';
+    tableContainer.innerHTML = '';
+    
+    const searchQuery = document.getElementById('searchInput').value;
+    const category = document.getElementById('categoryFilter').value;
+    
+    let apiUrl = '/api/v1/parts?include_schema=true&limit=1000';
+    
+    if (searchQuery) {
+        apiUrl += `&name=${encodeURIComponent(searchQuery)}`;
+    }
+    if (category) {
+        apiUrl += `&major=${encodeURIComponent(category)}`;
+    }
+    
+    try {
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error('API 호출 실패');
+        }
+        
+        const data = await response.json();
+        
+        // 집계 대분류 항목 제외 (하단 집계 테이블에만 표시)
+        const summaryCategories = [
+            '전장/제어부 집계'
+        ];
+        
+        // 집계 항목이 아닌 것만 필터링
+        const filteredItems = (data.items || []).filter(item => {
+            const major = item.major_category || item.category_major || '';
+            return !summaryCategories.includes(major);
+        });
+        
+        partsData = filteredItems;
+        
+        renderTable(data.schema, filteredItems);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        tableContainer.innerHTML = `
+            <div class="empty-state" style="color: #ef4444;">
+                부품 목록을 불러오는데 실패했습니다.<br>
+                <small>${error.message}</small>
+            </div>
+        `;
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// 테이블 렌더링
+function renderTable(schema, items) {
+    const tableContainer = document.getElementById('tableContainer');
+    
+    if (!items || items.length === 0) {
+        tableContainer.innerHTML = '<div class="empty-state">부품이 없습니다</div>';
+        return;
+    }
+    
+    // View 모드 체크
+    const isViewMode = pageMode === 'view';
+    
+    // 대분류 정렬 순서 정의
+    const categoryOrder = [
+        '전장 판넬 판금 및 명판',
+        '판넬 차단기류',
+        'PLC Set',
+        'Touch Screen',
+        '판넬 주요자재',
+        '판넬 기타자재',
+        '케이블 및 기타 잡자재'
+    ];
+    
+    // 대분류별로 그룹화
+    const groupedItems = {};
+    items.forEach(item => {
+        const major = item.major_category || item.category_major || '기타';
+        if (!groupedItems[major]) {
+            groupedItems[major] = [];
+        }
+        groupedItems[major].push(item);
+    });
+    
+    // 정렬된 대분류 순서로 배열 생성
+    const sortedCategories = categoryOrder.filter(cat => groupedItems[cat]);
+    // 정의되지 않은 카테고리 추가
+    Object.keys(groupedItems).forEach(cat => {
+        if (!categoryOrder.includes(cat)) {
+            sortedCategories.push(cat);
+        }
+    });
+    
+    // 현재 대분류 순서 저장
+    currentCategoryOrder = sortedCategories;
+    
+    // 컬럼 정의 (순서: 대분류, 중분류, 부품명, 제조사, UL, CE, KC, ETC, 단위, 단가, 수량, 소계)
+    const columns = [
+        { key: 'major_category', title: 'Unit', width: '120px', align: 'center', sortable: false },
+        { key: 'minor_category', title: '품목', width: '120px', align: 'left', sortable: true },
+        { key: 'name', title: '모델명/규격', width: '200px', align: 'left', sortable: true },
+        { key: 'maker_name', title: 'Maker', width: '100px', align: 'left', sortable: true },
+        { key: 'ul', title: 'UL', width: '50px', align: 'center', sortable: false },
+        { key: 'ce', title: 'CE', width: '50px', align: 'center', sortable: false },
+        { key: 'kc', title: 'KC', width: '50px', align: 'center', sortable: false },
+        { key: 'etc', title: '기타', width: '100px', align: 'center', sortable: false },
+        { key: 'unit', title: '단위', width: '60px', align: 'center', sortable: false },
+        { key: 'solo_price', title: '금액', width: '120px', align: 'right', sortable: true },
+        { key: 'quantity', title: '수량', width: '100px', align: 'center', sortable: true },
+        { key: 'subtotal', title: '합계 금액', width: '120px', align: 'right', sortable: false }
+    ];
+    
+    let html = '<div class="table-container"><table class="data-table create-table" id="partsTable">';
+    
+    // 헤더
+    html += '<thead><tr>';
+    columns.forEach(col => {
+        const sortIcon = col.sortable && currentSortKey === col.key ? 
+            (currentSortOrder === 'asc' ? ' ▲' : ' ▼') : '';
+        const sortClass = col.sortable ? 'sortable' : '';
+        const onClick = col.sortable ? `onclick="sortTable('${col.key}')"` : '';
+        
+        html += `<th class="col-${col.align} ${sortClass}" style="width: ${col.width}" ${onClick}>
+            ${col.title}${sortIcon}
+        </th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    // 대분류별로 그룹화하여 렌더링
+    sortedCategories.forEach(majorCategory => {
+        let categoryItems = [...groupedItems[majorCategory]];
+        
+        // 정렬 적용
+        if (currentSortKey) {
+            categoryItems = sortItems(categoryItems, currentSortKey, currentSortOrder);
+        }
+        
+        const rowSpan = categoryItems.length;
+        
+        categoryItems.forEach((item, index) => {
+            const itemCode = item.item_code || item.id || '';
+            const isFirstRow = index === 0;
+            const isLastRow = index === categoryItems.length - 1;
+            const rowClass = isLastRow ? 'category-last-row' : '';
+            
+            html += `<tr class="${rowClass}" data-item-code="${itemCode}">`;
+            
+            columns.forEach(col => {
+                let value = item[col.key] || item[col.key.replace('_', '')];
+                const cellClass = `col-${col.align}`;
+                
+                // 대분류 셀은 첫 행에만 rowspan으로 표시
+                if (col.key === 'major_category') {
+                    if (isFirstRow) {
+                        html += `<td class="${cellClass} category-cell" rowspan="${rowSpan}">
+                            <strong>${value || '-'}</strong>
+                        </td>`;
+                    }
+                    // 나머지 행에는 td를 생성하지 않음
+                } else {
+                    html += `<td class="${cellClass}">`;
+                    
+                    if (col.key === 'quantity') {
+                        // 수량 입력 필드
+                        const currentQty = selectedParts.has(itemCode) ? selectedParts.get(itemCode).quantity : 0;
+                        if (isViewMode) {
+                            html += `<span>${currentQty}</span>`;
+                        } else {
+                            html += `<input 
+                                type="number" 
+                                class="quantity-input" 
+                                data-item-code="${itemCode}"
+                                min="0" 
+                                value="${currentQty}"
+                                onchange="updateQuantity('${itemCode}', this.value)"
+                            >`;
+                        }
+                    } else if (col.key === 'subtotal') {
+                        // 소계 표시 (읽기 전용)
+                        const currentQty = selectedParts.has(itemCode) ? selectedParts.get(itemCode).quantity : 0;
+                        const currentPrice = selectedParts.has(itemCode) ? 
+                            selectedParts.get(itemCode).solo_price : (item.solo_price || 0);
+                        const subtotal = currentQty * currentPrice;
+                        html += `<span class="subtotal-value" data-item-code="${itemCode}">${subtotal.toLocaleString('ko-KR')}</span>`;
+                    } else if (col.key === 'solo_price') {
+                        // 단가 수정 가능
+                        const currentPrice = selectedParts.has(itemCode) ? 
+                            selectedParts.get(itemCode).solo_price : (item.solo_price || 0);
+                        if (isViewMode) {
+                            html += `<span>${currentPrice.toLocaleString('ko-KR')}</span>`;
+                        } else {
+                            html += `<input 
+                                type="number" 
+                                class="price-input" 
+                                data-item-code="${itemCode}"
+                                min="0" 
+                                value="${currentPrice}"
+                                onchange="updatePrice('${itemCode}', this.value)"
+                            >`;
+                        }
+                    } else if (col.key === 'ul' || col.key === 'ce' || col.key === 'kc') {
+                        // 인증 뱃지
+                        html += value ? 
+                            '<span class="badge badge-success">O</span>' : 
+                            '<span class="badge badge-default">-</span>';
+                    } else {
+                        // 일반 텍스트
+                        html += value || '-';
+                    }
+                    
+                    html += '</td>';
+                }
+            });
+            
+            html += '</tr>';
+        });
+    });
+    
+    html += '</tbody></table></div>';
+    
+    tableContainer.innerHTML = html;
+}
+
+// 정렬 함수
+function sortItems(items, key, order) {
+    return items.sort((a, b) => {
+        let aVal = a[key];
+        let bVal = b[key];
+        
+        // 숫자형 비교
+        if (key === 'solo_price' || key === 'quantity') {
+            aVal = parseFloat(aVal) || 0;
+            bVal = parseFloat(bVal) || 0;
+        } else {
+            // 문자열 비교
+            aVal = (aVal || '').toString().toLowerCase();
+            bVal = (bVal || '').toString().toLowerCase();
+        }
+        
+        if (aVal < bVal) return order === 'asc' ? -1 : 1;
+        if (aVal > bVal) return order === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+// 테이블 정렬
+function sortTable(key) {
+    // 같은 컬럼 클릭 시 정렬 순서 반전
+    if (currentSortKey === key) {
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortKey = key;
+        currentSortOrder = 'asc';
+    }
+    
+    // 테이블 다시 렌더링
+    renderTable(null, partsData);
+}
+
+// 단가 변경
+function updatePrice(itemCode, newPrice) {
+    const price = parseInt(newPrice) || 0;
+    
+    // partsData에서 해당 부품 찾아서 가격 업데이트
+    const part = partsData.find(p => (p.item_code || p.id) === itemCode);
+    if (part) {
+        part.solo_price = price;
+        
+        // 이미 선택된 부품이면 selectedParts도 업데이트
+        if (selectedParts.has(itemCode)) {
+            const selected = selectedParts.get(itemCode);
+            selected.solo_price = price;
+            selected.subtotal = selected.quantity * price;
+            selectedParts.set(itemCode, selected);
+        }
+    }
+    
+    // 소계 업데이트
+    updateSubtotal(itemCode);
+    updateSummary();
+}
+
+// 개별 소계 업데이트
+function updateSubtotal(itemCode) {
+    const subtotalElement = document.querySelector(`.subtotal-value[data-item-code="${itemCode}"]`);
+    if (subtotalElement) {
+        const qty = selectedParts.has(itemCode) ? selectedParts.get(itemCode).quantity : 0;
+        const price = selectedParts.has(itemCode) ? selectedParts.get(itemCode).solo_price : 
+            (partsData.find(p => (p.item_code || p.id) === itemCode)?.solo_price || 0);
+        const subtotal = qty * price;
+        subtotalElement.textContent = subtotal.toLocaleString('ko-KR');
+    }
+}
+
+// 값 포맷팅
+function formatValue(value, type, format) {
+    if (value === null || value === undefined || value === '') {
+        return '<span class="text-muted">-</span>';
+    }
+    
+    switch(type) {
+        case 'boolean':
+            return value ? 
+                '<span class="badge badge-success">O</span>' : 
+                '<span class="badge badge-default">X</span>';
+        
+        case 'integer':
+            return value.toLocaleString('ko-KR');
+        
+        default:
+            return value;
+    }
+}
+
+// 수량 변경
+function updateQuantity(itemCode, quantity) {
+    const qty = parseInt(quantity) || 0;
+    
+    if (qty > 0) {
+        // 부품 정보 찾기
+        const part = partsData.find(p => (p.item_code || p.id) === itemCode);
+        if (part) {
+            // 현재 단가 가져오기 (수정되었을 수 있음)
+            const currentPrice = selectedParts.has(itemCode) ? 
+                selectedParts.get(itemCode).solo_price : part.solo_price;
+            
+            selectedParts.set(itemCode, {
+                part: part,
+                quantity: qty,
+                solo_price: currentPrice,
+                subtotal: qty * currentPrice
+            });
+        }
+    } else {
+        selectedParts.delete(itemCode);
+    }
+    
+    // 소계 업데이트
+    updateSubtotal(itemCode);
+    updateSummary();
+}
+
+// 요약 업데이트
+function updateSummary() {
+    // 대분류별 집계 계산
+    const categoryOrder = [
+        '전장 판넬 판금 및 명판',
+        '판넬 차단기류',
+        'PLC Set',
+        'Touch Screen',
+        '판넬 주요자재',
+        '판넬 기타자재',
+        '케이블 및 기타 잡자재'
+    ];
+    
+    // 대분류 초기화
+    const categoryTotals = {};
+    categoryOrder.forEach(category => {
+        categoryTotals[category] = 0;
+    });
+    
+    // 각 대분류별 금액 집계
+    selectedParts.forEach(item => {
+        const major = item.part.major_category || item.part.category_major || '기타';
+        if (categoryTotals[major] !== undefined) {
+            categoryTotals[major] += item.subtotal;
+        }
+    });
+    
+    // 자동 계산 항목 업데이트
+    categoryOrder.forEach(category => {
+        const row = document.querySelector(`#summaryTable tr[data-category="${category}"]`);
+        if (row) {
+            const amountCell = row.querySelector('.summary-amount');
+            amountCell.textContent = categoryTotals[category].toLocaleString('ko-KR');
+        }
+    });
+    
+    // 자재 합계 계산
+    let materialTotal = 0;
+    
+    // 부품 소계
+    selectedParts.forEach(item => {
+        materialTotal += item.subtotal;
+    });
+    
+    // 수동 입력 항목 소계
+    Object.keys(manualSummaryItems).forEach(key => {
+        materialTotal += manualSummaryItems[key].subtotal;
+    });
+    
+    document.getElementById('materialTotalAmount').textContent = materialTotal.toLocaleString('ko-KR');
+    
+    // 인건비 합계 계산
+    let laborTotal = 0;
+    laborItems.forEach(item => {
+        laborTotal += item.subtotal;
+    });
+    document.getElementById('laborTotalAmount').textContent = laborTotal.toLocaleString('ko-KR');
+    
+    // 총 합계
+    const grandTotal = materialTotal + laborTotal;
+    document.getElementById('grandTotalAmount').textContent = grandTotal.toLocaleString('ko-KR');
+    
+    // 상단 금액 필드 업데이트
+    document.getElementById('totalPrice').value = grandTotal.toLocaleString('ko-KR') + '원';
+}
+
+// 수동 입력 항목 업데이트
+function updateManualSummary(itemKey, field, value) {
+    if (pageMode === 'view') return; // View 모드에서는 수정 불가
+    
+    const numValue = parseInt(value) || 0;
+    manualSummaryItems[itemKey][field] = numValue;
+    manualSummaryItems[itemKey].subtotal = manualSummaryItems[itemKey].price * manualSummaryItems[itemKey].quantity;
+    
+    // 해당 행의 소계 업데이트
+    const row = document.querySelector(`#summaryTable tr[data-item="${itemKey}"]`);
+    if (row) {
+        const amountCell = row.querySelector('.summary-amount');
+        amountCell.textContent = manualSummaryItems[itemKey].subtotal.toLocaleString('ko-KR');
+    }
+    
+    updateSummary();
+}
+
+// 인건비 항목 추가
+function addLaborItem() {
+    if (pageMode === 'view') return; // View 모드에서는 추가 불가
+    
+    const id = laborItemCounter++;
+    laborItems.push({
+        id: id,
+        name: '',
+        unit: 'M/D',
+        price: 0,
+        quantity: 0,
+        subtotal: 0
+    });
+    renderLaborItems();
+}
+
+// 인건비 항목 렌더링
+function renderLaborItems() {
+    const summaryTableBody = document.getElementById('summaryTableBody');
+    const materialTotalRow = summaryTableBody.querySelector('.material-total-row');
+    const laborTotalRow = summaryTableBody.querySelector('.labor-total-row');
+    
+    // 기존 인건비 행들 제거
+    const existingLaborRows = summaryTableBody.querySelectorAll('tr[data-labor-id]');
+    existingLaborRows.forEach(row => row.remove());
+    
+    // 인건비 항목이 없으면 리턴
+    if (laborItems.length === 0) {
+        return;
+    }
+    
+    const isViewMode = pageMode === 'view';
+    
+    // 인건비 항목 행들 생성
+    laborItems.forEach((item, index) => {
+        const rowspan = index === 0 ? ` rowspan="${laborItems.length}"` : '';
+        
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-labor-id', item.id);
+        tr.className = 'labor-input-row';
+        
+        let html = '';
+        if (index === 0) {
+            html += `<td class="col-center category-cell"${rowspan}><strong>인건비</strong></td>`;
+        }
+        
+        if (isViewMode) {
+            // View 모드: 읽기 전용 텍스트
+            html += `
+                <td class="col-left" colspan="7">${item.name || '-'}</td>
+                <td class="col-center">${item.unit}</td>
+                <td class="col-right">${item.price.toLocaleString('ko-KR')}</td>
+                <td class="col-center">${item.quantity}</td>
+                <td class="col-right labor-subtotal">${item.subtotal.toLocaleString('ko-KR')}</td>
+            `;
+        } else {
+            // Create/Edit 모드: 입력 필드
+            html += `
+                <td class="col-left" colspan="7">
+                    <input type="text" class="labor-name-input" placeholder="항목명 (예: 전장실계)" 
+                        value="${item.name}" onchange="updateLaborItem(${item.id}, 'name', this.value)">
+                </td>
+                <td class="col-center">
+                    <input type="text" class="unit-input" value="${item.unit}" 
+                        onchange="updateLaborItem(${item.id}, 'unit', this.value)">
+                </td>
+                <td class="col-right">
+                    <input type="number" class="price-input" value="${item.price}" min="0"
+                        onchange="updateLaborItem(${item.id}, 'price', this.value)">
+                </td>
+                <td class="col-center">
+                    <input type="number" class="quantity-input" value="${item.quantity}" min="0"
+                        onchange="updateLaborItem(${item.id}, 'quantity', this.value)">
+                </td>
+                <td class="col-right labor-subtotal">${item.subtotal.toLocaleString('ko-KR')}</td>
+            `;
+        }
+        
+        tr.innerHTML = html;
+        
+        // materialTotalRow 다음에 삽입
+        materialTotalRow.parentNode.insertBefore(tr, laborTotalRow);
+    });
+}
+
+// 인건비 항목 업데이트
+function updateLaborItem(id, field, value) {
+    const item = laborItems.find(i => i.id === id);
+    if (!item) return;
+    
+    if (field === 'price' || field === 'quantity') {
+        item[field] = parseInt(value) || 0;
+        item.subtotal = item.price * item.quantity;
+        
+        // 해당 행의 소계 업데이트
+        const row = document.querySelector(`tr[data-labor-id="${id}"]`);
+        if (row) {
+            const subtotalCell = row.querySelector('.labor-subtotal');
+            subtotalCell.textContent = item.subtotal.toLocaleString('ko-KR');
+        }
+    } else {
+        item[field] = value;
+    }
+    
+    updateSummary();
+}
+
+// 인건비 항목 삭제
+function removeLaborItem(id) {
+    laborItems = laborItems.filter(i => i.id !== id);
+    renderLaborItems();
+    updateSummary();
+}
+
+// 검색 (Enter 키)
+function handleSearch(event) {
+    if (event.key === 'Enter') {
+        loadParts();
+    }
+}
+
+// 장비 견적서 수정
+async function updateMachine() {
+    const machineName = document.getElementById('machineName').value.trim();
+    const manufacturer = document.getElementById('manufacturer').value.trim();
+    const client = document.getElementById('client').value.trim();
+    const description = document.getElementById('description').value.trim();
+    
+    // 유효성 검증
+    if (!machineName) {
+        alert('장비명을 입력하세요.');
+        document.getElementById('machineName').focus();
+        return;
+    }
+    
+    if (selectedParts.size === 0 && laborItems.length === 0) {
+        alert('최소 1개 이상의 부품 또는 인건비 항목을 입력하세요.');
+        return;
+    }
+    
+    // API 요청 데이터 구성
+    const resources = [];
+    selectedParts.forEach((item) => {
+        const part = item.part;
+        resources.push({
+            maker_id: part.maker_id,
+            resources_id: part.id || part.resources_id,
+            solo_price: item.solo_price,
+            quantity: item.quantity
+        });
+    });
+    
+    // 수동 입력 항목 추가
+    Object.keys(manualSummaryItems).forEach(key => {
+        const item = manualSummaryItems[key];
+        if (item.quantity > 0) {
+            resources.push({
+                maker_id: "SUMMARY",
+                resources_id: key,
+                solo_price: item.price,
+                quantity: item.quantity
+            });
+        }
+    });
+    
+    // 인건비 항목 추가
+    laborItems.forEach(item => {
+        if (item.quantity > 0) {
+            resources.push({
+                maker_id: "LABOR",
+                resources_id: `LABOR_${item.id}`,
+                solo_price: item.price,
+                quantity: item.quantity
+            });
+        }
+    });
+    
+    const requestData = {
+        name: machineName,
+        manufacturer: manufacturer || null,
+        client: client || null,
+        description: description || null,
+        resources: resources
+    };
+    
+    console.log('Update Request Data:', requestData);
+    
+    // API 호출
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '수정 중...';
+    
+    try {
+        const response = await fetch(`/api/v1/quotation/machine/${machineId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            alert('장비 견적서가 수정되었습니다!');
+            // View 모드로 전환
+            window.location.href = `?mode=view&id=${machineId}`;
+        } else {
+            const error = await response.json();
+            alert('수정 실패: ' + (error.detail || JSON.stringify(error)));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('수정 중 오류가 발생했습니다.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '수정완료';
+    }
+}
+
+// 장비 견적서 등록
+async function submitMachine() {
+    const machineName = document.getElementById('machineName').value.trim();
+    const manufacturer = document.getElementById('manufacturer').value.trim();
+    const client = document.getElementById('client').value.trim();
+    const creator = document.getElementById('creator').value.trim();
+    const description = document.getElementById('description').value.trim();
+    
+    // 유효성 검증
+    if (!machineName) {
+        alert('장비명을 입력하세요.');
+        document.getElementById('machineName').focus();
+        return;
+    }
+    
+    if (!creator) {
+        alert('작성자명을 입력하세요.');
+        document.getElementById('creator').focus();
+        return;
+    }
+    
+    if (selectedParts.size === 0 && laborItems.length === 0) {
+        alert('최소 1개 이상의 부품 또는 인건비 항목을 입력하세요.');
+        return;
+    }
+    
+    // API 요청 데이터 구성
+    const resources = [];
+    selectedParts.forEach((item) => {
+        const part = item.part;
+        resources.push({
+            maker_id: part.maker_id,
+            resources_id: part.id,
+            solo_price: item.solo_price,
+            quantity: item.quantity
+        });
+    });
+    
+    // 수동 입력 항목 추가 (가상 resources로 변환)
+    Object.keys(manualSummaryItems).forEach(key => {
+        const item = manualSummaryItems[key];
+        if (item.quantity > 0) {  // 수량이 0보다 큰 것만 추가
+            resources.push({
+                maker_id: "SUMMARY",  // 집계 항목 식별자
+                resources_id: key,     // LOCAL_MAT, OPERATION_PC
+                solo_price: item.price,
+                quantity: item.quantity
+            });
+        }
+    });
+    
+    // 인건비 항목 추가
+    laborItems.forEach(item => {
+        if (item.quantity > 0) {  // 수량이 0보다 큰 것만 추가
+            resources.push({
+                maker_id: "LABOR",           // 인건비 항목 식별자
+                resources_id: `LABOR_${item.id}`,  // LABOR_0, LABOR_1, ...
+                solo_price: item.price,
+                quantity: item.quantity
+            });
+        }
+    });
+    
+    const requestData = {
+        name: machineName,
+        manufacturer: manufacturer || null,
+        client: client || null,
+        creator: creator,
+        description: description || null,
+        resources: resources
+    };
+    
+    console.log('Request Data:', requestData);
+    
+    // API 호출
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '등록 중...';
+    
+    try {
+        const response = await fetch('/api/v1/quotation/machine', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            alert(`장비 견적서가 등록되었습니다!\nID: ${data.id}`);
+            // 상세 페이지로 이동 (경로 수정!)
+            window.location.href = `/service/quotation/machine/${data.id}`;
+        } else {
+            const error = await response.json();
+            alert('등록 실패: ' + (error.detail || JSON.stringify(error)));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('등록 중 오류가 발생했습니다.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록완료';
+    }
+}
+
+// 취소
+function goBack() {
+    if (confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
+        window.location.href = '/service/quotation/machine';
+    }
+}
+</script>
+
+<style>
+/* 페이지 컨텐츠 */
+.page-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 생성 헤더 */
+.create-header {
+    margin-bottom: 24px;
+}
+
+.create-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #1f2937;
+}
+
+.header-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input:read-only {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 24px 0;
+}
+
+/* 액션 바 */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.action-bar h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+}
+
+.action-bar-left,
+.action-bar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-bar-right .input-search {
+    min-width: 300px;
+}
+
+.input-select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+/* 수량 입력 */
+.quantity-input {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* 단가 입력 */
+.price-input {
+    width: 100px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.price-input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* 소계 표시 */
+.subtotal-value {
+    display: inline-block;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+/* 집계 테이블 섹션 */
+.summary-table-section {
+    margin-top: 24px;
+}
+
+.summary-readonly {
+    background-color: #f9fafb;
+    color: #6b7280;
+}
+
+.manual-input-row {
+    background-color: #fffbeb;
+}
+
+.labor-input-row {
+    background-color: #fef3c7;
+}
+
+.material-total-row {
+    background-color: #d1fae5;
+    border-top: 2px solid #10b981;
+    border-bottom: 2px solid #10b981;
+}
+
+.material-total-row td {
+    padding: 12px !important;
+    font-size: 15px;
+}
+
+.labor-total-row {
+    background-color: #dbeafe;
+    border-top: 2px solid #2563eb;
+}
+
+.labor-total-row td {
+    padding: 12px !important;
+    font-size: 15px;
+}
+
+.grand-total-row {
+    background-color: #fef08a;
+    border-top: 3px solid #eab308;
+    border-bottom: 3px solid #eab308;
+}
+
+.grand-total-row td {
+    padding: 14px !important;
+    font-size: 16px;
+}
+
+/* 인건비 항목명 입력 */
+.labor-name-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.labor-name-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+.unit-input {
+    width: 60px;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.unit-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+/* 정렬 가능한 헤더 */
+.create-table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.create-table thead th.sortable:hover {
+    background-color: #f3f4f6;
+}
+
+.create-table thead th.sortable:active {
+    background-color: #e5e7eb;
+}
+
+/* 카테고리 그룹 스타일 */
+.create-table tbody td.category-cell {
+    font-weight: 600;
+    background-color: #eff6ff;
+    border-right: 2px solid #2563eb;
+    border-left: 2px solid #2563eb;
+    border-top: 3px solid #2563eb;
+    border-bottom: 3px solid #2563eb;
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* 대분류 첫 행 */
+.create-table tbody tr:has(td.category-cell) {
+    border-top: 3px solid #2563eb;
+}
+
+/* 대분류 마지막 행 - 굵은 하단 테두리 */
+.create-table tbody tr.category-last-row {
+    border-bottom: 3px solid #2563eb;
+}
+
+.create-table tbody tr.category-last-row td {
+    border-bottom: 3px solid #2563eb;
+}
+
+/* 일반 행 테두리 */
+.create-table tbody tr {
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.create-table tbody tr:hover {
+    background-color: #f3f4f6;
+}
+
+/* rowspan 셀이 있는 행의 호버는 category-cell 제외 */
+.create-table tbody tr:hover td.category-cell {
+    background-color: #eff6ff;
+}
+
+/* 요약 섹션 */
+.summary-section {
+    margin-top: 24px;
+    padding: 20px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.summary-header {
+    margin-bottom: 16px;
+}
+
+.summary-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+}
+
+/* 대분류 집계 테이블 */
+#categorySummary {
+    margin-bottom: 24px;
+}
+
+.summary-table tbody tr.auto-calc {
+    background-color: #f9fafb;
+}
+
+.summary-table tbody tr.manual-input {
+    background-color: #fffbeb;
+}
+
+.summary-table tbody tr.labor-cost-row {
+    background-color: #fef3c7;
+    border-top: 2px solid #f59e0b;
+}
+
+.summary-table tbody tr.subtotal-row {
+    background-color: #eff6ff;
+    border-top: 2px solid #2563eb;
+}
+
+.summary-table tbody tr.subtotal-row td,
+.summary-table tbody tr.labor-cost-row td {
+    padding: 12px;
+    font-size: 15px;
+}
+
+.summary-table tbody tr.total-row-table {
+    background-color: #dbeafe;
+    border-top: 3px solid #2563eb;
+    border-bottom: 3px solid #2563eb;
+}
+
+.summary-table tbody tr.total-row-table td {
+    padding: 14px;
+    font-size: 16px;
+}
+
+/* 수동 입력 필드 */
+.manual-amount-input {
+    width: 150px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.manual-amount-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+/* 인건비 인라인 입력 */
+.labor-quantity-input,
+.labor-price-input {
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: right;
+}
+
+.labor-quantity-input:focus,
+.labor-price-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+.empty-message {
+    text-align: center;
+    color: #9ca3af;
+    padding: 20px;
+    margin: 0;
+}
+
+/* 총 금액 */
+.total-summary {
+    padding: 16px;
+    background-color: #eff6ff;
+    border-radius: 6px;
+    border: 2px solid #2563eb;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-label {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.total-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+/* 액션 푸터 */
+.action-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-lg {
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+}
+
+.btn-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-bar-left,
+    .action-bar-right {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

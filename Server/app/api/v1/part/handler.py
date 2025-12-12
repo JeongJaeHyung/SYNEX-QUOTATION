@@ -1,41 +1,37 @@
 # api/v1/parts/handler.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from database import get_db
-from . import schemas, crud
+from . import crud, schemas
 
 handler = APIRouter()
 
-# ============================================================
-# Schema 생성 함수
-# ============================================================
-
 def get_parts_schema() -> dict:
-    """Parts Schema"""
+    """Parts 스키마 정의"""
     return {
         "item_code": {
             "title": "품목코드",
             "type": "string",
             "ratio": 2
-        },
+        }, 
         "maker_name": {
-            "title": "제조사",
+            "title": "Maker",  # ✅ 제조사 → Maker
             "type": "string",
             "ratio": 2
         },
         "major_category": {
-            "title": "대분류",
+            "title": "Unit",  # ✅ 대분류 → Unit
             "type": "string",
             "ratio": 2
         },
         "minor_category": {
-            "title": "중분류",
+            "title": "품목",  # ✅ 중분류 → 품목
             "type": "string",
             "ratio": 2
         },
         "name": {
-            "title": "부품명",
+            "title": "모델명/규격",  # ✅ 부품명 → 모델명/규격
             "type": "string",
             "ratio": 3
         },
@@ -45,7 +41,7 @@ def get_parts_schema() -> dict:
             "ratio": 1
         },
         "solo_price": {
-            "title": "단가",
+            "title": "금액",  # ✅ 단가 → 금액
             "type": "integer",
             "format": "currency",
             "ratio": 2
@@ -66,141 +62,110 @@ def get_parts_schema() -> dict:
             "ratio": 1
         },
         "etc": {
-            "title": "기타인증",
+            "title": "기타",  # ✅ 기타인증 → 기타
             "type": "string",
             "ratio": 2
         }
     }
 
-# ============================================================
-# Parts Endpoints
-# ============================================================
 
-@handler.post("/", response_model=schemas.PartsCreateResponse, status_code=201)
-def register_parts(
-    parts: schemas.PartsCreate,
-    db: Session = Depends(get_db)
-):
-    """
-    Parts 등록
-    
-    - maker_name으로 maker_id 자동 조회
-    - major_category + minor_category로 category_id 자동 조회
-    - id는 제조사별 자동 증가
-    """
-    # Maker 조회
-    maker = crud.get_maker_by_name(db, parts.maker_name)
-    if not maker:
-        raise HTTPException(status_code=404, detail=f"Maker '{parts.maker_name}' not found")
-    
-    # Category 조회
-    category = crud.get_category_by_major_minor(db, parts.major_category, parts.minor_category)
-    if not category:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"Category '{parts.major_category}/{parts.minor_category}' not found"
-        )
-    
-    # 새 Parts ID 생성 (제조사별 자동 증가)
-    new_id = crud.get_next_parts_id(db, maker.id)
-    
-    # Parts 생성
-    db_parts = crud.create_parts(
-        db=db,
-        parts_id=new_id,
-        maker_id=maker.id,
-        category_id=category.id,
-        name=parts.name,
-        unit=parts.unit,
-        solo_price=parts.solo_price,
-        ul=parts.ul,
-        ce=parts.ce,
-        kc=parts.kc,
-        etc=parts.etc
-    )
-    
-    # Response
+def convert_to_parts_response(resource) -> dict:
+    """Resources 모델을 API 응답 형식으로 변환"""
     return {
-        "item_code": f"{db_parts.maker_id}-{db_parts.id}",
-        "id": db_parts.id,
-        "maker_id": db_parts.maker_id,
-        "maker_name": maker.name,
-        "category_id": category.id,
-        "major_category": category.major,
-        "minor_category": category.minor,
-        "name": db_parts.name,
-        "unit": db_parts.unit,
-        "solo_price": db_parts.solo_price,
-        "ul": db_parts.certification.ul if db_parts.certification else False,
-        "ce": db_parts.certification.ce if db_parts.certification else False,
-        "kc": db_parts.certification.kc if db_parts.certification else False,
-        "etc": db_parts.certification.etc if db_parts.certification else None,
-        "created_at": db_parts.created_at
+        "item_code": f"{resource.maker_id}-{resource.id}",
+        "id": resource.id,
+        "maker_id": resource.maker_id,
+        "maker_name": resource.maker.name,
+        "major_category": resource.major,
+        "minor_category": resource.minor,
+        "name": resource.name,
+        "unit": resource.unit,
+        "solo_price": resource.solo_price,
+        "ul": resource.certification.ul if resource.certification else False,
+        "ce": resource.certification.ce if resource.certification else False,
+        "kc": resource.certification.kc if resource.certification else False,
+        "etc": resource.certification.etc if resource.certification else None,
+        "created_at": resource.created_at,
+        "updated_at": resource.updated_at
     }
 
 
-@handler.get("/", response_model=schemas.PartsListResponse)
-def get_parts_list(
-    include_schema: bool = Query(False, description="schema 포함 여부"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    id: Optional[str] = Query(None, max_length=6),
-    maker_id: Optional[str] = Query(None, max_length=4),
-    name: Optional[str] = Query(None),
-    unit: Optional[str] = Query(None),
-    min_price: Optional[int] = Query(None, ge=0),
-    max_price: Optional[int] = Query(None, ge=0),
-    major: Optional[str] = Query(None),
-    minor: Optional[str] = Query(None),
-    ul: Optional[bool] = Query(None),
-    ce: Optional[bool] = Query(None),
-    kc: Optional[bool] = Query(None),
+@handler.post("", status_code=201)
+def create_parts(
+    parts_data: schemas.PartsCreate,
     db: Session = Depends(get_db)
 ):
-    """
-    Parts 목록 조회 (필터링 지원)
+    """새로운 Parts 등록"""
     
-    - include_schema: true면 schema 포함
-    - 11개 필터 파라미터 지원
-    - updated_at DESC 정렬
-    """
-    # 필터 구성
-    filters = {}
-    if id: filters['id'] = id
-    if maker_id: filters['maker_id'] = maker_id
-    if name: filters['name'] = name
-    if unit: filters['unit'] = unit
-    if min_price: filters['min_price'] = min_price
-    if max_price: filters['max_price'] = max_price
-    if major: filters['major'] = major
-    if minor: filters['minor'] = minor
-    if ul is not None: filters['ul'] = ul
-    if ce is not None: filters['ce'] = ce
-    if kc is not None: filters['kc'] = kc
+    # Maker 조회
+    maker = crud.get_maker_by_name(db, parts_data.maker_name)
+    if not maker:
+        raise HTTPException(status_code=404, detail=f"Maker '{parts_data.maker_name}' not found")
     
-    # 조회
-    total, parts_list = crud.get_parts_list(db, skip=skip, limit=limit, filters=filters)
+    # Parts ID 생성
+    parts_id = crud.get_next_parts_id(db, maker.id)
     
-    # Items 변환
-    items = []
-    for p in parts_list:
-        items.append({
-            "item_code": f"{p.maker_id}-{p.id}",
-            "id": p.id,
-            "maker_id": p.maker_id,
-            "maker_name": p.maker.name,
-            "category_id": p.category_id,
-            "major_category": p.category.major,
-            "minor_category": p.category.minor,
-            "name": p.name,
-            "unit": p.unit,
-            "solo_price": p.solo_price,
-            "ul": p.certification.ul if p.certification else False,
-            "ce": p.certification.ce if p.certification else False,
-            "kc": p.certification.kc if p.certification else False,
-            "etc": p.certification.etc if p.certification else None
-        })
+    # Parts 생성 (CRUD 호출)
+    resource = crud.create_parts(
+        db=db,
+        parts_id=parts_id,
+        maker_id=maker.id,
+        major=parts_data.major_category,
+        minor=parts_data.minor_category,
+        name=parts_data.name,
+        unit=parts_data.unit,
+        solo_price=parts_data.solo_price,
+        ul=parts_data.ul,
+        ce=parts_data.ce,
+        kc=parts_data.kc,
+        etc=parts_data.certification_etc
+    )
     
+    return convert_to_parts_response(resource)
+
+
+@handler.get("")
+def get_parts_list(
+    include_schema: bool = Query(False, description="스키마 포함 여부"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    id: Optional[str] = None,
+    maker_id: Optional[str] = None,
+    name: Optional[str] = None,
+    unit: Optional[str] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
+    major: Optional[str] = None,
+    minor: Optional[str] = None,
+    ul: Optional[bool] = None,
+    ce: Optional[bool] = None,
+    kc: Optional[bool] = None,
+    db: Session = Depends(get_db)
+):
+    """Parts 목록 조회 (필터링 지원)"""
+    
+    # 필터 생성
+    filters = schemas.PartsFilter(
+        id=id,
+        maker_id=maker_id,
+        name=name,
+        unit=unit,
+        min_price=min_price,
+        max_price=max_price,
+        major=major,
+        minor=minor,
+        ul=ul,
+        ce=ce,
+        kc=kc
+    )
+    
+    # 데이터 조회
+    parts_list, total = crud.get_parts_list(db, filters, skip, limit)
+    
+    # 데이터 변환
+    items = [convert_to_parts_response(part) for part in parts_list]
+    
+    # 응답 생성
     if include_schema:
         return {
             "schema": get_parts_schema(),
@@ -209,204 +174,119 @@ def get_parts_list(
             "skip": skip,
             "limit": limit
         }
-    
-    return {
-        "total": total,
-        "items": items,
-        "skip": skip,
-        "limit": limit
-    }
+    else:
+        return {
+            "total": total,
+            "items": items,
+            "skip": skip,
+            "limit": limit
+        }
 
 
-@handler.get("/{parts_id}/{maker_id}", response_model=schemas.PartsDetailResponse)
-def get_parts(
+@handler.get("/{parts_id}/{maker_id}")
+def get_parts_detail(
     parts_id: str,
     maker_id: str,
-    include_schema: bool = Query(False, description="schema 포함 여부"),
+    include_schema: bool = Query(False, description="스키마 포함 여부"),
     db: Session = Depends(get_db)
 ):
-    """
-    Parts 단일 조회
+    """특정 Parts 상세 조회"""
     
-    - parts_id + maker_id (복합 PK)
-    - include_schema: true면 schema 포함
-    """
     parts = crud.get_parts_by_id(db, parts_id, maker_id)
+    
     if not parts:
         raise HTTPException(status_code=404, detail="Parts not found")
     
-    # Response 데이터
-    response_data = {
-        "item_code": f"{parts.maker_id}-{parts.id}",
-        "id": parts.id,
-        "maker_id": parts.maker_id,
-        "maker_name": parts.maker.name,
-        "major_category": parts.category.major,
-        "minor_category": parts.category.minor,
-        "name": parts.name,
-        "unit": parts.unit,
-        "solo_price": parts.solo_price,
-        "ul": parts.certification.ul if parts.certification else False,
-        "ce": parts.certification.ce if parts.certification else False,
-        "kc": parts.certification.kc if parts.certification else False,
-        "etc": parts.certification.etc if parts.certification else None
-    }
+    item = convert_to_parts_response(parts)
     
     if include_schema:
         return {
             "schema": get_parts_schema(),
-            "item": response_data
+            "item": item
         }
-    
-    return response_data
+    else:
+        return item
 
 
-@handler.post("/search", response_model=schemas.PartsListResponse)
+@handler.post("/search")
 def search_parts(
-    search: schemas.PartsSearch,
+    search_request: schemas.PartsSearchRequest,
     db: Session = Depends(get_db)
 ):
-    """
-    Parts 검색 (여러 필드 OR 조건)
+    """Parts 검색 (OR 조건)"""
     
-    - query: 검색어
-    - search_fields: 검색 대상 필드 (name, id, maker_name, major, minor)
-    - include_schema: true면 schema 포함
-    """
-    # 검색
-    total, parts_list = crud.search_parts(
+    parts_list, total = crud.search_parts(
         db=db,
-        query=search.query,
-        search_fields=search.search_fields,
-        skip=search.skip,
-        limit=search.limit
+        query=search_request.query,
+        search_fields=search_request.search_fields,
+        skip=search_request.skip,
+        limit=search_request.limit
     )
     
-    # Items 변환
-    items = []
-    for p in parts_list:
-        items.append({
-            "item_code": f"{p.maker_id}-{p.id}",
-            "id": p.id,
-            "maker_id": p.maker_id,
-            "maker_name": p.maker.name,
-            "category_id": p.category_id,
-            "major_category": p.category.major,
-            "minor_category": p.category.minor,
-            "name": p.name,
-            "unit": p.unit,
-            "solo_price": p.solo_price,
-            "ul": p.certification.ul if p.certification else False,
-            "ce": p.certification.ce if p.certification else False,
-            "kc": p.certification.kc if p.certification else False,
-            "etc": p.certification.etc if p.certification else None
-        })
+    # 데이터 변환
+    items = [convert_to_parts_response(part) for part in parts_list]
     
-    if search.include_schema:
+    if search_request.include_schema:
         return {
             "schema": get_parts_schema(),
             "total": total,
             "items": items,
-            "skip": search.skip,
-            "limit": search.limit
+            "skip": search_request.skip,
+            "limit": search_request.limit
         }
-    
-    return {
-        "total": total,
-        "items": items,
-        "skip": search.skip,
-        "limit": search.limit
-    }
+    else:
+        return {
+            "total": total,
+            "items": items,
+            "skip": search_request.skip,
+            "limit": search_request.limit
+        }
 
 
-@handler.put("/{parts_id}/{maker_id}", response_model=schemas.PartsUpdateResponse)
+@handler.put("/{parts_id}/{maker_id}")
 def update_parts(
     parts_id: str,
     maker_id: str,
     parts_update: schemas.PartsUpdate,
     db: Session = Depends(get_db)
 ):
-    """
-    Parts 수정 (부분 수정)
+    """Parts 정보 수정"""
     
-    - 모든 필드 선택적
-    - category 변경 시 major + minor 둘 다 필요
-    """
-    # Parts 존재 확인
-    existing_parts = crud.get_parts_by_id(db, parts_id, maker_id)
-    if not existing_parts:
-        raise HTTPException(status_code=404, detail="Parts not found")
-    
-    # Category 변경 확인
-    category_id = None
-    if parts_update.major_category and parts_update.minor_category:
-        category = crud.get_category_by_major_minor(
-            db, 
-            parts_update.major_category, 
-            parts_update.minor_category
-        )
-        if not category:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Category '{parts_update.major_category}/{parts_update.minor_category}' not found"
-            )
-        category_id = category.id
-    
-    # 수정
     updated_parts = crud.update_parts(
         db=db,
         parts_id=parts_id,
         maker_id=maker_id,
-        category_id=category_id,
+        major=parts_update.major_category,
+        minor=parts_update.minor_category,
         name=parts_update.name,
         unit=parts_update.unit,
         solo_price=parts_update.solo_price,
         ul=parts_update.ul,
         ce=parts_update.ce,
         kc=parts_update.kc,
-        etc=parts_update.etc
+        etc=parts_update.certification_etc
     )
     
-    return {
-        "item_code": f"{updated_parts.maker_id}-{updated_parts.id}",
-        "id": updated_parts.id,
-        "maker_id": updated_parts.maker_id,
-        "maker_name": updated_parts.maker.name,
-        "category_id": updated_parts.category_id,
-        "major_category": updated_parts.category.major,
-        "minor_category": updated_parts.category.minor,
-        "name": updated_parts.name,
-        "unit": updated_parts.unit,
-        "solo_price": updated_parts.solo_price,
-        "ul": updated_parts.certification.ul if updated_parts.certification else False,
-        "ce": updated_parts.certification.ce if updated_parts.certification else False,
-        "kc": updated_parts.certification.kc if updated_parts.certification else False,
-        "etc": updated_parts.certification.etc if updated_parts.certification else None,
-        "updated_at": updated_parts.updated_at
-    }
+    if not updated_parts:
+        raise HTTPException(status_code=404, detail="Parts not found")
+    
+    return convert_to_parts_response(updated_parts)
 
 
-@handler.delete("/{parts_id}/{maker_id}", response_model=schemas.PartsDeleteResponse)
+@handler.delete("/{parts_id}/{maker_id}")
 def delete_parts(
     parts_id: str,
     maker_id: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Parts 삭제 (CASCADE로 Certification도 삭제)
-    """
-    # Parts 존재 확인
-    existing_parts = crud.get_parts_by_id(db, parts_id, maker_id)
-    if not existing_parts:
-        raise HTTPException(status_code=404, detail="Parts not found")
+    """Parts 삭제"""
     
-    item_code = f"{maker_id}-{parts_id}"
-    
-    # 삭제
     success = crud.delete_parts(db, parts_id, maker_id)
+    
     if not success:
         raise HTTPException(status_code=404, detail="Parts not found")
     
+    item_code = f"{maker_id}-{parts_id}"
     return {
         "message": "Parts deleted successfully",
         "deleted_item_code": item_code

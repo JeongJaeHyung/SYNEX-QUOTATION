@@ -12,7 +12,8 @@ class Resources(Base):
     maker_id = Column(String(4), ForeignKey("maker.id"), primary_key=True)
     
     # 기본 컬럼
-    category_id = Column(Integer, ForeignKey("category.id"), nullable=False)
+    major = Column(String(50), nullable=False)
+    minor = Column(String(50), nullable=False)
     name = Column(String(100), nullable=False)
     unit = Column(String(10), nullable=False)
     solo_price = Column(Integer, nullable=False)
@@ -21,7 +22,6 @@ class Resources(Base):
     
     # Relationships
     maker = relationship("Maker", back_populates="resources")
-    category = relationship("Category", back_populates="resources")
     certification = relationship("Certification", back_populates="resource", uselist=False)
     
     def __repr__(self):
