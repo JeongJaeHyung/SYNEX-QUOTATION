@@ -24,10 +24,11 @@ app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
 templates = Jinja2Templates(directory="frontend")
 
 @app.get("/")
-async def root():
-    return {"message": "SYNEX Quotation API"}
-
-
+async def root(request: Request):  # 1. 함수 인자에 request 추가
+    return templates.TemplateResponse(
+        "template/home.html", 
+        {"request": request}       # 2. 컨텍스트 딕셔너리에 request 객체 전달 필수
+    )
 
 
 
