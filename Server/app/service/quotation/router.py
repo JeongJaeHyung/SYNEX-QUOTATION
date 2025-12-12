@@ -1,6 +1,6 @@
 # SYNEX+QUOTATION/Server/app/view/quotation/router.py
 from fastapi import APIRouter
-from .machine.handler import router as machine_handler
+from .machine.handler import handler as machine_handler
 from .default.handler import router as default_handler
 
 router = APIRouter()

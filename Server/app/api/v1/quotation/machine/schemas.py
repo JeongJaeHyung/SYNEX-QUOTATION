@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
+from typing import Union
 
 # ============================================================
 # Machine Resource Schemas
@@ -40,13 +41,17 @@ class MachineResourceDetail(BaseModel):
 class MachineCreate(BaseModel):
     """Machine 등록 요청"""
     name: str = Field(..., max_length=100)
-    creator: str = Field(..., max_length=10)
+    manufacturer: Optional[str] = Field(None, max_length=50)  # ✅ 추가
+    client: Optional[str] = Field(None, max_length=50)        # ✅ 추가
+    creator: str = Field(..., max_length=25)
     description: Optional[str] = Field(None, max_length=500)
     resources: List[MachineResourceCreate]
 
 class MachineUpdate(BaseModel):
     """Machine 수정 요청 (선택적)"""
     name: Optional[str] = Field(None, max_length=100)
+    manufacturer: Optional[str] = Field(None, max_length=50)  # ✅ 추가
+    client: Optional[str] = Field(None, max_length=50)        # ✅ 추가
     description: Optional[str] = Field(None, max_length=500)
     resources: Optional[List[MachineResourceCreate]] = None
 
@@ -54,6 +59,8 @@ class MachineListItem(BaseModel):
     """Machine 목록 항목"""
     id: UUID
     name: str
+    manufacturer: Optional[str]  # ✅ 추가
+    client: Optional[str]        # ✅ 추가
     creator: str
     description: Optional[str]
     updated_at: datetime
@@ -67,7 +74,7 @@ class MachineListResponse(BaseModel):
 
 class MachineListWithSchemaResponse(BaseModel):
     """Machine 목록 조회 응답 (schema 있음)"""
-    model_config = ConfigDict(protected_namespaces=())  # schema 필드 경고 해결
+    model_config = ConfigDict(protected_namespaces=())
     
     schema_data: dict = Field(..., alias="schema")
     total: int
@@ -77,31 +84,34 @@ class MachineListWithSchemaResponse(BaseModel):
 
 class MachineResourcesWithSchemaResponse(BaseModel):
     """Machine 리소스 응답 (schema 있음)"""
-    model_config = ConfigDict(protected_namespaces=())  # schema 필드 경고 해결
+    model_config = ConfigDict(protected_namespaces=())
     
     schema_data: dict = Field(..., alias="schema")
-    items: List[MachineResourceDetail]
-
-class MachineResourcesResponse(BaseModel):
-    """Machine 리소스 응답 (schema 없음)"""
     items: List[MachineResourceDetail]
 
 class MachineDetailResponse(BaseModel):
     """Machine 상세 조회 응답"""
     id: UUID
     name: str
+    manufacturer: Optional[str]  # ✅ 추가
+    client: Optional[str]        # ✅ 추가
     creator: str
+    price: Optional[int]         # ✅ 추가 (총액)
     description: Optional[str]
     created_at: datetime
     updated_at: datetime
     total_price: int
     resource_count: int
-    resources: dict  # schema 포함 여부에 따라 구조 다름
+    resources: Union[List[MachineResourceDetail], dict]
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class MachineCreateResponse(BaseModel):
     """Machine 등록 응답"""
     id: UUID
     name: str
+    manufacturer: Optional[str]  # ✅ 추가
+    client: Optional[str]        # ✅ 추가
     creator: str
     description: Optional[str]
     created_at: datetime
@@ -113,6 +123,8 @@ class MachineUpdateResponse(BaseModel):
     """Machine 수정 응답"""
     id: UUID
     name: str
+    manufacturer: Optional[str]  # ✅ 추가
+    client: Optional[str]        # ✅ 추가
     creator: str
     description: Optional[str]
     updated_at: datetime

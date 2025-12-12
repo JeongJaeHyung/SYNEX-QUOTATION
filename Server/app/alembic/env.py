@@ -11,7 +11,6 @@ sys.path.insert(0, '/app')
 
 # 모델 import
 from database import Base
-from models.category import Category
 from models.maker import Maker
 from models.resources import Resources
 from models.certification import Certification
