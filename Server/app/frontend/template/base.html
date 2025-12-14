@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SYNEX+ 견적 시스템{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 상단 네비게이션 바 -->
+    <header class="top-navbar">
+        <div class="navbar-container">
+            <!-- 로고 -->
+            <div class="navbar-logo">
+                <a href="/">SYNEX+</a>
+            </div>
+            
+            <!-- 메인 메뉴 -->
+            <nav class="navbar-menu">
+                <a href="/service/quotation/default" class="nav-item {% if current_page == 'quotation_default' %}active{% endif %}">
+                    견적서(일반)
+                </a>
+                <a href="/service/quotation/machine" class="nav-item {% if current_page == 'quotation_machine' %}active{% endif %}">
+                    장비 견적서
+                </a>
+                <a href="/service/parts" class="nav-item {% if current_page == 'parts' %}active{% endif %}">
+                    부품/자재 목록
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="main-content">
+        <div class="content-container">
+            {% block content %}
+            <!-- 여기에 각 페이지의 내용이 들어갑니다 -->
+            {% endblock %}
+        </div>
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="bottom-footer">
+        <div class="footer-container">
+            <div class="footer-logo">
+                <img src="/assets/images/jlt-logo.svg" alt="JLT" class="jlt-logo">
+            </div>
+            <div class="footer-copyright">
+                Copyright © 2025 주식회사 제이엘티 All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- 공통 JavaScript -->
+    <script src="/static/js/common.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

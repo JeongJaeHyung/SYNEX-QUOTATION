@@ -1,0 +1,536 @@
+/* app/frontend/static/css/page/machine_create.css
+*
+* 장비 견적서 생성/수정 페이지(machine_create.html) 전용 스타일을 정의합니다.
+* - 견적서의 기본 정보 입력, 부품 선택 테이블, 집계 테이블, 플로팅 액션 버튼 등
+*   복잡한 레이아웃과 기능에 필요한 스타일을 포함합니다.
+* - 공통 스타일(style.css) 위에 적용되어 페이지별 특화된 디자인을 제공합니다.
+*
+*/
+
+/* --- 페이지 컨텐츠 영역 스타일 --- */
+.page-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+}
+
+/* --- 상단 견적서 헤더 정보 입력 영역 --- */
+.create-header { margin-bottom: 24px; }
+.create-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #1f2937;
+}
+
+.header-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* 폼 그룹 간 세로 간격 */
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4개 컬럼 그리드 */
+    gap: 16px; /* 컬럼 간 간격 */
+    margin-bottom: 16px;
+    align-items: end; /* 아이템 하단 정렬 */
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #ef4444; /* 필수 입력 필드 마커 */
+}
+
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+input.form-input:read-only {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 24px 0;
+}
+
+/* --- 부품 선택 액션 바 --- */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.action-bar h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+}
+
+.action-bar-left,
+.action-bar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-bar-right .input-search {
+    min-width: 300px;
+}
+
+.input-select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+/* --- 테이블 공통 스타일 (부품 선택 테이블) --- */
+.quantity-input {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.price-input {
+    width: 100px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.price-input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.subtotal-value {
+    display: inline-block;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+/* --- 템플릿 불러오기 모달 내 테이블 --- */
+#importTable .import-row { cursor: pointer; }
+#importTable .import-row:hover { background-color: #f9fafb; }
+#importTable .import-row.selected { background-color: #eef2ff; }
+
+/* --- 집계 테이블 섹션 --- */
+.summary-table-section { margin-top: 24px; }
+.summary-readonly {
+    background-color: #f9fafb;
+    color: #6b7280;
+}
+
+.manual-input-row {
+    background-color: #fffbeb; /* 수동 입력 행 배경색 */
+}
+
+.material-total-row {
+    background-color: #d1fae5;
+    border-top: 2px solid #10b981;
+    border-bottom: 2px solid #10b981;
+}
+
+.material-total-row td {
+    padding: 12px !important;
+    font-size: 15px;
+}
+
+.labor-total-row {
+    background-color: #dbeafe;
+    border-top: 2px solid #2563eb;
+}
+
+.labor-total-row td {
+    padding: 12px !important;
+    font-size: 15px;
+}
+
+.grand-total-row {
+    background-color: #fef08a;
+    border-top: 3px solid #eab308;
+    border-bottom: 3px solid #eab308;
+}
+
+.grand-total-row td {
+    padding: 14px !important;
+    font-size: 16px;
+}
+
+/* 인건비 및 집계 헤더 스타일 */
+.labor-header-cell {
+    background-color: #f3f0ff !important;
+    border-left: 3px solid #7c3aed !important;
+    border-right: 2px solid #7c3aed !important;
+    border-top: 2px solid #7c3aed !important;
+    border-bottom: 2px solid #7c3aed !important;
+    color: #000;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.labor-fixed-row td {
+    padding: 8px 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.labor-fixed-row:hover {
+    background-color: #f9fafb;
+}
+
+.badge-gray-box {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-color: #e5e7eb;
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.labor-fixed-row .price-input,
+.labor-fixed-row .quantity-input {
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px;
+    width: 100%;
+    max-width: 100px;
+    text-align: right;
+}
+
+.labor-fixed-row .price-input:focus,
+.labor-fixed-row .quantity-input:focus {
+    border-color: #7c3aed;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+}
+
+/* --- 테이블 공통 스타일 --- */
+.create-table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.create-table thead th.sortable:hover {
+    background-color: #f3f4f6;
+}
+
+.create-table tbody td.category-cell {
+    font-weight: 600;
+    background-color: #eff6ff;
+    border: 2px solid #2563eb;
+    border-top: 3px solid #2563eb;
+    border-bottom: 3px solid #2563eb;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.create-table tbody tr:has(td.category-cell) {
+    border-top: 3px solid #2563eb;
+}
+
+.create-table tbody tr.category-last-row {
+    border-bottom: 3px solid #2563eb;
+}
+
+.create-table tbody tr.category-last-row td {
+    border-bottom: 3px solid #2563eb;
+}
+
+.create-table tbody tr {
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.create-table tbody tr:hover {
+    background-color: #f3f4f6;
+}
+
+.create-table tbody tr:hover td.category-cell {
+    background-color: #eff6ff;
+}
+
+/* --- 액션 푸터 --- */
+.action-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-lg {
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-xs {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    height: 28px;
+    line-height: 1;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+}
+
+.btn-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+/* --- 반응형 디자인 --- */
+@media (max-width: 1024px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .action-bar-left,
+    .action-bar-right {
+        width: 100%;
+    }
+}
+
+/* --- 플로팅 액션 버튼 --- */
+.floating-action-buttons {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 1000;
+}
+
+.fab-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2px;
+}
+
+.submit-fab {
+    background-color: #10b981;
+}
+
+.submit-fab:hover {
+    background-color: #059669;
+}
+
+/* --- 모달 (Import Modal, Create Modal) 스타일 --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    background-color: #2563eb;
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* --- 테이블 셀 내 호버 버튼 스타일 --- */
+.cell-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    position: relative;
+}
+
+.hover-plus-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+    color: #2563eb;
+}
+
+.cell-wrapper:hover .hover-plus-btn {
+    opacity: 1;
+}
+
+.hover-plus-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.hover-plus-btn:hover {
+    color: #1d4ed8;
+}
+
+/* --- 하이라이트 행 스타일 --- */
+.highlight-row {
+    background-color: #fef3c7 !important;
+    animation: highlight-fade 2s ease-out;
+}
+
+@keyframes highlight-fade {
+    0% { background-color: #fef3c7; }
+    100% { background-color: transparent; }
+}

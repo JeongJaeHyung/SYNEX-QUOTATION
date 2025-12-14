@@ -1,0 +1,31 @@
+# SYNEX+QUOTATION/DataBase/docker-compose.yml
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: synex-postgres-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Asia/Seoul
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - synex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 포트를 노출하지 않음 - 같은 네트워크의 컨테이너만 접근 가능
+
+networks:
+  synex-network:
+    name: synex-network
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

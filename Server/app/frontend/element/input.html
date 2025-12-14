@@ -1,0 +1,112 @@
+{# Input Elements #}
+
+{# 텍스트 입력 #}
+{% macro text_input(name, placeholder="", value="", required=false, id="", disabled=false) %}
+<input 
+    type="text"
+    class="input-text"
+    name="{{ name }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+    {% if value %}value="{{ value }}"{% endif %}
+    {% if required %}required{% endif %}
+    {% if disabled %}disabled{% endif %}
+>
+{% endmacro %}
+
+{# 숫자 입력 #}
+{% macro number_input(name, placeholder="", value="", min="", max="", step="1", required=false, id="") %}
+<input 
+    type="number"
+    class="input-number"
+    name="{{ name }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+    {% if value %}value="{{ value }}"{% endif %}
+    {% if min %}min="{{ min }}"{% endif %}
+    {% if max %}max="{{ max }}"{% endif %}
+    step="{{ step }}"
+    {% if required %}required{% endif %}
+>
+{% endmacro %}
+
+{# 검색 입력 (돋보기 아이콘 포함) #}
+{% macro search_input(name, placeholder="검색...", id="searchInput", onkeyup="") %}
+<div class="search-input-container">
+    <input 
+        type="text"
+        class="input-search"
+        name="{{ name }}"
+        id="{{ id }}"
+        placeholder="{{ placeholder }}"
+        {% if onkeyup %}onkeyup="{{ onkeyup }}"{% endif %}
+    >
+    <span class="search-icon">🔍</span>
+</div>
+{% endmacro %}
+
+{# 드롭다운 (Select) #}
+{% macro dropdown(name, options=[], selected="", placeholder="선택해주세요", id="", onchange="", required=false) %}
+<select 
+    class="input-dropdown"
+    name="{{ name }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if onchange %}onchange="{{ onchange }}"{% endif %}
+    {% if required %}required{% endif %}
+>
+    {% if placeholder %}
+    <option value="" disabled {% if not selected %}selected{% endif %}>{{ placeholder }}</option>
+    {% endif %}
+    
+    {% for option in options %}
+    <option 
+        value="{{ option.value }}"
+        {% if option.value == selected %}selected{% endif %}
+    >
+        {{ option.label }}
+    </option>
+    {% endfor %}
+</select>
+{% endmacro %}
+
+{# 체크박스 #}
+{% macro checkbox(name, label="", checked=false, id="", value="", onchange="") %}
+<label class="checkbox-label">
+    <input 
+        type="checkbox"
+        class="input-checkbox"
+        name="{{ name }}"
+        {% if id %}id="{{ id }}"{% endif %}
+        {% if value %}value="{{ value }}"{% endif %}
+        {% if checked %}checked{% endif %}
+        {% if onchange %}onchange="{{ onchange }}"{% endif %}
+    >
+    {% if label %}<span class="checkbox-text">{{ label }}</span>{% endif %}
+</label>
+{% endmacro %}
+
+{# 날짜 입력 #}
+{% macro date_input(name, value="", id="", required=false, min="", max="") %}
+<input 
+    type="date"
+    class="input-date"
+    name="{{ name }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if value %}value="{{ value }}"{% endif %}
+    {% if min %}min="{{ min }}"{% endif %}
+    {% if max %}max="{{ max }}"{% endif %}
+    {% if required %}required{% endif %}
+>
+{% endmacro %}
+
+{# Textarea #}
+{% macro textarea(name, placeholder="", value="", rows=3, id="", required=false) %}
+<textarea 
+    class="input-textarea"
+    name="{{ name }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+    rows="{{ rows }}"
+    {% if required %}required{% endif %}
+>{{ value }}</textarea>
+{% endmacro %}

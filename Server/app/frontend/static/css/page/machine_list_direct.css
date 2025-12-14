@@ -1,0 +1,92 @@
+/* 페이지 컨텐츠 */
+.page-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 액션 바 */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+}
+
+.action-bar-left,
+.action-bar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-bar-right .input-search {
+    min-width: 300px;
+}
+
+.input-search {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.input-search:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* 페이지네이션 */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.pagination-info {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.pagination-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.pagination-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 테이블 행 호버 */
+.data-table tbody tr.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.data-table tbody tr.clickable:hover {
+    background-color: #f3f4f6;
+}
+
+@media (max-width: 768px) {
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-bar-left,
+    .action-bar-right {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .input-search {
+        flex: 1;
+        min-width: 0;
+    }
+}

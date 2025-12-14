@@ -1,0 +1,25 @@
+# SYNEX+QUOTATION/Server/requirements.txt
+
+# 프레임워크 & 서버
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# 데이터베이스
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.13.1
+
+# 데이터 검증
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# 유틸리티
+python-dotenv==1.0.1
+python-multipart==0.0.12
+Jinja2==3.1.4
+
+# Security
+bcrypt==4.1.2
+
+email-validator==2.1.0
+openpyxl==3.1.5

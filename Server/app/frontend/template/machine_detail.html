@@ -1,0 +1,79 @@
+{% extends "template/base.html" %}
+
+{% block title %}장비 견적서 상세 - SYNEX+{% endblock %}
+
+{% block extra_css %}
+    <!-- 페이지 전용 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/machine_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 로딩 #}
+    <div id="loading" style="display: block; text-align: center; padding: 40px;">
+        <p>데이터를 불러오는 중...</p>
+    </div>
+
+    {# 에러 메시지 #}
+    <div id="errorMessage" style="display: none; text-align: center; padding: 40px; color: #ef4444;">
+        <h3>데이터를 불러올 수 없습니다</h3>
+        <p id="errorDetail"></p>
+        <button class="btn btn-primary" onclick="window.location.href='/service/quotation/maintenance/list'">목록으로</button>
+    </div>
+
+    {# 상세 정보 #}
+    <div id="detailContainer" style="display: none;">
+        {# 헤더 #}
+        <div class="detail-header">
+            <div class="detail-title">
+                <h2 id="machineName"></h2>
+                <span class="badge badge-info" id="machineId"></span>
+            </div>
+            <div class="detail-actions">
+                <button class="btn btn-secondary" onclick="goToList()">목록</button>
+                <button class="btn btn-primary" onclick="editMachine()">수정</button>
+                <button class="btn btn-danger" onclick="downloadPDF()">PDF 다운로드</button>
+            </div>
+        </div>
+
+        {# 기본 정보 #}
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>작성자</label>
+                    <span id="creator"></span>
+                </div>
+                <div class="info-item">
+                    <label>생성일</label>
+                    <span id="createdAt"></span>
+                </div>
+                <div class="info-item">
+                    <label>수정일</label>
+                    <span id="updatedAt"></span>
+                </div>
+                <div class="info-item">
+                    <label>총 금액</label>
+                    <span id="totalPrice" class="price-text"></span>
+                </div>
+            </div>
+            <div class="info-description">
+                <label>비고</label>
+                <p id="description"></p>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        {# 구성 부품 목록 #}
+        <div class="resources-section">
+            <h3>구성 부품 (<span id="resourceCount">0</span>개)</h3>
+            <div id="resourcesTable"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- 페이지 전용 JS -->
+    <script src="{{ url_for('static', path='/js/page/machine_detail.js') }}"></script>
+{% endblock %}

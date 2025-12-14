@@ -1,0 +1,84 @@
+{# ECOUNT 스타일 버튼 Elements #}
+
+{# 기본 버튼 #}
+{% macro button(text, type="default", size="medium", id="", onclick="", disabled=false) %}
+<button 
+    class="btn btn-{{ type }} btn-{{ size }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if onclick %}onclick="{{ onclick }}"{% endif %}
+    {% if disabled %}disabled{% endif %}
+    type="button">
+    {{ text }}
+</button>
+{% endmacro %}
+
+{# 블루 버튼 (primary) #}
+{% macro blue_button(text, id="", onclick="", disabled=false) %}
+{{ button(text, type="primary", id=id, onclick=onclick, disabled=disabled) }}
+{% endmacro %}
+
+{# 아이콘 버튼 #}
+{% macro icon_button(icon, text="", type="default", id="", onclick="", title="") %}
+<button 
+    class="btn btn-{{ type }} btn-icon"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if onclick %}onclick="{{ onclick }}"{% endif %}
+    {% if title %}title="{{ title }}"{% endif %}
+    type="button">
+    <span class="icon">{{ icon }}</span>
+    {% if text %}<span class="text">{{ text }}</span>{% endif %}
+</button>
+{% endmacro %}
+
+{# 드롭다운 버튼 #}
+{% macro dropdown_button(text, type="default", id="", items=[]) %}
+<div class="btn-dropdown">
+    <button 
+        class="btn btn-{{ type }} btn-dropdown-toggle"
+        {% if id %}id="{{ id }}"{% endif %}
+        type="button">
+        {{ text }} <span class="arrow">▼</span>
+    </button>
+    {% if items %}
+    <ul class="dropdown-menu">
+        {% for item in items %}
+        <li><a href="{{ item.link }}" {% if item.onclick %}onclick="{{ item.onclick }}"{% endif %}>{{ item.text }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# 단축키 버튼 (F2, F3 등) #}
+{% macro shortcut_button(text, shortcut="", type="default", id="", onclick="") %}
+<button 
+    class="btn btn-{{ type }} btn-shortcut"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if onclick %}onclick="{{ onclick }}"{% endif %}
+    type="button">
+    {{ text }}{% if shortcut %}<span class="shortcut">({{ shortcut }})</span>{% endif %}
+</button>
+{% endmacro %}
+
+{# 링크 버튼 #}
+{% macro link_button(text, href, type="default", target="", title="") %}
+<a 
+    href="{{ href }}"
+    class="btn btn-{{ type }}"
+    {% if target %}target="{{ target }}"{% endif %}
+    {% if title %}title="{{ title }}"{% endif %}>
+    {{ text }}
+</a>
+{% endmacro %}
+
+{# 탭 버튼 (ECOUNT pill 스타일) #}
+{% macro tab_button(text, is_active=false, onclick="", id="", title="") %}
+<button 
+    class="tab-btn {% if is_active %}active{% endif %}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if onclick %}onclick="{{ onclick }}"{% endif %}
+    {% if title %}title="{{ title }}"{% endif %}
+    type="button">
+    {{ text }}
+</button>
+{% endmacro %}

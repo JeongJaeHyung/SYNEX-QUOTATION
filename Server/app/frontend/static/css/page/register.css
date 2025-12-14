@@ -1,0 +1,170 @@
+/* app/frontend/static/css/page/register.css
+*
+* 회원가입 페이지(register.html) 전용 스타일을 정의합니다.
+* - 인증 페이지의 전체 레이아웃, 카드, 폼 요소 및 반응형 디자인을 포함합니다.
+* - 공통 스타일(style.css) 위에 적용되어 회원가입 페이지 특화된 디자인을 제공합니다.
+*
+*/
+
+/* --- 인증 페이지 전체 레이아웃 --- */
+.auth-page {
+    display: flex;
+    justify-content: center; /* 가로 중앙 정렬 */
+    align-items: center;     /* 세로 중앙 정렬 */
+    min-height: 100vh;       /* 뷰포트 전체 높이 */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 배경 그라데이션 */
+    padding: 40px 20px;      /* 페이지 여백 */
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 520px; /* 로그인 페이지보다 약간 더 넓게 설정 */
+}
+
+.auth-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); /* 카드 그림자 */
+}
+
+/* --- 헤더 스타일 (로고 및 서브타이틀) --- */
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-logo {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.auth-logo span {
+    color: #2563eb; /* '+' 부분 강조 색상 */
+}
+
+.auth-subtitle {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* --- 폼 스타일 --- */
+.auth-form {
+    margin-bottom: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #ef4444; /* 필수 입력 필드 마커 */
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    box-sizing: border-box; /* 패딩과 보더가 너비에 포함되도록 */
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); /* 포커스 시 강조 */
+}
+
+.input-with-button {
+    display: flex; /* 입력 필드와 버튼을 가로로 배치 */
+    gap: 8px;      /* 요소 간 간격 */
+}
+
+.input-with-button .form-input {
+    flex: 1; /* 입력 필드가 남은 공간을 채우도록 */
+}
+
+.btn-sm {
+    padding: 10px 16px;
+    font-size: 13px;
+    white-space: nowrap; /* 버튼 텍스트 줄바꿈 방지 */
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2개 컬럼으로 나눔 */
+    gap: 12px; /* 컬럼 간 간격 */
+}
+
+.form-message {
+    display: block;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.form-message.error {
+    color: #ef4444; /* 에러 메시지 색상 */
+}
+
+.form-message.success {
+    color: #10b981; /* 성공 메시지 색상 */
+}
+
+.btn-block {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+.btn-block:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- 푸터 스타일 (로그인 링크) --- */
+.auth-footer {
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.auth-footer p {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+.auth-footer a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+/* --- 반응형 디자인 --- */
+@media (max-width: 640px) {
+    .auth-card {
+        padding: 24px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr; /* 모바일에서는 1개 컬럼으로 변경 */
+    }
+}

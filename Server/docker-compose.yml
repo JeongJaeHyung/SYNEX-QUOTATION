@@ -1,0 +1,20 @@
+# SYNEX+QUOTATION/Server/docker-compose.yml
+
+services:
+  fastapi:
+    build: .
+    container_name: synex-quotation
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./app:/app
+    env_file:
+      - .env
+    networks:
+      - synex-network
+    # depends_on 제거! (다른 compose 프로젝트라 안 됨)
+    restart: unless-stopped
+
+networks:
+  synex-network:
+    external: true

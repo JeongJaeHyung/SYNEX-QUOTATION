@@ -1,0 +1,276 @@
+{# Data Table Widget - 재사용 가능한 테이블 컴포넌트 #}
+
+{% macro data_table(
+    columns=[],
+    data=[],
+    checkable=false,
+    editable=false,
+    clickable=true,
+    on_row_click="",
+    table_id="dataTable",
+    show_index=false,
+    empty_message="데이터가 없습니다"
+) %}
+
+<div class="table-container">
+    <table class="data-table" id="{{ table_id }}">
+        <thead>
+            <tr>
+                {# 체크박스 컬럼 #}
+                {% if checkable %}
+                <th class="col-checkbox">
+                    <input type="checkbox" class="table-checkbox-all" onchange="toggleAllRows(this, '{{ table_id }}')">
+                </th>
+                {% endif %}
+                
+                {# 순번 컬럼 #}
+                {% if show_index %}
+                <th class="col-index">No</th>
+                {% endif %}
+                
+                {# 데이터 컬럼 #}
+                {% for col in columns %}
+                <th class="col-{{ col.align|default('left') }}" 
+                    {% if col.width %}style="width: {{ col.width }}"{% endif %}
+                    {% if col.sortable %}onclick="sortTable('{{ table_id }}', {{ loop.index0 }})" style="cursor: pointer;"{% endif %}>
+                    {{ col.label }}
+                    {% if col.sortable %}
+                    <span class="sort-icon">⇅</span>
+                    {% endif %}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        
+        <tbody>
+            {% if data and data|length > 0 %}
+                {% for row in data %}
+                <tr class="{% if clickable %}clickable{% endif %}" 
+                    data-row-id="{{ row.id|default(loop.index) }}"
+                    data-row-index="{{ loop.index }}">
+                    
+                    {# 체크박스 #}
+                    {% if checkable %}
+                    <td class="col-checkbox">
+                        <input type="checkbox" class="table-checkbox" value="{{ row.id }}" onclick="event.stopPropagation()">
+                    </td>
+                    {% endif %}
+                    
+                    {# 순번 #}
+                    {% if show_index %}
+                    <td class="col-index">{{ loop.index }}</td>
+                    {% endif %}
+                    
+                    {# 데이터 셀 #}
+                    {% for col in columns %}
+                    <td class="col-{{ col.align|default('left') }}" data-column="{{ loop.index0 }}">
+                        {% set value = row %}
+                        {% for key in col.key.split('.') %}
+                            {% set value = value[key] if value is mapping and key in value else '' %}
+                        {% endfor %}
+                        
+                        {# 타입별 렌더링 #}
+                        {% if col.type == 'badge' %}
+                            {# Boolean 값을 O/X 뱃지로 표시 #}
+                            {% if value %}
+                                <span class="badge badge-success">O</span>
+                            {% else %}
+                                <span class="badge badge-default">X</span>
+                            {% endif %}
+                            
+                        {% elif col.type == 'number' %}
+                            {# 숫자 포맷 (천 단위 콤마) #}
+                            {{ "{:,}".format(value) if value else '0' }}
+                            
+                        {% elif col.type == 'date' %}
+                            {# 날짜 포맷 (YYYY. MM. DD) #}
+                            {% if value %}
+                                {% set date_str = value|string %}
+                                {{ date_str[:10].replace('-', '. ') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                            
+                        {% elif col.type == 'datetime' %}
+                            {# 날짜+시간 포맷 #}
+                            {% if value %}
+                                {% set datetime_str = value|string %}
+                                {{ datetime_str[:16].replace('T', ' ') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                            
+                        {% elif col.type == 'input' and editable %}
+                            {# 편집 가능한 입력 필드 #}
+                            <input 
+                                type="number" 
+                                class="table-input" 
+                                value="{{ value }}"
+                                data-field="{{ col.key }}"
+                                onchange="updateRowData(this, '{{ table_id }}')"
+                                onclick="event.stopPropagation()"
+                            >
+                            
+                        {% else %}
+                            {# 일반 텍스트 #}
+                            {{ value if value else '-' }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            {% else %}
+                {# 빈 상태 #}
+                <tr class="empty-row">
+                    <td colspan="{{ columns|length + (1 if checkable else 0) + (1 if show_index else 0) }}" class="text-center">
+                        <div class="empty-state">
+                            {{ empty_message }}
+                        </div>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if clickable and on_row_click %}
+{# 행 클릭 이벤트 등록 #}
+<script>
+(function() {
+    const tableId = '{{ table_id }}';
+    const onRowClickFunc = '{{ on_row_click }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        
+        const clickableRows = table.querySelectorAll('tbody tr.clickable');
+        clickableRows.forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                if (e.target.type === 'checkbox' || e.target.type === 'number') {
+                    return;
+                }
+                
+                const rowId = this.dataset.rowId;
+                const funcCall = onRowClickFunc.replace(/\bid\b/g, "'" + rowId + "'");
+                
+                try {
+                    eval(funcCall);
+                } catch (error) {
+                    console.error('Row click error:', error);
+                }
+            });
+        });
+    });
+})();
+</script>
+{% endif %}
+
+{% endmacro %}
+
+{# 공통 JavaScript 함수들 #}
+<script>
+// 전체 체크박스 토글
+function toggleAllRows(checkbox, tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    const checkboxes = table.querySelectorAll('.table-checkbox');
+    checkboxes.forEach(function(cb) {
+        cb.checked = checkbox.checked;
+    });
+}
+
+// 테이블 정렬
+function sortTable(tableId, columnIndex) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+    
+    // 현재 정렬 방향 토글
+    const currentDir = table.dataset.sortDir || 'none';
+    const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+    table.dataset.sortDir = newDir;
+    
+    // 행 정렬
+    rows.sort(function(a, b) {
+        const cellA = a.querySelectorAll('td[data-column]')[columnIndex];
+        const cellB = b.querySelectorAll('td[data-column]')[columnIndex];
+        
+        if (!cellA || !cellB) return 0;
+        
+        let aValue = cellA.textContent.trim();
+        let bValue = cellB.textContent.trim();
+        
+        // 숫자 비교 시도
+        const aNum = parseFloat(aValue.replace(/,/g, '').replace(/\./g, ''));
+        const bNum = parseFloat(bValue.replace(/,/g, '').replace(/\./g, ''));
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        
+        // 문자열 비교
+        return newDir === 'asc' 
+            ? aValue.localeCompare(bValue, 'ko') 
+            : bValue.localeCompare(aValue, 'ko');
+    });
+    
+    // DOM 재배치
+    rows.forEach(function(row) {
+        tbody.appendChild(row);
+    });
+}
+
+// 행 데이터 업데이트
+function updateRowData(input, tableId) {
+    const row = input.closest('tr');
+    const rowId = row.dataset.rowId;
+    const field = input.dataset.field;
+    const value = input.value;
+    
+    console.log('Updated:', { tableId: tableId, rowId: rowId, field: field, value: value });
+    
+    // 소계 자동 계산
+    if (field === 'quantity') {
+        const cells = row.querySelectorAll('td');
+        let priceValue = 0;
+        let subtotalCell = null;
+        
+        cells.forEach(function(cell) {
+            const cellInput = cell.querySelector('input[data-field="solo_price"]');
+            if (cellInput) {
+                priceValue = parseFloat(cellInput.value) || 0;
+            }
+            
+            if (cell.textContent.includes(',') || cell.classList.contains('col-right')) {
+                const text = cell.textContent.trim();
+                if (text && !isNaN(parseFloat(text.replace(/,/g, '')))) {
+                    const cellValue = parseFloat(text.replace(/,/g, ''));
+                    if (cellValue === priceValue * parseFloat(value)) {
+                        subtotalCell = cell;
+                    }
+                }
+            }
+        });
+        
+        if (priceValue > 0 && subtotalCell) {
+            const subtotal = priceValue * parseFloat(value);
+            subtotalCell.textContent = subtotal.toLocaleString();
+        }
+    }
+}
+
+// 선택된 행 가져오기
+function getSelectedRows(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return [];
+    
+    const checkboxes = table.querySelectorAll('.table-checkbox:checked');
+    return Array.from(checkboxes).map(function(cb) {
+        return cb.value;
+    });
+}
+</script>
