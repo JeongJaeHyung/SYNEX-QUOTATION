@@ -1,22 +1,26 @@
-<!--app/frontend/template/home.html-->
-
 <!DOCTYPE html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SYNEX +Quotation Intro</title>
+    <title>SYNEX +Quotation Intro</title> {# 페이지 제목 #}
+    {# Google Fonts 로드를 위한 Preconnect #}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    {# Noto Sans KR 폰트 로드 #}
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    {# 공통 CSS 스타일시트 로드 (상대 경로 사용) #}
     <link rel="stylesheet" href="../static/css/styles.css" />
   </head>
   <body>
+    {# 전체 화면을 차지하는 히어로 섹션 #}
     <div class="hero">
+      {# 비디오 위에 겹쳐지는 오버레이 (텍스트 가독성 향상) #}
       <div class="hero__overlay" aria-hidden="true"></div>
+      {# 배경 비디오: 자동 재생, 음소거, 반복, 인라인 재생 설정 #}
       <video
         id="heroVideo"
         class="hero__video"
@@ -25,36 +29,47 @@
         loop
         playsinline
       >
+        {# 비디오 소스 지정 #}
         <source src="assets/video/jlt_intro.mp4" type="video/mp4" />
+        {# 비디오를 지원하지 않는 브라우저를 위한 대체 텍스트 #}
         해당 브라우저에서는 비디오 태그를 지원하지 않습니다.
       </video>
 
+      {# 헤더 로고 #}
       <header class="hero__logo">
         <img src="../assets/images/Logo_2.png" alt="SYNEX 로고" />
       </header>
 
+      {# 메인 컨텐츠 영역 #}
       <main class="hero__content">
+        {# 텍스트 블록 #}
         <div class="hero__text-block">
           <h1 class="hero__title">
+            {# 제목 강조 부분 #}
             <span class="hero__title-accent">SYNEX +QUOTATION</span>
             JLT
+            {# 제목 내 줄바꿈 부분 #}
             <span class="hero__title-break">Just-In-Line Traceability</span>
           </h1>
+          {# 서브 타이틀 또는 설명 #}
           <p class="hero__subtitle">
             Trust is earned by the ability to track the precise sequence,
             timing, and full process of every connection between equipment and
             technology
           </p>
+          {# 시작하기 버튼 (CTA: Call To Action) #}
           <button id="ctaButton" class="hero__cta" type="button">
             Get Started
           </button>
         </div>
+        {# 현재 버전 정보 #}
         <div class="hero__version" aria-label="현재 버전">
           v0.0.1
         </div>
       </main>
     </div>
 
+    {# 페이지 전용 JavaScript 로드 #}
     <script src="../static/js/script.js"></script>
   </body>
 </html>

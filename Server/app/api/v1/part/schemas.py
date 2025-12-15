@@ -27,6 +27,7 @@ class PartsCreate(BaseModel):
     name: str
     unit: str
     solo_price: int
+    display_order: Optional[int] = None
     ul: Optional[bool] = False
     ce: Optional[bool] = False
     kc: Optional[bool] = False

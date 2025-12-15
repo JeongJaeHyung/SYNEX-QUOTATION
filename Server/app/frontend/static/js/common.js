@@ -1,29 +1,23 @@
-// static/js/common.js
+// Common UI helpers shared across pages
 
-// [보안] 페이지 로드 시 즉시 실행
-(function() {
-    const token = localStorage.getItem('access_token');
-    const currentPath = window.location.pathname;
+document.addEventListener('DOMContentLoaded', () => {
+  highlightActiveNav();
+});
 
-    // 1. 로그인/회원가입 페이지는 검사 제외
-    const publicPages = ['/login', '/register', '/'];
-    if (publicPages.includes(currentPath)) {
-        // 이미 로그인했는데 로그인 페이지로 오면 메인으로 보냄
-        if (token && currentPath === '/login') {
-            window.location.href = '/service/quotation/machine';
-        }
-        return;
+function highlightActiveNav() {
+  const path = window.location.pathname;
+  const links = document.querySelectorAll('.navbar-menu .nav-item');
+
+  links.forEach((link) => {
+    // Clear any server-side class if present
+    link.classList.remove('active');
+
+    const href = link.getAttribute('href');
+    if (!href) return;
+
+    // Mark current nav item active when pathname starts with its href
+    if (path === href || path.startsWith(href + '/')) {
+      link.classList.add('active');
     }
-
-    // 2. 토큰이 없으면 로그인 페이지로 강제 이동 (Kick out)
-    if (!token) {
-        alert('로그인이 필요한 서비스입니다.');
-        window.location.href = '/login';
-        return; // 이후 로직 실행 차단
-    }
-
-    // 3. (선택) 토큰이 있는데 만료되었는지 체크하는 로직은 
-    //    API 호출 시 401 에러가 나면 authFetch에서 처리함.
-})();
-
-// ... (기존 authFetch 함수 등) ...
+  });
+}

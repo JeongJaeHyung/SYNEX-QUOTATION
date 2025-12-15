@@ -1,27 +1,16 @@
-# Core Framework
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
-
-# Database & ORM
 sqlalchemy==2.0.36
 psycopg2-binary==2.9.10
 alembic==1.13.1
-
-# Authentication & Security
-passlib[bcrypt]>=1.7.4
-python-jose[cryptography]>=3.3.0
-bcrypt==4.1.2
-
-# Data Validation & Settings
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+bcrypt==4.0.1
 pydantic==2.10.3
 pydantic-settings==2.6.1
 email-validator==2.1.0
-
-# Web & Templates
 Jinja2==3.1.4
 python-multipart==0.0.12
-
-# Utilities & File Processing
 python-dotenv==1.0.1
 openpyxl==3.1.5
-requests>=2.31.0
+requests==2.31.0
