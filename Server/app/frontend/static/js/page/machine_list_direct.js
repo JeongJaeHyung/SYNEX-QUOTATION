@@ -79,34 +79,36 @@ function renderTable(schema, items) {
     
     // 테이블 HTML 생성
     let html = '<div class="table-container"><table class="data-table" id="machineTable">';
-    
+
     // 헤더
     html += '<thead><tr>';
-    
+    html += '<th style="width: 40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>';
+
     for (const key in schema) {
         const col = schema[key];
         const width = ((col.ratio || 1) / totalRatio * 100).toFixed(1);
         const align = col.align || 'left';
         html += `<th class="col-${align}" style="width: ${width}%">${col.title}</th>`;
     }
-    
+
     html += '</tr></thead><tbody>';
     
     // 데이터 행
     items.forEach((item) => {
         const machineId = item.id;
-        html += `<tr class="clickable" data-machine-id="${machineId}" onclick="goToDetail('${machineId}')">`;
-        
+        html += `<tr class="clickable" data-machine-id="${machineId}">`;
+        html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox" value="${machineId}"></td>`;
+
         for (const key in schema) {
             const col = schema[key];
             const value = item[key];
             const align = col.align || 'left';
-            
-            html += `<td class="col-${align}">`;
+
+            html += `<td class="col-${align}" onclick="goToDetail('${machineId}')">`;
             html += formatValue(value, col.type, col.format);
             html += '</td>';
         }
-        
+
         html += '</tr>';
     });
     
@@ -200,4 +202,67 @@ function createMachine() {
 // 상세 페이지로 이동 (View 모드)
 function goToDetail(machineId) {
     window.location.href = `/service/quotation/machine/form?mode=view&id=${machineId}`;
+}
+
+// 전체 선택/해제
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+}
+
+// 선택된 항목 가져오기
+function getSelectedRows() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// 선택 삭제
+async function deleteSelected() {
+    const selected = getSelectedRows();
+    if (selected.length === 0) {
+        alert('선택된 항목이 없습니다');
+        return;
+    }
+
+    if (!confirm(`${selected.length}개 견적서를 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+        return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    const failedItems = [];
+
+    for (const machineId of selected) {
+        try {
+            const response = await fetch(`/api/v1/quotation/machine/${machineId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok || response.status === 204) {
+                successCount++;
+            } else {
+                failCount++;
+                failedItems.push(machineId);
+                const error = await response.json().catch(() => ({}));
+                console.error(`Delete failed for ${machineId}:`, error);
+            }
+        } catch (e) {
+            failCount++;
+            failedItems.push(machineId);
+            console.error(`Delete error for ${machineId}:`, e);
+        }
+    }
+
+    // 결과 메시지
+    let message = '';
+    if (successCount > 0) {
+        message += `${successCount}개 견적서가 삭제되었습니다.`;
+    }
+    if (failCount > 0) {
+        message += `\n${failCount}개 견적서 삭제에 실패했습니다.`;
+    }
+    alert(message);
+
+    // 목록 새로고침
+    loadData();
 }

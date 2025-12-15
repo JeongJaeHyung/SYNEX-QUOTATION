@@ -374,3 +374,29 @@ def update_machine(
     db.commit() # 트랜잭션 커밋
     db.refresh(machine) # Machine 객체 새로고침
     return machine
+
+
+def delete_machine(db: Session, machine_id: UUID) -> bool:
+    """
+    견적서(Machine) 및 관련된 구성 자재(MachineResources)를 삭제합니다.
+
+    Args:
+        db (Session): SQLAlchemy 데이터베이스 세션.
+        machine_id (UUID): 삭제할 견적서 ID.
+
+    Returns:
+        bool: 삭제 성공 시 True, 실패 시 False.
+    """
+    machine = db.query(Machine).filter(Machine.id == machine_id).first()
+    if not machine:
+        return False
+
+    # MachineResources 먼저 삭제
+    db.query(MachineResources).filter(
+        MachineResources.machine_id == machine_id
+    ).delete()
+
+    # Machine 삭제
+    db.delete(machine)
+    db.commit()
+    return True

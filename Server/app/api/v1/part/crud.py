@@ -189,10 +189,10 @@ def get_parts_list(
             query = query.filter(Certification.kc == filters.kc)
     
     total = query.count() # 필터링된 결과의 총 개수
-    
+
     # --- 정렬 및 페이징 적용 ---
-    parts_list = query.order_by(Resources.display_order.asc()).offset(skip).limit(limit).all() # 표시 순서 오름차순 정렬
-    
+    parts_list = query.order_by(Resources.maker_id.asc(), Resources.id.asc()).offset(skip).limit(limit).all() # 품목코드(maker_id + id) 순서로 정렬
+
     return parts_list, total
 
 
@@ -236,9 +236,9 @@ def search_parts(
         query_obj = query_obj.filter(or_(*conditions)) # OR 조건 적용
     
     total = query_obj.count() # 검색 결과 총 개수
-    
-    parts_list = query_obj.order_by(Resources.display_order.asc()).offset(skip).limit(limit).all()
-    
+
+    parts_list = query_obj.order_by(Resources.maker_id.asc(), Resources.id.asc()).offset(skip).limit(limit).all() # 품목코드 순서로 정렬
+
     return parts_list, total
 
 

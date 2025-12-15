@@ -202,7 +202,7 @@ def register_machine(
         "created_at": db_machine.created_at,
         "total_price": total_price,
         "resource_count": len(resources_detail),
-        "resources": { "items": resources_detail } # resources 필드를 DTO 규격에 맞춰 items로 감쌈
+        "resources": resources_detail # 스키마에 맞춰 List로 반환
     }
 
 
@@ -468,3 +468,28 @@ def update_machine(
         "resource_count": len(resources_detail), # 자재 개수 추가
         "resources": resources_detail # 스키마 없이 자재 리스트만 반환
     }
+
+
+@handler.delete("/{machine_id}", status_code=204)
+def delete_machine(
+    machine_id: UUID, # 경로 파라미터로 견적서 ID를 받음
+    db: Session = Depends(get_db) # DB 세션 의존성 주입
+):
+    """
+    특정 장비 견적서(Machine)를 삭제하는 API 엔드포인트입니다.
+    - 견적서와 관련된 모든 구성 자재(MachineResources)도 함께 삭제됩니다.
+
+    Args:
+        machine_id (UUID): 삭제할 견적서 ID.
+        db (Session): SQLAlchemy 데이터베이스 세션.
+
+    Returns:
+        None: 204 No Content 응답.
+
+    Raises:
+        HTTPException: 견적서를 찾을 수 없는 경우 404 Not Found.
+    """
+    success = crud.delete_machine(db, machine_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="견적서를 찾을 수 없습니다.")
+    return None

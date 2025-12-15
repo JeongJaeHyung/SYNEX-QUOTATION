@@ -204,18 +204,67 @@ function goToDetail(itemCode) {
 }
 
 // 선택 삭제
-function deleteSelected() {
+async function deleteSelected() {
     const selected = getSelectedRows();
     if (selected.length === 0) {
         alert('선택된 항목이 없습니다');
         return;
     }
-    
-    if (confirm(`${selected.length}개 항목을 삭제하시겠습니까?`)) {
-        // TODO: API 호출
-        console.log('삭제할 항목:', selected);
-        alert('삭제 API 연동 예정');
+
+    if (!confirm(`${selected.length}개 항목을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+        return;
     }
+
+    let successCount = 0;
+    let failCount = 0;
+    const failedItems = [];
+
+    for (const itemCode of selected) {
+        try {
+            // item_code 형식: "maker_id-resources_id" (예: "T000-000001")
+            const parts = itemCode.split('-');
+            if (parts.length !== 2) {
+                console.error('Invalid item_code format:', itemCode);
+                failCount++;
+                failedItems.push(itemCode);
+                continue;
+            }
+
+            const makerId = parts[0];
+            const resourcesId = parts[1];
+
+            // API 경로: /api/v1/parts/{parts_id}/{maker_id}
+            const response = await fetch(`/api/v1/parts/${resourcesId}/${makerId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                successCount++;
+            } else {
+                failCount++;
+                failedItems.push(itemCode);
+                const error = await response.json();
+                console.error(`Delete failed for ${itemCode}:`, error);
+            }
+        } catch (e) {
+            failCount++;
+            failedItems.push(itemCode);
+            console.error(`Delete error for ${itemCode}:`, e);
+        }
+    }
+
+    // 결과 메시지
+    let message = '';
+    if (successCount > 0) {
+        message += `${successCount}개 항목이 삭제되었습니다.`;
+    }
+    if (failCount > 0) {
+        message += `\n${failCount}개 항목 삭제에 실패했습니다.`;
+    }
+    alert(message);
+
+    // 목록 새로고침
+    loadData(true);
 }
 
 // 부품 등록 팝업 열기

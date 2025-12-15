@@ -19,6 +19,7 @@ let laborItems = [];
 let isDirty = false;
 let autoSaveInterval = null;
 const AUTO_SAVE_DELAY = 60000; // 60초
+let isSaving = false; // 저장 중 여부 (중복 저장 방지)
 
 // 페이지 모드 및 ID
 let pageMode = 'create'; 
@@ -286,8 +287,14 @@ function applyMachineResourcesToForm(machineDetailData) {
             }
         }
         // 그 외 일반 부품
+        // resource 객체에 id 필드가 없으면 resources_id를 id로 매핑
+        const partData = { ...resource };
+        if (!partData.id && partData.resources_id) {
+            partData.id = partData.resources_id;
+        }
+
         selectedParts.set(itemCode, {
-            part: resource,
+            part: partData,
             quantity: resource.quantity,
             solo_price: resource.solo_price,
             subtotal: resource.solo_price * resource.quantity
@@ -491,6 +498,16 @@ function renderTable(schema, items, highlightItemCode = null) {
     let displayItems = [...items];
     if (currentSortKey) {
         displayItems = sortItems(displayItems, currentSortKey, currentSortOrder);
+    } else {
+        // 정렬 키가 없을 때 기본 정렬: major_category -> item_code 순서
+        displayItems.sort((a, b) => {
+            const majorA = majorKeyOf(a);
+            const majorB = majorKeyOf(b);
+            if (majorA !== majorB) return majorA.localeCompare(majorB);
+            const codeA = a.item_code || a.id || '';
+            const codeB = b.item_code || b.id || '';
+            return codeA.localeCompare(codeB);
+        });
     }
 
     for (let rowIndex = 0; rowIndex < displayItems.length; rowIndex++) {
@@ -910,7 +927,16 @@ function renderTemplatePartsTable() {
         html += `<tr class="${isRunEnd ? 'category-last-row' : ''}" data-item-code="${r.itemCode}">`;
         if (isRunStart) html += `<td class="col-center category-cell" rowspan="${rowSpan}"><strong>${r.major || '-'}</strong></td>`;
         html += `<td class="col-left">${r.minor || '-'}</td>`;
-        html += `<td class="col-left">${r.name || '-'}</td>`;
+        html += `<td class="col-left"><div class="cell-wrapper">
+                    <span>${r.name || '-'}</span>
+                    <button class="hover-plus-btn" onclick="openCreatePopup('${r.itemCode}'); event.stopPropagation();" title="이 정보로 신규 등록">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                    </button>
+                </div></td>`;
         html += `<td class="col-left">${r.maker || '-'}</td>`;
         html += `<td class="col-center">${r.ul ? '<span class="badge badge-success">O</span>' : '<span class="badge badge-default">-</span>'}</td>`;
         html += `<td class="col-center">${r.ce ? '<span class="badge badge-success">O</span>' : '<span class="badge badge-default">-</span>'}</td>`;
@@ -1007,19 +1033,26 @@ async function submitMachine() {
     const creator = document.getElementById('creator').value.trim();
     if (!machineName) return alert('장비명을 입력하세요.');
     if (!creator) return alert('작성자명을 입력하세요.');
-    
+
     if (selectedParts.size === 0 && laborItems.every(i => i.quantity === 0)) {
         return alert('최소 1개 이상의 부품 또는 인건비 항목을 입력하세요.');
     }
-    
+
     const resources = [];
     selectedOrder.forEach(itemCode => {
         const item = selectedParts.get(itemCode);
         if (!item) return;
         const part = item.part || {};
+
+        // 필수 필드 검증
+        if (!part.maker_id || !part.id) {
+            console.error('Invalid part data:', { itemCode, part });
+            return;
+        }
+
         resources.push({
             maker_id: part.maker_id,
-            resources_id: part.id || part.resources_id,
+            resources_id: part.id,
             solo_price: item.solo_price,
             quantity: item.quantity,
             display_major: part.category_major || part.major_category || null,
@@ -1073,19 +1106,39 @@ async function submitMachine() {
         const response = await fetch('/api/v1/quotation/machine', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData)
         });
+
         if (response.ok) {
             const data = await response.json();
             alert(`장비 견적서가 등록되었습니다!\nID: ${data.id}`);
             window.location.href = `/service/quotation/machine/${data.id}`;
         } else {
-            const error = await response.json();
-            console.error('Submit Error:', error);
-            alert('등록 실패:\n' + JSON.stringify(error.detail || error, null, 2));
+            // 에러 응답 처리 - Content-Type에 따라 JSON 또는 텍스트로 처리
+            let errorMessage = '';
+            const contentType = response.headers.get('content-type');
+
+            try {
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    console.error('Submit Error (JSON):', error);
+                    errorMessage = JSON.stringify(error.detail || error, null, 2);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Submit Error (Text):', errorText);
+                    errorMessage = `서버 오류 (${response.status}):\n${errorText.substring(0, 500)}`;
+                }
+            } catch (e) {
+                console.error('Error parsing response:', e);
+                errorMessage = `응답 파싱 실패 (${response.status})`;
+            }
+
+            alert('등록 실패:\n' + errorMessage);
         }
     } catch (error) {
-        console.error('Error:', error); alert('등록 중 오류가 발생했습니다.');
+        console.error('Error:', error);
+        alert('등록 중 오류가 발생했습니다.');
     } finally {
-        submitBtn.disabled = false; submitBtn.textContent = '등록완료';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록완료';
     }
 }
 
@@ -1093,19 +1146,26 @@ async function submitMachine() {
 async function updateMachine() {
     const machineName = document.getElementById('machineName').value.trim();
     if (!machineName) return alert('장비명을 입력하세요.');
-    
+
     if (selectedParts.size === 0 && laborItems.every(i => i.quantity === 0)) {
         return alert('최소 1개 이상의 부품 또는 인건비 항목을 입력하세요.');
     }
-    
+
     const resources = [];
     selectedOrder.forEach(itemCode => {
         const item = selectedParts.get(itemCode);
         if (!item) return;
         const part = item.part || {};
+
+        // 필수 필드 검증
+        if (!part.maker_id || !part.id) {
+            console.error('Invalid part data:', { itemCode, part });
+            return;
+        }
+
         resources.push({
             maker_id: part.maker_id,
-            resources_id: part.id || part.resources_id,
+            resources_id: part.id,
             solo_price: item.solo_price,
             quantity: item.quantity,
             display_major: part.category_major || part.major_category || null,
@@ -1150,18 +1210,38 @@ async function updateMachine() {
         const response = await fetch(`/api/v1/quotation/machine/${machineId}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData)
         });
+
         if (response.ok) {
             alert('장비 견적서가 수정되었습니다!');
             window.location.href = `?mode=view&id=${machineId}`;
         } else {
-            const error = await response.json();
-            console.error('Update Error:', error);
-            alert('수정 실패:\n' + JSON.stringify(error.detail || error, null, 2));
+            // 에러 응답 처리 - Content-Type에 따라 JSON 또는 텍스트로 처리
+            let errorMessage = '';
+            const contentType = response.headers.get('content-type');
+
+            try {
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    console.error('Update Error (JSON):', error);
+                    errorMessage = JSON.stringify(error.detail || error, null, 2);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Update Error (Text):', errorText);
+                    errorMessage = `서버 오류 (${response.status}):\n${errorText.substring(0, 500)}`;
+                }
+            } catch (e) {
+                console.error('Error parsing response:', e);
+                errorMessage = `응답 파싱 실패 (${response.status})`;
+            }
+
+            alert('수정 실패:\n' + errorMessage);
         }
     } catch (error) {
-        console.error('Error:', error); alert('수정 중 오류가 발생했습니다.');
+        console.error('Error:', error);
+        alert('수정 중 오류가 발생했습니다.');
     } finally {
-        submitBtn.disabled = false; submitBtn.textContent = '수정완료';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '수정완료';
     }
 }
 
@@ -1169,16 +1249,24 @@ async function updateMachine() {
 async function saveDraft(isSilent = false) {
     const machineName = document.getElementById('machineName').value.trim();
     const creator = document.getElementById('creator').value.trim();
-    
+
     // Silent 모드일 때는 필수값 없으면 조용히 리턴
     if (isSilent && (!machineName || !creator)) return;
-    
+
     if (!machineName) return alert('장비명을 입력하세요.');
     if (!creator) return alert('작성자명을 입력하세요.');
+
+    // 이미 저장 중이면 중복 실행 방지
+    if (isSaving) {
+        console.log('이미 저장 중입니다. 요청 무시.');
+        return;
+    }
 
     // 상태 표시
     const statusEl = document.getElementById('autoSaveStatus');
     if (isSilent && statusEl) statusEl.textContent = '자동 저장 중...';
+
+    isSaving = true; // 저장 시작
 
     // 데이터 수집 로직 (submitMachine과 동일)
     const resources = [];
@@ -1186,9 +1274,16 @@ async function saveDraft(isSilent = false) {
         const item = selectedParts.get(itemCode);
         if (!item) return;
         const part = item.part || {};
+
+        // 필수 필드 검증
+        if (!part.maker_id || !part.id) {
+            console.error('Invalid part data:', { itemCode, part });
+            return;
+        }
+
         resources.push({
             maker_id: part.maker_id,
-            resources_id: part.id || part.resources_id,
+            resources_id: part.id,
             solo_price: item.solo_price,
             quantity: item.quantity,
             display_major: part.category_major || part.major_category || null,
@@ -1268,13 +1363,30 @@ async function saveDraft(isSilent = false) {
 
             if (!isSilent) alert('임시 저장되었습니다.');
         } else {
-            const error = await response.json();
-            console.error('Save Draft Error:', error);
+            // 에러 응답 처리 - Content-Type에 따라 JSON 또는 텍스트로 처리
+            let errorMessage = '';
+            const contentType = response.headers.get('content-type');
+
+            try {
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    console.error('Save Draft Error (JSON):', error);
+                    errorMessage = JSON.stringify(error.detail || error, null, 2);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Save Draft Error (Text):', errorText);
+                    errorMessage = `서버 오류 (${response.status}): ${errorText.substring(0, 200)}`;
+                }
+            } catch (e) {
+                console.error('Error parsing response:', e);
+                errorMessage = `응답 파싱 실패 (${response.status})`;
+            }
+
             if (statusEl) {
                 statusEl.textContent = '자동 저장 실패';
                 statusEl.style.color = '#ef4444';
             }
-            if (!isSilent) alert('임시 저장 실패:\n' + JSON.stringify(error.detail || error, null, 2));
+            if (!isSilent) alert('임시 저장 실패:\n' + errorMessage);
         }
     } catch (error) {
         console.error('Error:', error);
@@ -1283,6 +1395,8 @@ async function saveDraft(isSilent = false) {
             statusEl.style.color = '#ef4444';
         }
         if (!isSilent) alert('저장 중 오류가 발생했습니다.');
+    } finally {
+        isSaving = false; // 저장 완료 (성공/실패 무관)
     }
 }
 
@@ -1294,7 +1408,20 @@ function goBack() {
 async function openCreatePopup(partId = null) {
     const modal = document.getElementById('createModal');
     const makerSelect = document.getElementById('regMaker');
-    
+
+    // partId가 전달되었으면 해당 부품 아래에 추가할 준비
+    if (partId) {
+        // selectedOrder에서 partId의 인덱스 찾기
+        const index = selectedOrder.indexOf(partId);
+        if (index !== -1) {
+            pendingInsertIndex = index;
+        } else {
+            pendingInsertIndex = null;
+        }
+    } else {
+        pendingInsertIndex = null;
+    }
+
     // 폼 초기화
     document.getElementById('regName').value = '';
     document.getElementById('regMinor').value = '';
@@ -1333,26 +1460,52 @@ async function openCreatePopup(partId = null) {
     
     // 데이터 채우기 (복사 등록)
     if (partId) {
-        // 1. partsData에서 부품 찾기
-        const partInMaster = partsData.find(p => (p.id === partId || p.item_code === partId));
-        
-        if (partInMaster) {
-            let price = partInMaster.solo_price || 0;
-            
-            // 2. 사용자가 수정한 가격이 있는지 확인 (selectedParts 우선)
-            const itemCode = partInMaster.item_code || partInMaster.id;
-            if (selectedParts.has(itemCode)) {
-                price = selectedParts.get(itemCode).solo_price;
-            }
+        // 1. selectedParts에서 먼저 찾기 (현재 견적서에 있는 부품)
+        let partData = null;
+        if (selectedParts.has(partId)) {
+            const selected = selectedParts.get(partId);
+            const part = selected.part || selected; // part 객체가 있으면 사용, 없으면 selected 자체 사용
 
-            document.getElementById('regName').value = partInMaster.name || '';
-            document.getElementById('regMinor').value = partInMaster.minor_category || partInMaster.category_minor || '';
-            document.getElementById('regUnit').value = partInMaster.unit || 'ea';
-            document.getElementById('regPrice').value = price;
-            document.getElementById('regEtc').value = partInMaster.etc || partInMaster.certification_etc || '';
-            
+            partData = {
+                name: part.name || part.model_name,
+                minor: part.minor_category || part.category_minor || part.minor,
+                major: part.major_category || part.category_major || part.major,
+                unit: part.unit,
+                solo_price: selected.solo_price || part.solo_price,
+                maker: part.maker_name || (part.maker ? part.maker.name : '') || part.maker,
+                ul: part.ul,
+                ce: part.ce,
+                kc: part.kc,
+                etc: part.etc || part.certification_etc
+            };
+        } else {
+            // 2. partsData에서 찾기 (마스터 목록)
+            const partInMaster = partsData.find(p => (p.id === partId || p.item_code === partId));
+            if (partInMaster) {
+                partData = {
+                    name: partInMaster.name,
+                    minor: partInMaster.minor_category || partInMaster.category_minor,
+                    major: partInMaster.major_category || partInMaster.category_major,
+                    unit: partInMaster.unit,
+                    solo_price: partInMaster.solo_price,
+                    maker: partInMaster.maker_name || (partInMaster.maker ? partInMaster.maker.name : ''),
+                    ul: partInMaster.ul,
+                    ce: partInMaster.ce,
+                    kc: partInMaster.kc,
+                    etc: partInMaster.etc || partInMaster.certification_etc
+                };
+            }
+        }
+
+        if (partData) {
+            document.getElementById('regName').value = partData.name || '';
+            document.getElementById('regMinor').value = partData.minor || '';
+            document.getElementById('regUnit').value = partData.unit || 'ea';
+            document.getElementById('regPrice').value = partData.solo_price || 0;
+            document.getElementById('regEtc').value = partData.etc || '';
+
             // Maker 설정
-            const makerName = partInMaster.maker_name || (partInMaster.maker ? partInMaster.maker.name : '');
+            const makerName = partData.maker || '';
             if (makerName) {
                 if (![...makerSelect.options].some(o => o.value === makerName)) {
                     const option = document.createElement('option');
@@ -1364,10 +1517,10 @@ async function openCreatePopup(partId = null) {
             }
 
             // 대분류 (Unit) 설정
-            const major = partInMaster.major_category || partInMaster.category_major || '';
+            const major = partData.major || '';
             const majorSelect = document.getElementById('regMajor');
             const manualInput = document.getElementById('regMajorManual');
-            
+
             const exists = [...majorSelect.options].some(o => o.value === major);
             if (exists) {
                 majorSelect.value = major;
@@ -1379,9 +1532,9 @@ async function openCreatePopup(partId = null) {
             }
 
             // 인증
-            document.getElementById('regUL').checked = !!partInMaster.ul;
-            document.getElementById('regCE').checked = !!partInMaster.ce;
-            document.getElementById('regKC').checked = !!partInMaster.kc;
+            document.getElementById('regUL').checked = !!partData.ul;
+            document.getElementById('regCE').checked = !!partData.ce;
+            document.getElementById('regKC').checked = !!partData.kc;
         }
     }
     
@@ -1423,47 +1576,126 @@ async function submitCreatePart() {
     const unit = document.getElementById('regUnit').value.trim();
     const priceInput = document.getElementById('regPrice').value;
     const price = parseInt(priceInput) || 0;
-    
+
     if (major === '기타') {
         major = document.getElementById('regMajorManual').value.trim();
         if (!major) return alert('대분류를 입력해주세요.');
     }
-    
+
     if (!makerName) return alert('Maker를 선택해주세요.');
     if (!major) return alert('Unit(대분류)를 선택해주세요.');
     if (!minor) return alert('품목(중분류)를 입력해주세요.');
     if (!name) return alert('모델명/규격을 입력해주세요.');
     if (!unit) return alert('단위를 입력해주세요.');
-    
-    const requestData = {
-        maker_name: makerName,
-        major_category: major,
-        minor_category: minor,
-        name: name,
-        unit: unit,
-        solo_price: price,
-        ul: document.getElementById('regUL').checked,
-        ce: document.getElementById('regCE').checked,
-        kc: document.getElementById('regKC').checked,
-        certification_etc: document.getElementById('regEtc').value.trim() || null
-    };
-    
+
     try {
-        const response = await fetch('/api/v1/parts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (response.ok) {
-            const newPart = await response.json();
-            alert('부품이 등록되었습니다.');
-            closeCreatePopup();
-            // 목록 갱신 및 신규 항목 강조
-            loadParts(newPart.item_code); 
+        // 1단계: 먼저 같은 이름, 메이커, 유닛을 가진 부품이 있는지 검색
+        const searchResponse = await fetch(`/api/v1/parts/search?search=${encodeURIComponent(name)}&skip=0&limit=100`);
+        let existingPart = null;
+
+        if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            // 정확히 일치하는 부품 찾기 (이름, 메이커, 유닛이 모두 같은 경우)
+            existingPart = searchData.items?.find(p =>
+                p.name === name &&
+                p.maker_name === makerName &&
+                p.unit === unit
+            );
+        }
+
+        let finalPart;
+
+        if (existingPart) {
+            // 2-A: 기존 부품이 있으면 그 부품 사용 (가격은 사용자 입력값으로)
+            console.log('기존 부품 사용:', existingPart.item_code);
+            finalPart = {
+                ...existingPart,
+                solo_price: price // 사용자가 입력한 가격으로 덮어쓰기
+            };
         } else {
-            const error = await response.json();
-            alert('등록 실패: ' + (error.detail || '알 수 없는 오류'));
+            // 2-B: 기존 부품이 없으면 새로 생성
+            const requestData = {
+                maker_name: makerName,
+                major_category: major,
+                minor_category: minor,
+                name: name,
+                unit: unit,
+                solo_price: price,
+                ul: document.getElementById('regUL').checked,
+                ce: document.getElementById('regCE').checked,
+                kc: document.getElementById('regKC').checked,
+                certification_etc: document.getElementById('regEtc').value.trim() || null
+            };
+
+            const response = await fetch('/api/v1/parts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                return alert('등록 실패: ' + (error.detail || '알 수 없는 오류'));
+            }
+
+            finalPart = await response.json();
+            console.log('새 부품 생성:', finalPart.item_code);
+        }
+
+        // 3단계: 견적서에 부품 추가 (finalPart 사용)
+        // pendingInsertIndex가 설정되어 있으면 해당 위치에 추가
+        if (pendingInsertIndex !== null) {
+            // 현재 선택된 부품 목록에 부품 추가
+            const partObject = {
+                item_code: finalPart.item_code,
+                id: finalPart.id,
+                resources_id: finalPart.id,
+                maker_id: finalPart.maker_id,
+                maker_name: finalPart.maker_name,
+                name: finalPart.name,
+                model_name: finalPart.name,
+                category_major: finalPart.major_category,
+                category_minor: finalPart.minor_category,
+                major_category: finalPart.major_category,
+                minor_category: finalPart.minor_category,
+                unit: finalPart.unit,
+                solo_price: finalPart.solo_price, // 사용자가 입력한 가격 사용
+                ul: finalPart.ul,
+                ce: finalPart.ce,
+                kc: finalPart.kc,
+                certification_etc: finalPart.certification_etc
+            };
+
+            selectedParts.set(finalPart.item_code, {
+                part: partObject,
+                quantity: 1, // 기본 수량 1
+                solo_price: finalPart.solo_price, // 사용자가 입력한 가격 사용
+                subtotal: finalPart.solo_price * 1
+            });
+
+            // selectedOrder에 pendingInsertIndex 위치 바로 다음에 삽입
+            selectedOrder.splice(pendingInsertIndex + 1, 0, finalPart.item_code);
+
+            // pendingInsertIndex 초기화
+            pendingInsertIndex = null;
+
+            const message = existingPart ?
+                '기존 부품을 사용하여 견적서에 추가되었습니다.' :
+                '새 부품이 등록되고 견적서에 추가되었습니다.';
+            alert(message);
+            closeCreatePopup();
+
+            // 테이블 다시 렌더링
+            renderPartsTable();
+            markAsDirty();
+        } else {
+            // pendingInsertIndex가 없으면 기존 동작 (목록만 갱신)
+            const message = existingPart ?
+                '기존 부품을 사용합니다.' :
+                '새 부품이 등록되었습니다.';
+            alert(message);
+            closeCreatePopup();
+            loadParts(finalPart.item_code);
         }
     } catch (e) {
         console.error('Submit error:', e);
