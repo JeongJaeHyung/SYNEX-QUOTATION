@@ -191,3 +191,148 @@
 │   ├── requirements.txt
 │   ├── tree.txt
 └── tree.txt
+.
+├── DataBase
+│   └── docker-compose.yml
+├── README.md
+├── Server
+│   ├── app
+│   │   ├── alembic
+│   │   │   ├── env.py
+│   │   │   ├── __pycache__  [error opening dir]
+│   │   │   ├── README
+│   │   │   ├── script.py.mako
+│   │   │   └── versions
+│   │   │       ├── 0b3b7831134e_create_tables_without_category.py
+│   │   │       ├── 26232116a2b1_add_manufacturer_client_creator_price_.py
+│   │   │       └── __pycache__
+│   │   │           ├── 0b3b7831134e_create_tables_without_category.cpython-311.pyc
+│   │   │           ├── 1a69a14ec676_add_machine_and_machine_resources_tables.cpython-311.pyc
+│   │   │           ├── 1e2f1b1f65f0_rename_account_columns_to_id_and_pwd.cpython-311.pyc
+│   │   │           ├── 26232116a2b1_add_manufacturer_client_creator_price_.cpython-311.pyc
+│   │   │           ├── 2bf238fda5e5_seed_master_data_from_excel.cpython-311.pyc
+│   │   │           ├── 61c599cd4f87_seed_master_data.cpython-311.pyc
+│   │   │           ├── 7e3f17e264e2_create_all_tables.cpython-311.pyc
+│   │   │           ├── 9cd16802e6b2_initial_migration_with_all_tables_.cpython-311.pyc
+│   │   │           ├── a34923047f02_create_all_tables_from_scratch.cpython-311.pyc
+│   │   │           ├── e232837c3128_rename_account_columns_without_fk.cpython-311.pyc
+│   │   │           ├── ef149eb2105b_initial_tables.cpython-311.pyc
+│   │   │           └── fad4b984c056_seed_master_data_from_excel.cpython-311.pyc
+│   │   ├── alembic.ini
+│   │   ├── api
+│   │   │   ├── __pycache__  [error opening dir]
+│   │   │   ├── router.py
+│   │   │   └── v1
+│   │   │       ├── account
+│   │   │       │   ├── crud.py
+│   │   │       │   ├── handler.py
+│   │   │       │   ├── __pycache__  [error opening dir]
+│   │   │       │   └── schemas.py
+│   │   │       ├── maker
+│   │   │       │   ├── crud.py
+│   │   │       │   ├── handler.py
+│   │   │       │   ├── __pycache__  [error opening dir]
+│   │   │       │   └── schemas.py
+│   │   │       ├── part
+│   │   │       │   ├── crud.py
+│   │   │       │   ├── handler.py
+│   │   │       │   ├── __pycache__  [error opening dir]
+│   │   │       │   └── schemas.py
+│   │   │       ├── __pycache__  [error opening dir]
+│   │   │       ├── quotation
+│   │   │       │   ├── default
+│   │   │       │   │   ├── crud.py
+│   │   │       │   │   ├── handler.py
+│   │   │       │   │   ├── __pycache__  [error opening dir]
+│   │   │       │   │   └── schemas.py
+│   │   │       │   ├── machine
+│   │   │       │   │   ├── crud.py
+│   │   │       │   │   ├── handler.py
+│   │   │       │   │   ├── __pycache__  [error opening dir]
+│   │   │       │   │   └── schemas.py
+│   │   │       │   ├── __pycache__  [error opening dir]
+│   │   │       │   └── router.py
+│   │   │       └── router.py
+│   │   ├── Auth
+│   │   ├── database.py
+│   │   ├── frontend
+│   │   │   ├── assets
+│   │   │   │   ├── fonts
+│   │   │   │   ├── images
+│   │   │   │   │   ├── jlt-logo.svg
+│   │   │   │   │   └── Logo_2.png
+│   │   │   │   └── video
+│   │   │   │       └── jlt_intro.mp4
+│   │   │   ├── element
+│   │   │   │   ├── button.html
+│   │   │   │   └── input.html
+│   │   │   ├── static
+│   │   │   │   ├── css
+│   │   │   │   │   ├── style.css
+│   │   │   │   │   └── styles.css
+│   │   │   │   └── js
+│   │   │   │       └── script.js
+│   │   │   ├── template
+│   │   │   │   ├── base.html
+│   │   │   │   ├── home.html
+│   │   │   │   ├── login.html
+│   │   │   │   ├── machine_create.html
+│   │   │   │   ├── machine_detail.html
+│   │   │   │   ├── machine_list_direct.html
+│   │   │   │   ├── parts_list_direct.html
+│   │   │   │   └── register.html
+│   │   │   └── widget
+│   │   │       └── data_table.html
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── models
+│   │   │   ├── account.py
+│   │   │   ├── certification.py
+│   │   │   ├── __init__.py
+│   │   │   ├── machine.py
+│   │   │   ├── machine_resources.py
+│   │   │   ├── maker.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── account.cpython-311.pyc
+│   │   │   │   ├── account.cpython-312.pyc
+│   │   │   │   ├── category.cpython-311.pyc
+│   │   │   │   ├── category.cpython-312.pyc
+│   │   │   │   ├── certification.cpython-311.pyc
+│   │   │   │   ├── certification.cpython-312.pyc
+│   │   │   │   ├── __init__.cpython-311.pyc
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   ├── machine.cpython-311.pyc
+│   │   │   │   ├── machine.cpython-312.pyc
+│   │   │   │   ├── machine_resources.cpython-311.pyc
+│   │   │   │   ├── machine_resources.cpython-312.pyc
+│   │   │   │   ├── maker.cpython-311.pyc
+│   │   │   │   ├── maker.cpython-312.pyc
+│   │   │   │   ├── resources.cpython-311.pyc
+│   │   │   │   └── resources.cpython-312.pyc
+│   │   │   └── resources.py
+│   │   ├── __pycache__
+│   │   │   ├── database.cpython-311.pyc
+│   │   │   ├── database.cpython-312.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── main.cpython-311.pyc
+│   │   │   └── main.cpython-312.pyc
+│   │   └── service
+│   │       ├── parts
+│   │       │   ├── handler.py
+│   │       │   └── __pycache__  [error opening dir]
+│   │       ├── __pycache__  [error opening dir]
+│   │       ├── quotation
+│   │       │   ├── default
+│   │       │   │   ├── handler.py
+│   │       │   │   └── __pycache__  [error opening dir]
+│   │       │   ├── machine
+│   │       │   │   ├── handler.py
+│   │       │   │   └── __pycache__  [error opening dir]
+│   │       │   ├── __pycache__  [error opening dir]
+│   │       │   └── router.py
+│   │       └── router.py
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── tree.txt
+└── tree.txt
