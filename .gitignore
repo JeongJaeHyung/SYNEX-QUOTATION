@@ -568,3 +568,7 @@ MigrationBackup/
 .ionide/
 
 # End of https://www.toptal.com/developers/gitignore/api/vs,venv,linux,python,git
+
+
+.claude
+doc
