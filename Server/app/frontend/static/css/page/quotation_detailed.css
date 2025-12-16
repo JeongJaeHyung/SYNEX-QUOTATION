@@ -178,6 +178,18 @@
     background: #e6ecff;
 }
 
+.cover-inner tfoot td {
+    font-size: 1.4rem;
+    font-weight: 800;
+    padding: 1.2rem 1rem;
+    color: #1e3a8a; /* Darker blue */
+}
+
+.cover-inner tfoot .total-amount {
+    font-size: 1.6rem;
+    color: #1e40af;
+}
+
 .cover-inner .total-amount {
     font-weight: 700;
     color: #1e40af;

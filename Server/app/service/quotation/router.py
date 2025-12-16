@@ -10,6 +10,7 @@ from .machine.handler import handler as machine_handler # 장비 견적서 관�
 from .default.handler import router as default_handler # 일반 견적서 관련 핸들러 (라우터 역할)
 from .summary.handler import router as summary_handler # 견적서 갑지 관련 핸들러 (라우터 역할)
 from .detailed.handler import router as detailed_handler # 견적서 을지(상세) 관련 핸들러 (라우터 역할)
+from .comparison.handler import router as comparison_handler # 견적 비교 관련 핸들러 (라우터 역할)
 
 # 견적 서비스 라우터 인스턴스 생성
 router = APIRouter()
@@ -40,3 +41,7 @@ router.include_router(summary_handler, prefix="/summary")
 # 견적서 을지(상세) 관련 핸들러를 '/detailed' 접두사로 포함합니다.
 # 예: /service/quotation/detailed
 router.include_router(detailed_handler, prefix="/detailed")
+
+# 견적 비교 관련 핸들러를 '/comparison' 접두사로 포함합니다.
+# 예: /service/quotation/comparison
+router.include_router(comparison_handler, prefix="/comparison")

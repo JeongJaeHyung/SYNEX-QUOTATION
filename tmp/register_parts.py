@@ -139,15 +139,15 @@ def post_parts_to_api(data_list, api_url):
                 if len(response_text) > 100:
                     response_text = response_text[:100] + "..."
                 # 부품명에 공백이 있을 수 있으므로 repr()로 출력하여 명확하게 합니다.
-                print(f"❌ 실패: {repr(part_data['name'])} (Status: {status_code}, 응답: {response_text})")
+                print(f"[FAIL] 실패: {repr(part_data['name'])} (Status: {status_code}, 응답: {response_text})")
                 
         except urllib.error.URLError as e:
             failure_count += 1
-            print(f"🚨 연결 오류: {repr(part_data['name'])} 전송 실패. ({e})")
+            print(f"[ERROR] 연결 오류: {repr(part_data['name'])} 전송 실패. ({e})")
 
     print(f"\n--- API 전송 완료 ---")
-    print(f"✅ 성공적으로 등록된 부품: {success_count}개")
-    print(f"❌ 등록 실패/오류 부품: {failure_count}개")
+    print(f"[OK] 성공적으로 등록된 부품: {success_count}개")
+    print(f"[FAIL] 등록 실패/오류 부품: {failure_count}개")
 
 
 if __name__ == "__main__":
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         total_converted = len(all_parts_data)
         print(f"총 {total_converted}개의 부품 데이터가 JSON 형식으로 변환되었습니다.")
         # 제외된 행은 '-'인 경우만 남습니다.
-        print(f"ℹ️ {skipped_count}개의 행이 '부품명'이 '-'여서 제외되었습니다. (총 변환 시도: {total_converted + skipped_count}개)")
+        print(f"[INFO] {skipped_count}개의 행이 '부품명'이 '-'여서 제외되었습니다. (총 변환 시도: {total_converted + skipped_count}개)")
         post_parts_to_api(all_parts_data, API_URL)
     else:
-        print("🚨 변환된 데이터가 없어 API 전송을 시작하지 않습니다.")
+        print("[ERROR] 변환된 데이터가 없어 API 전송을 시작하지 않습니다.")

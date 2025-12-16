@@ -17,7 +17,7 @@ def clean_value(value):
 
     cleaned = str(value).strip()
     
-    # ✅ 수정: '공백'은 띄어쓰기 하나로 변환하여 API에 전송되도록 합니다.
+    # [OK] 수정: '공백'은 띄어쓰기 하나로 변환하여 API에 전송되도록 합니다.
     if cleaned == "공백":
         return " " 
         
@@ -94,19 +94,19 @@ def post_makers_to_api(maker_list, api_url):
                 success_count += 1
             else:
                 if status_code == 409:
-                    print(f"⚠️ 이미 존재: {maker_name} (Status: 409)")
+                    print(f"[WARN] 이미 존재: {maker_name} (Status: 409)")
                     success_count += 1 
                 else:
                     failure_count += 1
-                    print(f"❌ 실패: {maker_name} (Status: {status_code}, 응답: {body[:100]}...)")
+                    print(f"[FAIL] 실패: {maker_name} (Status: {status_code}, 응답: {body[:100]}...)")
                 
         except urllib.error.URLError as e:
             failure_count += 1
-            print(f"🚨 연결 오류: {maker_name} 전송 실패. ({e})")
+            print(f"[ERROR] 연결 오류: {maker_name} 전송 실패. ({e})")
 
     print(f"\n--- API 전송 완료 ---")
-    print(f"✅ 성공적으로 등록/확인된 제조사: {success_count}개")
-    print(f"❌ 등록 실패 제조사: {failure_count}개")
+    print(f"[OK] 성공적으로 등록/확인된 제조사: {success_count}개")
+    print(f"[FAIL] 등록 실패 제조사: {failure_count}개")
 
 if __name__ == "__main__":
     all_makers_data = get_maker_data_from_excel(EXCEL_FILE_PATH, MAKER_SHEET_NAME)
@@ -115,4 +115,4 @@ if __name__ == "__main__":
         print(f"총 {len(all_makers_data)}개의 고유 제조사 데이터가 추출되었습니다.")
         post_makers_to_api(all_makers_data, API_URL)
     else:
-        print("🚨 추출된 제조사 데이터가 없어 API 전송을 시작하지 않습니다.")
+        print("[ERROR] 추출된 제조사 데이터가 없어 API 전송을 시작하지 않습니다.")

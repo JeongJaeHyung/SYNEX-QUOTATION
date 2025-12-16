@@ -1,0 +1,308 @@
+{% extends "template/base.html" %}
+
+{% block title %}견적 비교 - SYNEX+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation_comparison.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', path='/js/page/quotation_comparison.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="quotation-comparison-page">
+    <div class="comparison-shell">
+        <div class="comparison-inner">
+            <header>
+                <h2>내정가 견적가 비교</h2>
+                <div class="logo-placeholder">
+                    <img src="/assets/images/JLT_Logo.png" alt="JLT Logo">
+                </div>
+            </header>
+            <div class="controls-container" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
+                <label for="markup-rate" style="margin-right: 8px; font-weight: bold;">견적가 상승률:</label>
+                <input type="number" id="markup-rate" value="5" step="0.1" style="width: 60px; text-align: right; padding: 4px;">
+                <span style="margin-left: 4px;">%</span>
+            </div>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="col-category">형목</th>
+                        <th rowspan="2" class="col-item">구분</th>
+                        <th colspan="4" class="header-internal">내정가</th>
+                        <th colspan="4" class="header-estimate">견적가</th>
+                        <th rowspan="2" class="col-note">비고</th>
+                    </tr>
+                    <tr>
+                        <th class="sub-header">수량</th>
+                        <th class="sub-header">단위</th>
+                        <th class="sub-header">단가</th>
+                        <th class="sub-header">금액</th>
+                        <th class="sub-header">수량</th>
+                        <th class="sub-header">단위</th>
+                        <th class="sub-header">단가</th>
+                        <th class="sub-header">금액</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 자재비 -->
+                    <tr class="category-row">
+                        <td rowspan="3" class="category-cell">자재비</td>
+                        <td>전장함</td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>34,040,000</td>
+                        <td></td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>35,742,000</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>부품비</td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>47,198,000</td>
+                        <td></td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>49,557,900</td>
+                        <td></td>
+                        <td>5%상승반영</td>
+                    </tr>
+                    <tr>
+                        <td>케이블 및 기타 잡자재</td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>27,760,000</td>
+                        <td></td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>29,148,000</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="subtotal-row" data-subtotal-type="material">
+                        <td colspan="2">자재비 소계</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="subtotal-cell"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="subtotal-cell"></td>
+                        <td class="difference-cell"></td>
+                    </tr>
+
+                    <!-- 인건비 -->
+                    <tr class="category-row">
+                        <td rowspan="4" class="category-cell">인건비</td>
+                        <td>주액기</td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>190,000,000</td>
+                        <td></td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>241,200,000</td>
+                        <td></td>
+                        <td>1010M/D -> 1070M/D</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- PJT Manager -->
+                    <tr class="pjt-manager-row">
+                        <td class="pjt-manager-cell">PJT Manager</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+
+                    <tr class="subtotal-row pjt-subtotal" data-subtotal-type="labor">
+                        <td colspan="2">인건비 소계</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="subtotal-cell"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="subtotal-cell"></td>
+                        <td class="difference-cell"></td>
+                    </tr>
+
+                    <!-- 출장 경비 -->
+                    <tr class="category-row">
+                        <td rowspan="4" class="category-cell">출장 경비</td>
+                        <td>식대</td>
+                        <td>710</td>
+                        <td></td>
+                        <td>30,000</td>
+                        <td></td>
+                        <td>710</td>
+                        <td>M/D</td>
+                        <td>30,000</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>숙박비</td>
+                        <td>355</td>
+                        <td></td>
+                        <td>60,000</td>
+                        <td></td>
+                        <td>355</td>
+                        <td>M/D</td>
+                        <td>60,000</td>
+                        <td></td>
+                        <td>2인1실기준</td>
+                    </tr>
+                    <tr>
+                        <td>교통비</td>
+                        <td></td>
+                        <td></td>
+                        <td>30,000</td>
+                        <td>-</td>
+                        <td></td>
+                        <td>M/D</td>
+                        <td>30,000</td>
+                        <td>-</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>운송비</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>1</td>
+                        <td>식</td>
+                        <td>1,000,000</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="subtotal-row" data-subtotal-type="travel">
+                        <td colspan="2"> 출장 경비 소계</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="subtotal-cell"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="subtotal-cell"></td>
+                        <td></td>
+                    </tr>
+
+                    <!-- 전체 합계 -->
+                    <tr class="total-row">
+                        <td colspan="5">Sub Total</td>
+                        <td class="total-cell"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>                        
+                        <td class="total-cell"></td>
+                        <td class="difference-cell"></td>
+                    </tr>
+
+                    <!-- 관리비 -->
+                    <tr class="management-row">
+                        <td rowspan="2" class="category-cell">관리비</td>
+                        <td>일반관리비</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>6</td>
+                        <td></td>
+                        <td></td>
+                        <td>22,676,874</td>
+                        <td></td>
+                    </tr>
+                    <tr class="management-row">
+                        <td>기업이윤</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>4</td>
+                        <td></td>
+                        <td></td>
+                        <td>15,117,916</td>
+                        <td></td>
+                    </tr>
+
+                    <!-- TOTAL -->
+                    <tr class="final-total-row">
+                        <td colspan="5">TOTAL</td>
+                        <td class="final-total-cell"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="final-total-cell"></td>
+                        <td class="difference-cell"></td>
+                    </tr>
+                    <tr class="markup-row">
+                        <td colspan="9"></td>
+                        <td class="margin-cell"></td>
+                        <td class="markup-cell"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 특이사항 -->
+            <div class="notes-section">
+                <div class="notes-header">특이사항</div>
+                <div class="notes-content">
+                    내정가의 단가와 제출할 수 있는 견적가의 단가가 동일함. 내정가 단가는 실 금액 반영 필요
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

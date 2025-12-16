@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(docker-compose logs:*)",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python:*)",
+      "Bash(cmd /c \"chcp 65001 >nul && curl -s http://localhost:8005/api/v1/quotation/machine/44fd4313-8bb3-495a-85b4-09983ba951b8\")",
+      "Bash(set:*)"
     ]
   }
 }

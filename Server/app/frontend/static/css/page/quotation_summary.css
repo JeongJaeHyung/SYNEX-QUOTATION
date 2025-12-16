@@ -311,7 +311,7 @@
 
 /* 편집 가능한 셀 */
 .editable {
-    background-color: white;
+    background-color: #fffbe6; /* Ivory to indicate editable */
     cursor: text;
 }
 
@@ -409,22 +409,24 @@
 .remarks-section {
     width: 100%;
     margin-top: 20px;
-    border: 2px solid #64748b;
-    border-radius: 8px;
+    border: 1px solid #cbd5e1; /* Lighter border like detailed */
+    border-radius: 4px;
     overflow: hidden;
 }
 
 .remarks-title {
-    background-color: #f1f5f9;
+    background-color: #f0f9ff; /* Light blue header */
     padding: 10px 15px;
     font-weight: 600;
-    color: #1e293b;
-    border-bottom: 2px solid #94a3b8;
+    color: #1e3a8a; /* Darker blue text */
+    border-bottom: 1px solid #cbd5e1;
+    text-align: center; /* Center align like detailed if needed, or keep left */
 }
 
 .remarks-content {
     padding: 15px;
     background-color: white;
+    min-height: 120px; /* Ensure height */
 }
 
 .remark-item {

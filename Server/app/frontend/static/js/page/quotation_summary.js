@@ -29,6 +29,14 @@ function setupEventListeners() {
         cell.addEventListener('blur', updateCalculations);
     });
 
+    // Make remarks content editable
+    const remarksContent = document.querySelector('.remarks-content');
+    if (remarksContent) {
+        remarksContent.setAttribute('contenteditable', 'true');
+        remarksContent.classList.add('editable'); // Apply styling
+        // Prevent enter from creating divs, maybe? Default behavior is okay for now.
+    }
+
     // Enter 키로 다음 셀로 이동
     editableCells.forEach((cell, index) => {
         cell.addEventListener('keydown', (e) => {
@@ -41,6 +49,24 @@ function setupEventListeners() {
             }
         });
     });
+
+    // Best Nego Total 이벤트 리스너
+    const negoTotal = document.getElementById('negoTotal');
+    if (negoTotal) {
+        negoTotal.addEventListener('blur', (e) => {
+            const val = parseInt(e.target.textContent.replace(/[^0-9]/g, '')) || 0;
+            if (val > 0) {
+                 e.target.textContent = formatNumber(val);
+            }
+            updateCalculations();
+        });
+        negoTotal.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                negoTotal.blur();
+            }
+        });
+    }
 }
 
 /**
@@ -57,6 +83,8 @@ function handleCellEdit(e) {
         }
     }
 }
+
+let isFirstCalculation = true;
 
 /**
  * 계산 업데이트
@@ -98,19 +126,45 @@ function updateCalculations() {
         }
     });
 
-    // 견적 총 금액 업데이트
+    // 견적 총 금액 업데이트 (하단 테이블 tfoot)
     const summaryAmount = document.getElementById('summaryAmount');
     if (summaryAmount) {
         summaryAmount.textContent = formatNumber(total);
     }
 
-    // Total 업데이트
+    // Total 업데이트 (하단 Total 영역)
     const totalAmount = document.getElementById('totalAmount');
     if (totalAmount) {
         totalAmount.textContent = formatNumber(total);
     }
 
-    // Best nego Total은 수동 입력 유지
+    // 상단 헤더 금액 업데이트 (Best Nego Total 우선 적용)
+    const negoTotal = document.getElementById('negoTotal');
+    const totalAmountVat = document.getElementById('totalAmountVat');
+    const quotationAmountText = document.getElementById('quotationAmountText');
+    
+    if (isFirstCalculation && negoTotal) {
+        negoTotal.textContent = formatNumber(total);
+    }
+    
+    let finalAmount = total;
+    
+    if (negoTotal) {
+        const negoVal = parseInt(negoTotal.textContent.replace(/[^0-9]/g, '')) || 0;
+        if (negoVal > 0) {
+            finalAmount = negoVal;
+        }
+    }
+
+    if (totalAmountVat) {
+        totalAmountVat.textContent = formatNumber(finalAmount);
+    }
+    
+    if (quotationAmountText) {
+        quotationAmountText.textContent = numberToKorean(finalAmount);
+    }
+
+    isFirstCalculation = false;
 }
 
 /**
@@ -321,4 +375,39 @@ function formatNumber(num) {
  */
 function removeComma(str) {
     return str.replace(/,/g, '');
+}
+
+/**
+ * 숫자를 한글 금액으로 변환 (예: 일금 일백만원 정)
+ */
+function numberToKorean(number) {
+    if (number == 0) return '일금 영원 정';
+    
+    const units = ['', '만', '억', '조', '경'];
+    const nums = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+    const decimals = ['', '십', '백', '천'];
+    
+    let str = String(number);
+    let result = '';
+    let unitIndex = 0;
+    
+    while (str.length > 0) {
+        const chunk = str.slice(-4);
+        str = str.slice(0, -4);
+        
+        let chunkResult = '';
+        for (let i = 0; i < chunk.length; i++) {
+            const digit = parseInt(chunk.charAt(chunk.length - 1 - i));
+            if (digit > 0) {
+                chunkResult = nums[digit] + decimals[i] + chunkResult;
+            }
+        }
+        
+        if (chunkResult.length > 0) {
+            result = chunkResult + units[unitIndex] + result;
+        }
+        unitIndex++;
+    }
+    
+    return '일금 ' + result + '원 정';
 }
