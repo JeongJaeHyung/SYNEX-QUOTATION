@@ -1,0 +1,133 @@
+/* app/frontend/static/css/page/login.css
+*
+* 로그인 페이지(login.html) 전용 스타일을 정의합니다.
+* - 인증 페이지의 전체 레이아웃, 카드, 폼 요소 및 반응형 디자인을 포함합니다.
+* - 공통 스타일(style.css) 위에 적용되어 로그인 페이지 특화된 디자인을 제공합니다.
+*
+*/
+
+/* --- 인증 페이지 전체 레이아웃 --- */
+.auth-page {
+    display: flex;
+    justify-content: center; /* 가로 중앙 정렬 */
+    align-items: center;     /* 세로 중앙 정렬 */
+    min-height: 100vh;       /* 뷰포트 전체 높이 */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 배경 그라데이션 */
+    padding: 20px;           /* 페이지 여백 */
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 420px; /* 최대 너비 제한 */
+}
+
+.auth-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); /* 카드 그림자 */
+}
+
+/* --- 헤더 스타일 (로고 및 서브타이틀) --- */
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-logo {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.auth-logo span {
+    color: #2563eb; /* '+' 부분 강조 색상 */
+}
+
+.auth-subtitle {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* --- 폼 스타일 --- */
+.auth-form {
+    margin-bottom: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s; /* 부드러운 전환 효과 */
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); /* 포커스 시 테두리 및 그림자 강조 */
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.form-checkbox label {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.btn-block {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+/* --- 푸터 스타일 (회원가입 링크) --- */
+.auth-footer {
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb; /* 상단 구분선 */
+}
+
+.auth-footer p {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+.auth-footer a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}

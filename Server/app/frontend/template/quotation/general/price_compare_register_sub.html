@@ -1,0 +1,84 @@
+{% extends "template/base.html" %}
+
+{% block title %}내정가 견적 비교 생성 - SYNEX+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/general/price_compare_register.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 헤더 섹션 #}
+    <div class="header-section">
+        <h2>내정가 견적 비교 생성</h2>
+        <p class="text-gray-500">
+            현재 프로젝트: <strong id="displayGeneralName" style="color: #2563eb;">정보 불러오는 중...</strong><br>
+            비교할 장비 견적서를 선택하여 내정가 비교서를 생성합니다.
+        </p>
+    </div>
+
+    {# [핵심] Handler에서 받은 general_id를 JS로 넘기기 위한 히든 필드 #}
+    <input type="hidden" id="hiddenGeneralId" value="{{ general_id }}">
+
+    {# 상단 액션 바 #}
+    <div class="action-bar">
+        <div class="action-bar-left">
+            {# 뒤로가기 버튼 #}/quotation/general/
+            <button class="btn btn-secondary" onclick="goBackToGeneral()">
+                &lt; 프로젝트로 돌아가기
+            </button>
+            
+            {# 생성 버튼 (선택 시 활성화) #}
+            <button class="btn btn-primary" onclick="openCreateModal()" id="createBtn" disabled>
+                <span id="selectedCount">0</span>개 선택됨 - 비교서 생성
+            </button>
+        </div>
+        
+        <div class="action-bar-right">
+            <input type="text" class="input-search" placeholder="장비명 검색" id="searchInput" onkeypress="handleSearch(event)">
+            <button class="btn btn-secondary" onclick="loadMachines()">검색</button>
+        </div>
+    </div>
+
+    {# 로딩 인디케이터 #}
+    <div id="loading" style="display: none; text-align: center; padding: 40px;">
+        <p>데이터를 불러오는 중...</p>
+    </div>
+
+    {# 장비 목록 테이블 컨테이너 #}
+    <div id="tableContainer"></div>
+</div>
+
+{# 생성 정보 입력 모달 #}
+<div id="createModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>비교서 생성 정보 입력</h3>
+            <button class="close-btn" onclick="closeCreateModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>작성자 <span class="required">*</span></label>
+                <input type="text" id="regCreator" class="form-input" placeholder="작성자명 입력">
+            </div>
+            <div class="form-group">
+                <label>비고</label>
+                <textarea id="regDescription" class="form-input input-textarea" placeholder="설명을 입력하세요"></textarea>
+            </div>
+            
+            <div class="selected-machines-summary">
+                <label>선택된 장비 목록 (<span id="modalSelectedCount">0</span>개)</label>
+                <ul id="modalSelectedList" class="machine-list"></ul>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCreateModal()">취소</button>
+            <button class="btn btn-primary" onclick="submitPriceCompare()">생성 완료</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', path='/js/page/quotation/general/price_compare_register_sub.js') }}"></script>
+{% endblock %}

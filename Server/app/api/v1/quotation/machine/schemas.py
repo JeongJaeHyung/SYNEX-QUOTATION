@@ -14,7 +14,12 @@ class MachineResourceCreate(BaseModel):
     maker_id: str = Field(..., max_length=4)
     resources_id: str = Field(..., max_length=6)
     solo_price: int = Field(..., ge=0)
-    quantity: int = Field(..., ge=1)
+    quantity: int = Field(..., ge=0)
+    display_major: Optional[str] = Field(None, max_length=50)
+    display_minor: Optional[str] = Field(None, max_length=50)
+    display_model_name: Optional[str] = Field(None, max_length=100)
+    display_maker_name: Optional[str] = Field(None, max_length=100)
+    display_unit: Optional[str] = Field(None, max_length=10)
 
 class MachineResourceDetail(BaseModel):
     """Machine 구성 부품 상세"""

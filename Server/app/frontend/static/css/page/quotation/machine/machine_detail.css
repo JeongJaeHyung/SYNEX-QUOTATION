@@ -1,0 +1,141 @@
+/* app/frontend/static/css/page/machine_detail.css
+*
+* 장비 견적서 상세 페이지(machine_detail.html) 전용 스타일을 정의합니다.
+* - 견적서의 기본 정보 표시, 상세 헤더, 정보 그리드, 부품 목록 섹션에 대한 스타일을 포함합니다.
+* - 공통 스타일(style.css) 위에 적용되어 상세 페이지 특화된 디자인을 제공합니다.
+*
+*/
+
+/* --- 페이지 컨텐츠 영역 스타일 --- */
+.page-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+}
+
+/* --- 상세 페이지 헤더 스타일 --- */
+.detail-header {
+    display: flex;
+    justify-content: space-between; /* 제목과 액션 버튼을 양 끝으로 정렬 */
+    align-items: flex-start;     /* 아이템 상단 정렬 */
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e5e7eb; /* 하단 구분선 */
+}
+
+.detail-title h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #1f2937;
+}
+
+.detail-title .badge {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 8px; /* 버튼 간 간격 */
+}
+
+/* --- 정보 섹션 (기본 정보 그리드) 스타일 --- */
+.info-section {
+    background-color: #f9fafb; /* 배경색 */
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4개 컬럼 그리드 */
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-item label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.info-item span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.price-text {
+    color: #2563eb !important; /* 총 금액 강조 색상 */
+    font-size: 18px !important;
+}
+
+.info-description {
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb; /* 설명 섹션 상단 구분선 */
+}
+
+.info-description label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.info-description p {
+    font-size: 14px;
+    color: #374151;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 32px 0;
+}
+
+/* --- 구성 부품 섹션 스타일 --- */
+.resources-section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #1f2937;
+}
+
+/* --- 반응형 디자인 --- */
+@media (max-width: 1024px) {
+    .detail-header {
+        flex-direction: column; /* 헤더 세로로 정렬 */
+        gap: 16px;
+    }
+    
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2개 컬럼 그리드 */
+    }
+}
+
+@media (max-width: 640px) {
+    .info-grid {
+        grid-template-columns: 1fr; /* 1개 컬럼 그리드 */
+    }
+    
+    .detail-actions {
+        width: 100%;
+        flex-direction: column; /* 버튼 세로로 정렬 */
+    }
+    
+    .detail-actions .btn {
+        width: 100%; /* 버튼 전체 너비 */
+    }
+}

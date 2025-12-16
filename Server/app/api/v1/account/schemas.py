@@ -1,4 +1,3 @@
-# api/v1/account/schemas.py
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from datetime import datetime
@@ -18,9 +17,12 @@ class AccountRegister(BaseModel):
     e_mail: EmailStr = Field(..., max_length=255)
 
 class AccountCheck(BaseModel):
-    """Account 중복 조회 요청 (선택적)"""
+    """
+    Account 중복 조회 요청 (선택적)
+    - 로그인 기능이 Auth API로 이관되었으므로 pwd 필드 제거함
+    """
     id: Optional[str] = Field(None, max_length=25)
-    pwd: Optional[str] = Field(None, max_length=255)
+    # pwd: Optional[str] = Field(None, max_length=255)  <-- 삭제 (불필요)
     name: Optional[str] = Field(None, max_length=10)
     department: Optional[str] = Field(None, max_length=25)
     position: Optional[str] = Field(None, max_length=25)

@@ -1,0 +1,52 @@
+{% extends "template/base.html" %}
+
+{% block title %}장비 견적서 목록 - SYNEX+{% endblock %}
+
+{% block extra_css %}
+    <!-- 페이지 전용 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/machine/machine_list_direct.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 상단 액션 바 #}
+    <div class="action-bar">
+        <div class="action-bar-left">
+            <button class="btn btn-primary" onclick="createMachine()">
+                <span>+</span> 견적서 생성
+            </button>
+            <button class="btn btn-danger" onclick="deleteSelected()">
+                선택 삭제
+            </button>
+        </div>
+        <div class="action-bar-right">
+            <input type="text" class="input-search" placeholder="장비명으로 검색" id="searchInput" onkeypress="handleSearch(event)">
+            <button class="btn btn-primary" onclick="loadData()">검색하기</button>
+        </div>
+    </div>
+
+    {# 로딩 인디케이터 #}
+    <div id="loading" style="display: none; text-align: center; padding: 40px;">
+        <p>데이터를 불러오는 중...</p>
+    </div>
+
+    {# 테이블 컨테이너 #}
+    <div id="tableContainer"></div>
+    
+    {# 페이지네이션 #}
+    <div id="pagination" style="display: none;" class="pagination">
+        <span class="pagination-info" id="pageInfo"></span>
+        <div class="pagination-buttons">
+            <button class="btn btn-secondary" id="prevBtn" onclick="goToPrevPage()">이전</button>
+            <button class="btn btn-secondary" id="nextBtn" onclick="goToNextPage()">다음</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- 페이지 전용 JS -->
+    <script src="{{ url_for('static', path='/js/page/quotation/machine/machine_list_direct.js') }}"></script>
+    <!-- 통합 JS -->
+    <script src="/static/js/common.js"></script>
+{% endblock %}

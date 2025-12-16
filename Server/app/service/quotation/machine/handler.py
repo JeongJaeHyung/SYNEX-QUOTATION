@@ -10,7 +10,7 @@ templates = Jinja2Templates(directory="frontend")
 @handler.get("/", response_class=HTMLResponse)
 async def machine_list(request: Request):
     """장비 견적서 목록 페이지"""
-    return templates.TemplateResponse("template/machine_list_direct.html", {
+    return templates.TemplateResponse("template/quotation/machine/machine_list_direct.html", {
         "request": request,
         "current_page": "quotation_machine"
     })
@@ -29,7 +29,7 @@ async def machine_form(request: Request):
         /service/quotation/machine/form?mode=view&id=xxx
         /service/quotation/machine/form?mode=edit&id=xxx
     """
-    return templates.TemplateResponse("template/machine_create.html", {
+    return templates.TemplateResponse("template/quotation/machine/machine_create.html", {
         "request": request,
         "current_page": "quotation_machine"
     })

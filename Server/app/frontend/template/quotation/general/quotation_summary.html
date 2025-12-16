@@ -1,0 +1,254 @@
+{% extends "template/base.html" %}
+
+{% block title %}견적서 갑지 - SYNEX+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation_summary.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="summary-page-content">
+    <div class="summary-container">
+        <!-- 헤더 섹션 -->
+        <div class="summary-header">
+            <h1 class="summary-title">QUOTATION</h1>
+            <div class="summary-logo">
+                <img src="/assets/images/JLT_Logo.png" alt="JLT" class="jlt-logo-large">
+            </div>
+        </div>
+
+        <!-- 정보 섹션 -->
+        <div class="summary-info-section">
+            <!-- 좌측: 발신 정보 -->
+            <div class="sender-info">
+                <div class="info-row">
+                    <span class="info-date" id="quotationDate">2025년 11월 26일</span>
+                </div>
+                <div class="info-box">
+                    <div class="info-row">
+                        <span class="company-name" id="senderCompany">(주)엠플러스</span>
+                    </div>
+                    <div class="info-row">
+                        <label>이중남 차장님 귀하</label>
+                    </div>
+                    <div class="info-row">
+                        <label>아래와 같이 견적합니다</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 우측: 수신 정보 -->
+            <div class="receiver-info">
+                <table class="info-table">
+                    <tr>
+                        <td class="label-cell" rowspan="5">공<br><br>급<br><br>자</td>
+                        <td class="label-cell">견적 번호</td>
+                        <td class="value-cell" colspan="3">
+                            <input type="text" id="quotationNumber" class="input-field" value="00-251126-01-01-01">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">상호(법인명)</td>
+                        <td class="value-cell">
+                            <input type="text" id="supplierCompany" class="input-field" value="(주)제이엘티">
+                        </td>
+                        <td class="label-cell">성 명</td>
+                        <td class="value-cell">
+                            <input type="text" id="supplierName" class="input-field" value="정현우">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">사업장주소</td>
+                        <td class="value-cell" colspan="3">
+                            <input type="text" id="businessAddress" class="input-field" value="인천광역시 연수구 벤처로 100번길 12">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">업 태</td>
+                        <td class="value-cell">
+                            <input type="text" id="businessType" class="input-field" value="제조, 도, 소매">
+                        </td>
+                        <td class="label-cell">사업자번호</td>
+                        <td class="value-cell">
+                            <input type="text" id="businessNumber" class="input-field" value="362-81-01342">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">TEL</td>
+                        <td class="value-cell">
+                            <input type="text" id="contactTel" class="input-field" value="010-9187-9593">
+                        </td>
+                        <td class="label-cell">mail</td>
+                        <td class="value-cell">
+                            <input type="text" id="contactEmail" class="input-field" value="hwjeong@jlta.co.kr">
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="stamp-area">
+                    <img src="/assets/images/stamp.png" alt="직인" class="stamp-image">
+                </div>
+            </div>
+        </div>
+
+        <!-- 견적 제목 -->
+        <div class="quotation-title-wrapper">
+            <div class="quotation-title-section quotation-title-left">
+                <div class="title-label title-label-left">제목：</div>
+                <div class="title-content title-content-left">
+                    <div id="quotationTitle">HMC 차세대 배터리 라인 주액기_전장_견적서</div>
+                </div>
+            </div>
+            <div class="quotation-title-section quotation-title-right">
+                <div class="title-label title-label-right">견적금액：</div>
+                <div class="title-content title-content-right">
+                    <div id="quotationAmountText">일금 삼억팔천만원 정</div>
+                    <div class="total-amount">
+                        ₩<span id="totalAmountVat">380,000,000</span> (VAT별도)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="document-title" id="documentTitle">HMC 자재Ⅲ 배터리 라인 주액기_견적_견적서</h2>
+
+        <!-- 견적 테이블 -->
+        <div class="quotation-table-section">
+            <table class="quotation-table">
+                <thead>
+                    <tr>
+                        <th class="col-no">No</th>
+                        <th class="col-name">품&nbsp;&nbsp;&nbsp;&nbsp;명</th>
+                        <th class="col-spec">규&nbsp;&nbsp;&nbsp;&nbsp;격</th>
+                        <th class="col-quantity">수량</th>
+                        <th class="col-unit">단위</th>
+                        <th class="col-price">단&nbsp;&nbsp;&nbsp;&nbsp;가</th>
+                        <th class="col-unit-price">공급가액</th>
+                        <th class="col-remarks">비&nbsp;&nbsp;&nbsp;&nbsp;고</th>
+                    </tr>
+                </thead>
+                <tbody id="quotationTableBody">
+                    <tr>
+                        <td class="col-no">1</td>
+                        <td class="col-name editable" contenteditable="true">재료비</td>
+                        <td class="col-spec editable" contenteditable="true"></td>
+                        <td class="col-quantity editable" contenteditable="true">1</td>
+                        <td class="col-unit editable" contenteditable="true">식</td>
+                        <td class="col-price editable" contenteditable="true">114,447,900</td>
+                        <td class="col-unit-price">114,447,900</td>
+                        <td class="col-remarks editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-no">2</td>
+                        <td class="col-name editable" contenteditable="true">인건비</td>
+                        <td class="col-spec editable" contenteditable="true"></td>
+                        <td class="col-quantity editable" contenteditable="true">1</td>
+                        <td class="col-unit editable" contenteditable="true">식</td>
+                        <td class="col-price editable" contenteditable="true">232,200,000</td>
+                        <td class="col-unit-price">232,200,000</td>
+                        <td class="col-remarks editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-no">3</td>
+                        <td class="col-name editable" contenteditable="true">경비</td>
+                        <td class="col-spec editable" contenteditable="true"></td>
+                        <td class="col-quantity editable" contenteditable="true">1</td>
+                        <td class="col-unit editable" contenteditable="true">식</td>
+                        <td class="col-price editable" contenteditable="true">22,300,000</td>
+                        <td class="col-unit-price">22,300,000</td>
+                        <td class="col-remarks editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-no">4</td>
+                        <td class="col-name editable" contenteditable="true">안전관리비 및 기업이윤</td>
+                        <td class="col-spec editable" contenteditable="true"></td>
+                        <td class="col-quantity editable" contenteditable="true">5</td>
+                        <td class="col-unit editable" contenteditable="true">%</td>
+                        <td class="col-price editable" contenteditable="true">18,417,395</td>
+                        <td class="col-unit-price">18,417,395</td>
+                        <td class="col-remarks editable" contenteditable="true"></td>
+                    </tr>
+                    <!-- 빈 행들 -->
+                    <tr class="empty-row">
+                        <td class="col-center"></td>
+                        <td class="col-left"></td>
+                        <td class="col-left"></td>
+                        <td class="col-center"></td>
+                        <td class="col-center"></td>
+                        <td class="col-right"></td>
+                        <td class="col-right"></td>
+                        <td class="col-left"></td>
+                    </tr>
+                    <tr class="empty-row">
+                        <td class="col-center"></td>
+                        <td class="col-left"></td>
+                        <td class="col-left"></td>
+                        <td class="col-center"></td>
+                        <td class="col-center"></td>
+                        <td class="col-right"></td>
+                        <td class="col-right"></td>
+                        <td class="col-left"></td>
+                    </tr>
+                    <tr class="empty-row">
+                        <td class="col-center"></td>
+                        <td class="col-left"></td>
+                        <td class="col-left"></td>
+                        <td class="col-center"></td>
+                        <td class="col-center"></td>
+                        <td class="col-right"></td>
+                        <td class="col-right"></td>
+                        <td class="col-left"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="summary-row">
+                        <td colspan="3" class="col-center summary-label">견적 총 금액</td>
+                        <td class="col-center editable" contenteditable="true">1</td>
+                        <td class="col-center editable" contenteditable="true">Set</td>
+                        <td colspan="3" class="col-right summary-amount" id="summaryAmount">387,395,295</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <h2 class="document-title" id="documentTitle2">비&nbsp;&nbsp;&nbsp;&nbsp;고(특이사항)</h2>
+
+            <div class="footer-note">
+                <p><strong>1. 2</strong>개라인 기준의 견적서 입니다.</p>
+            </div>
+
+            <div class="bottom-section">
+                <div class="total-section">
+                    <div class="total-row">
+                        <span class="total-label">Total</span>
+                        <span class="total-value" id="totalAmount">387,395,295</span>
+                    </div>
+                    <div class="total-row nego">
+                        <span class="total-label">Best nego Total</span>
+                        <span class="total-value nego-value" id="negoTotal">380,000,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="remarks-section">
+                <div class="remarks-title">비 고</div>
+                <div class="remarks-content">
+                    <div class="remark-item">- 납기 : 협의사항</div>
+                    <div class="remark-item">- 지불조건 : 선금금 30%, 중도금 50%, 잔금 20%</div>
+                    <div class="remark-item">- 기타 : 견적유효기간 10 일</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="action-footer">
+            <button class="btn btn-secondary btn-lg" onclick="goBack()">목록으로</button>
+            <button class="btn btn-primary btn-lg" onclick="saveSummary()">저장</button>
+            <button class="btn btn-success btn-lg" onclick="exportPDF()">PDF 저장</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', path='/js/page/quotation_summary.js') }}"></script>
+{% endblock %}

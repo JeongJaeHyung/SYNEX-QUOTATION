@@ -12,7 +12,7 @@ templates = Jinja2Templates(directory="frontend")
 
 @router.get("/", response_class=HTMLResponse)
 async def parts(request: Request):
-    return templates.TemplateResponse("template/parts_list_direct.html", {
+    return templates.TemplateResponse("template/parts/parts_list_direct.html", {
         "request": request,
         "current_page": "parts"
     })
