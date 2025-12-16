@@ -1,4 +1,4 @@
-# api/v1/general/crud.py
+# app/api/v1/quotation/general/crud.py
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from uuid import UUID

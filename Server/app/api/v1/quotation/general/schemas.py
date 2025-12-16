@@ -1,4 +1,4 @@
-# api/v1/general/schemas.py
+# app/api/v1/quotation/general/schemas.py
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime

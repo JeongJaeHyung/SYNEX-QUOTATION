@@ -1,5 +1,5 @@
 # app/models/price_compare_resources.py
-from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint, ForeignKey
+from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
@@ -7,13 +7,13 @@ from database import Base
 class PriceCompareResources(Base):
     __tablename__ = "price_compare_resources"
     
-    # PK, FK to price_compare
-    price_compare_id = Column(UUID(as_uuid=True), ForeignKey("price_compare.id", ondelete="CASCADE"), primary_key=True) 
+    # 1. PK: 어떤 견적 비교서인지
+    price_compare_id = Column(UUID(as_uuid=True), primary_key=True) 
     
-    # PK
+    # 2. PK [추가]: 어떤 장비의 자원인지 (이게 있어야 장비별 구분이 됨) 💡
+    machine_id = Column(UUID(as_uuid=True), primary_key=True)
     major = Column(String(30), primary_key=True)
     minor = Column(String(50), primary_key=True)
-    # 중복 uuid 컬럼 제거
     
     # Data Columns
     cost_solo_price = Column(Integer, nullable=False)
@@ -30,12 +30,19 @@ class PriceCompareResources(Base):
     
     # 복합 FK 제약 조건
     __table_args__ = (
+        # Price Compare 연결
         ForeignKeyConstraint(
             ['price_compare_id'],
             ['price_compare.id'],
             ondelete='CASCADE'
         ),
+        # Machine 연결 (장비 삭제 시 해당 리소스도 삭제되도록) 💡
+        ForeignKeyConstraint(
+            ['machine_id'],
+            ['machine.id'],
+            ondelete='CASCADE'
+        ),
     )
 
     def __repr__(self):
-        return f"<PriceCompareResources(pc_id='{self.price_compare_id}', major='{self.major}', minor='{self.minor}')>"
+        return f"<PriceCompareResources(pc_id='{self.price_compare_id}', machine_id='{self.machine_id}', major='{self.major}')>"
