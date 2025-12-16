@@ -1,0 +1,540 @@
+{% extends "template/base.html" %}
+
+{% block title %}견적서(일반) - SYNEX+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    {# 상단 정보 입력 #}
+    <div class="create-header">
+        <h2 id="pageTitle">견적서(일반) 생성</h2>
+        <div class="header-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="generalName">견적서명 <span class="required">*</span></label>
+                    <input type="text" id="generalName" class="form-input" placeholder="견적서명을 입력하세요" required>
+                </div>
+                <div class="form-group">
+                    <label for="client">고객사</label>
+                    <input type="text" id="client" class="form-input" placeholder="고객사를 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="creator">작성자 <span class="required">*</span></label>
+                    <input type="text" id="creator" class="form-input" placeholder="작성자명을 입력하세요" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">비고</label>
+                    <input type="text" id="description" class="form-input" placeholder="비고를 입력하세요">
+                </div>
+            </div>
+            <div class="form-row" id="viewOnlyFields" style="display: none;">
+                <div class="form-group">
+                    <label for="createdAt">생성일</label>
+                    <input type="text" id="createdAt" class="form-input" value="-" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="updatedAt">수정일</label>
+                    <input type="text" id="updatedAt" class="form-input" value="-" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 연관 테이블 섹션 (View 모드에서만 표시) #}
+    <div id="relationsSection" style="display: none;">
+        <hr class="divider">
+        
+        <div class="section-header">
+            <h3>연관 견적서 목록</h3>
+            <p class="section-description">이 견적서(일반)에 연결된 견적서(부품), 견적서(상세), 견적서(비교) 목록</p>
+        </div>
+
+        {# 로딩 인디케이터 #}
+        <div id="relationsLoading" style="display: none; text-align: center; padding: 20px;">
+            <p>연관 데이터를 불러오는 중...</p>
+        </div>
+
+        {# 연관 테이블 #}
+        <div id="relationsTableContainer"></div>
+    </div>
+
+    {# 액션 푸터 #}
+    <div class="action-footer">
+        <button class="btn btn-secondary btn-lg" onclick="goToList()">목록으로</button>
+        <button class="btn btn-success btn-lg" onclick="submitGeneral()" id="submitBtn">등록완료</button>
+    </div>
+</div>
+
+<script>
+// 페이지 모드 및 ID
+let pageMode = 'create'; // create, view
+let generalId = null;
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    // URL 파라미터에서 모드와 ID 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    pageMode = urlParams.get('mode') || 'create';
+    generalId = urlParams.get('id') || null;
+    
+    // 페이지 초기화
+    initializePage();
+});
+
+// 페이지 초기화
+function initializePage() {
+    const titleElement = document.getElementById('pageTitle');
+    const submitBtn = document.getElementById('submitBtn');
+    const viewOnlyFields = document.getElementById('viewOnlyFields');
+    const relationsSection = document.getElementById('relationsSection');
+    
+    if (pageMode === 'create') {
+        // 생성 모드
+        titleElement.textContent = '견적서(일반) 생성';
+        submitBtn.textContent = '등록완료';
+        submitBtn.style.display = 'inline-block';
+        viewOnlyFields.style.display = 'none';
+        relationsSection.style.display = 'none';
+        
+    } else if (pageMode === 'view') {
+        // 조회 모드 - 모든 필드 비활성화
+        titleElement.textContent = '견적서(일반) 조회';
+        submitBtn.style.display = 'none';
+        viewOnlyFields.style.display = 'flex';
+        relationsSection.style.display = 'block';
+        
+        // 입력 필드 모두 비활성화
+        disableAllInputs();
+        
+        // 기존 데이터 로드
+        if (generalId) {
+            loadGeneralData(generalId);
+            loadRelationsData(generalId);
+        }
+    }
+}
+
+// 모든 입력 필드 비활성화 (View 모드)
+function disableAllInputs() {
+    document.getElementById('generalName').readOnly = true;
+    document.getElementById('client').readOnly = true;
+    document.getElementById('creator').readOnly = true;
+    document.getElementById('description').readOnly = true;
+}
+
+// 기존 General 데이터 로드
+async function loadGeneralData(id) {
+    try {
+        const response = await fetch(`/api/v1/quotation/general/${id}`);
+        
+        if (!response.ok) {
+            throw new Error('데이터 로드 실패');
+        }
+        
+        const data = await response.json();
+        
+        // 상단 정보 설정
+        document.getElementById('generalName').value = data.name || '';
+        document.getElementById('client').value = data.client || '';
+        document.getElementById('creator').value = data.creator || '';
+        document.getElementById('description').value = data.description || '';
+        
+        // 날짜 포맷팅
+        if (data.created_at) {
+            const createdDate = new Date(data.created_at);
+            document.getElementById('createdAt').value = formatDateTime(createdDate);
+        }
+        if (data.updated_at) {
+            const updatedDate = new Date(data.updated_at);
+            document.getElementById('updatedAt').value = formatDateTime(updatedDate);
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('데이터를 불러오는데 실패했습니다.');
+    }
+}
+
+// 연관 테이블 데이터 로드
+async function loadRelationsData(id) {
+    const loading = document.getElementById('relationsLoading');
+    const tableContainer = document.getElementById('relationsTableContainer');
+    
+    loading.style.display = 'block';
+    tableContainer.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/api/v1/quotation/general/${id}?include_relations=true&include_schema=true`);
+        
+        if (!response.ok) {
+            throw new Error('연관 데이터 로드 실패');
+        }
+        
+        const data = await response.json();
+        
+        // 연관 테이블 렌더링
+        renderRelationsTable(data.schema, data.relations);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        tableContainer.innerHTML = `
+            <div class="empty-state" style="color: #ef4444;">
+                연관 데이터를 불러오는데 실패했습니다.<br>
+                <small>${error.message}</small>
+            </div>
+        `;
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// 연관 테이블 렌더링
+function renderRelationsTable(schema, items) {
+    const tableContainer = document.getElementById('relationsTableContainer');
+    
+    if (!items || items.length === 0) {
+        tableContainer.innerHTML = '<div class="empty-state">연관된 견적서가 없습니다</div>';
+        return;
+    }
+    
+    // ratio 합계 계산
+    let totalRatio = 0;
+    for (const key in schema) {
+        totalRatio += schema[key].ratio || 1;
+    }
+    
+    // 테이블 HTML 생성
+    let html = '<div class="table-container"><table class="data-table" id="relationsTable">';
+    
+    // 헤더
+    html += '<thead><tr>';
+    
+    for (const key in schema) {
+        const col = schema[key];
+        const width = ((col.ratio || 1) / totalRatio * 100).toFixed(1);
+        html += `<th class="col-left" style="width: ${width}%">${col.title}</th>`;
+    }
+    
+    html += '</tr></thead><tbody>';
+    
+    // 데이터 행
+    items.forEach((item) => {
+        const relationId = item.id;
+        const tableName = item.table_name;
+        
+        // 테이블 종류에 따라 다른 링크 생성
+        let detailUrl = '#';
+        if (tableName === 'Quotation') {
+            detailUrl = `/service/quotation/parts/form?mode=view&id=${relationId}`;
+        } else if (tableName === 'Detailed') {
+            detailUrl = `/service/quotation/detailed/form?mode=view&id=${relationId}`;
+        } else if (tableName === 'PriceCompare') {
+            detailUrl = `/service/quotation/compare/form?mode=view&id=${relationId}`;
+        }
+        
+        html += `<tr class="clickable" onclick="window.location.href='${detailUrl}'">`;
+        
+        for (const key in schema) {
+            const col = schema[key];
+            const value = item[key];
+            
+            html += `<td class="col-left">`;
+            
+            // 구분(table_name)에 뱃지 표시
+            if (key === 'table_name') {
+                html += formatTableName(value);
+            } else {
+                html += formatValue(value, col.type, col.format);
+            }
+            
+            html += '</td>';
+        }
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table></div>';
+    
+    tableContainer.innerHTML = html;
+}
+
+// 테이블명 포맷팅 (뱃지)
+function formatTableName(tableName) {
+    const badges = {
+        'Quotation': '<span class="badge badge-primary">견적서(부품)</span>',
+        'Detailed': '<span class="badge badge-info">견적서(상세)</span>',
+        'PriceCompare': '<span class="badge badge-warning">견적서(비교)</span>'
+    };
+    return badges[tableName] || tableName;
+}
+
+// 날짜 포맷팅
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+// 값 포맷팅
+function formatValue(value, type, format) {
+    if (value === null || value === undefined || value === '') {
+        return '<span class="text-muted">-</span>';
+    }
+    
+    switch(type) {
+        case 'datetime':
+            if (format === 'YYYY-MM-DD HH:mm') {
+                return value.substring(0, 16).replace('T', ' ');
+            }
+            return value;
+        
+        case 'date':
+            return value.substring(0, 10).replace(/-/g, '. ');
+        
+        default:
+            return value;
+    }
+}
+
+// 견적서 등록
+async function submitGeneral() {
+    const generalName = document.getElementById('generalName').value.trim();
+    const client = document.getElementById('client').value.trim();
+    const creator = document.getElementById('creator').value.trim();
+    const description = document.getElementById('description').value.trim();
+    
+    // 유효성 검증
+    if (!generalName) {
+        alert('견적서명을 입력하세요.');
+        document.getElementById('generalName').focus();
+        return;
+    }
+    
+    if (!creator) {
+        alert('작성자명을 입력하세요.');
+        document.getElementById('creator').focus();
+        return;
+    }
+    
+    // API 요청 데이터 구성
+    const requestData = {
+        name: generalName,
+        client: client || null,
+        creator: creator,
+        description: description || null
+    };
+    
+    console.log('Request Data:', requestData);
+    
+    // API 호출
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '등록 중...';
+    
+    try {
+        const response = await fetch('/api/v1/quotation/general', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            alert(`견적서(일반)가 등록되었습니다!\nID: ${data.id}`);
+            // 조회 페이지로 이동
+            window.location.href = `/service/quotation/general/form?mode=view&id=${data.id}`;
+        } else {
+            const error = await response.json();
+            alert('등록 실패: ' + (error.detail || JSON.stringify(error)));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('등록 중 오류가 발생했습니다.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록완료';
+    }
+}
+
+// 목록으로 이동
+function goToList() {
+    window.location.href = '/service/quotation/general/list';
+}
+</script>
+
+<style>
+/* 페이지 컨텐츠 */
+.page-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 생성 헤더 */
+.create-header {
+    margin-bottom: 24px;
+}
+
+.create-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #1f2937;
+}
+
+.header-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input:read-only {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
+
+/* 구분선 */
+.divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 32px 0;
+}
+
+/* 섹션 헤더 */
+.section-header {
+    margin-bottom: 16px;
+}
+
+.section-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: #1f2937;
+}
+
+.section-description {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* 뱃지 */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-primary {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-info {
+    background-color: #e0e7ff;
+    color: #4338ca;
+}
+
+.badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* 테이블 행 호버 */
+.data-table tbody tr.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.data-table tbody tr.clickable:hover {
+    background-color: #f3f4f6;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* 액션 푸터 */
+.action-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-lg {
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+}
+
+.btn-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

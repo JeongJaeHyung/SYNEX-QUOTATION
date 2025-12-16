@@ -6,8 +6,8 @@ import urllib.request
 import urllib.error
 
 # --- Configuration ---
-API_URL = "http://localhost:8005/api/v1/parts"
-EXCEL_FILE_PATH = "SYNEX+QUOTATION INFO (1).xlsx"
+API_URL = "http://localhost:8030/api/v1/parts"
+EXCEL_FILE_PATH = "tmp/data.xlsx"
 # 현재 엑셀: 1번 시트(0-based 0)가 parts
 PARTS_SHEET_NAME = 0 
 

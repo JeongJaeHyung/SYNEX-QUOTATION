@@ -1,4 +1,4 @@
-# SYNEX+QUOTATION/Server/app/models/resources.py
+# SYNEX+QUOTATION/Server/app/models/resources.py (수정 후)
 from sqlalchemy import Column, String, Integer, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -17,6 +17,10 @@ class Resources(Base):
     name = Column(String(100), nullable=False)
     unit = Column(String(10), nullable=False)
     solo_price = Column(Integer, nullable=False)
+    
+    # 💡 [핵심 추가] DB에 존재하는 NOT NULL 컬럼을 ORM 모델에 추가합니다.
+    display_order = Column(Integer, nullable=False) 
+    
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
     

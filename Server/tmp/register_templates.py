@@ -21,14 +21,14 @@ from openpyxl import load_workbook
 from datetime import datetime
 
 # --- Configuration ---
-API_BASE_URL = "http://localhost:8005/api/v1"
+API_BASE_URL = "http://localhost:8030/api/v1"
 MACHINE_API_URL = f"{API_BASE_URL}/quotation/machine/"
 MACHINE_SEARCH_URL = f"{API_BASE_URL}/quotation/machine/search"
 PARTS_LIST_URL = f"{API_BASE_URL}/parts"
 PARTS_CREATE_URL = f"{API_BASE_URL}/parts"
 MAKER_CREATE_URL = f"{API_BASE_URL}/maker"
 
-EXCEL_FILE_PATH = "tmp/SYNEX+QUOTATION INFO (1).xlsx"
+EXCEL_FILE_PATH = "tmp/data.xlsx"
 
 # 엑셀 시트 인덱스(0-based): 1~3번 시트는 마스터, 4~9번 시트는 템플릿(= 3~8)
 TEMPLATE_SHEET_INDICES = list(range(3, 9))

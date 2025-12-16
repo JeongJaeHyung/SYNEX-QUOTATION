@@ -6,8 +6,8 @@ import urllib.request
 import urllib.error
 
 # --- Configuration ---
-API_URL = "http://localhost:8005/api/v1/maker"
-EXCEL_FILE_PATH = "SYNEX+QUOTATION INFO (1).xlsx"
+API_URL = "http://localhost:8030/api/v1/maker"
+EXCEL_FILE_PATH = "tmp/data.xlsx"
 MAKER_SHEET_NAME = 2 # 엑셀 파일의 제조사 데이터 시트 인덱스 (이전 디버깅 결과에 따라 1로 유지)
 
 def clean_value(value):
@@ -40,7 +40,7 @@ def get_maker_data_from_excel(excel_file_path, sheet_name):
 
     required_cols = ['회사명', '회사코드']
 
-    header_row_index = 2  # pandas header=1 과 동일(2번째 줄이 헤더)
+    header_row_index = 1  # pandas header=1 과 동일(2번째 줄이 헤더)
     header_cells = [cell.value for cell in ws[header_row_index]]
     header = [str(v).strip() if v is not None else "" for v in header_cells]
     header_map = {name: idx for idx, name in enumerate(header)}

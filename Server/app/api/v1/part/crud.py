@@ -65,35 +65,26 @@ def get_next_parts_id(db: Session, maker_id: str) -> str:
 
 def create_parts(
     db: Session,
-    parts_id: str, # 생성할 부품 ID
-    maker_id: str, # 부품의 제조사 ID
-    major: str,    # 대분류 (Unit)
-    minor: str,    # 중분류 (품목)
-    name: str,     # 모델명/규격
-    unit: str,     # 단위
-    solo_price: int, # 단가
+    parts_id: str, 
+    maker_id: str, 
+    major: str,    
+    minor: str,    
+    name: str,     
+    unit: str,     
+    solo_price: int, 
     display_order: Optional[int] = None, # 표시 순서 (지정 없으면 자동 할당)
-    ul: bool = False, # UL 인증 여부
-    ce: bool = False, # CE 인증 여부
-    kc: bool = False, # KC 인증 여부
-    etc: Optional[str] = None # 기타 인증/비고
+    ul: bool = False, 
+    ce: bool = False, 
+    kc: bool = False, 
+    etc: Optional[str] = None 
 ) -> Resources:
-    """
-    새로운 부품(Resources)을 생성하고 관련 인증 정보(Certification)를 함께 저장합니다.
     
-    Args:
-        db (Session): SQLAlchemy 데이터베이스 세션.
-        (위에 정의된 인자들)
-        
-    Returns:
-        Resources: 생성된 Resources 객체.
-    """
-    # display_order가 지정되지 않으면 현재 최대 display_order에 1을 더하여 할당합니다.
+    # 💡 [수정] display_order가 None인 경우, DB의 NOT NULL 제약조건을 만족시키기 위해 0을 할당합니다.
     if display_order is None:
-        max_order = db.query(func.max(Resources.display_order)).scalar()
-        display_order = 0 if max_order is None else int(max_order) + 1
-
+        display_order = 0 
+    
     # Resources 모델 인스턴스 생성
+    # 💡 [복구] display_order 인자 전달을 다시 추가합니다. (이제 모델에 정의되어 TypeError가 발생하지 않음)
     resource = Resources(
         id=parts_id,
         maker_id=maker_id,
@@ -102,10 +93,10 @@ def create_parts(
         name=name,
         unit=unit,
         solo_price=solo_price,
-        display_order=display_order,
+        display_order=display_order, # 👈 0 또는 요청된 값 전달
     )
-    db.add(resource) # 세션에 자원 객체 추가
-    db.flush() # ID 할당 및 관계 설정을 위해 플러시 (아직 커밋은 아님)
+    db.add(resource) 
+    db.flush()
     
     # Certification 모델 인스턴스 생성 및 연결
     certification = Certification(
@@ -116,10 +107,10 @@ def create_parts(
         kc=kc,
         etc=etc
     )
-    db.add(certification) # 세션에 인증 객체 추가
+    db.add(certification) 
     
-    db.commit() # 트랜잭션 커밋 (DB에 변경사항 반영)
-    db.refresh(resource) # 커밋된 자원 객체를 최신 상태로 새로고침
+    db.commit() 
+    db.refresh(resource) 
     return resource
 
 
@@ -302,15 +293,6 @@ def update_parts(
 def delete_parts(db: Session, parts_id: str, maker_id: str) -> bool:
     """
     부품(Resources) 및 관련 인증 정보(Certification)를 데이터베이스에서 삭제합니다.
-    - Resources 모델에 CASCADE 설정이 없으므로 Certification이 먼저 삭제되어야 하지만,
-      Resources 테이블 정의 시 Certification과의 관계에 `cascade="all, delete-orphan"`이
-      설정되어 있거나, Foreign Key 제약 조건에 `ON DELETE CASCADE`가 설정되어 있으면 자동으로 함께 삭제됩니다.
-      현재 Resources 모델에 관계 설정은 없지만, Certification 테이블에 ForeignKeyConstraint가 정의되어 있습니다.
-      (참고: `certification` 모델에 `ForeignKeyConstraint`가 있고, Resources에 `relationship` 정의에 `cascade`가 없으므로 수동 삭제 또는 DB 설정 필요)
-      -> `certification` 모델에 `ForeignKeyConstraint`에 `ondelete='CASCADE'`가 명시되어 있지 않으면
-      Resources 삭제 전에 Certification을 먼저 삭제해야 에러가 나지 않습니다.
-      현재는 Certification이 Resources를 FK로 참조하고 있어, Resources 삭제 시 Certification은 자동으로
-      삭제되지 않을 수 있으므로 주의해야 합니다.
     
     Args:
         db (Session): SQLAlchemy 데이터베이스 세션.
@@ -324,14 +306,6 @@ def delete_parts(db: Session, parts_id: str, maker_id: str) -> bool:
     if not resource:
         return False
     
-    # Certification이 먼저 삭제되어야 Resources를 삭제할 수 있음 (FK 제약조건 때문에)
-    # 현재 모델 정의에서는 Resource 삭제 시 Certification이 자동 삭제되지 않으므로, 명시적으로 삭제 로직이 필요.
-    # 하지만 실제 DB 스키마에 ON DELETE CASCADE가 걸려있다면 이 로직은 불필요.
-    # 여기서는 ORM 모델의 관계 정의에 따라 처리됩니다.
-    # resource.certification이 있으면 db.delete(resource.certification) 필요.
-    # 하지만 resources 모델의 relationship에 cascade="all, delete-orphan"이 없으므로 직접 처리해야 할 수 있음.
-    # 현재 Certification 모델의 __table_args__에 ondelete='CASCADE'가 없으므로 db.delete(resource.certification)을 먼저 해야 함.
-
     # FIXME: Certification이 먼저 삭제되어야 함.
     if resource.certification:
         db.delete(resource.certification)

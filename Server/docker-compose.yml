@@ -5,7 +5,7 @@ services:
     build: .
     container_name: synex-quotation
     ports:
-      - "8005:8005"
+      - "8030:8030"
     volumes:
       - ./app:/app
     env_file:

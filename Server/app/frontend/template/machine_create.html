@@ -184,7 +184,7 @@
                     </tr>
                     
                     {# 자재 합계 #}
-                    <tr class="material-total-row">
+                    <tr class="materialTotalRow">
                         <td class="col-center" colspan="11"><strong>자재 합계</strong></td>
                         <td class="col-right"><strong id="materialTotalAmount">0</strong></td>
                     </tr>
@@ -334,4 +334,6 @@
 {% block extra_js %}
     <!-- 페이지 전용 JS -->
     <script src="{{ url_for('static', path='/js/page/machine_create.js') }}"></script>
+    <!-- 통합 JS -->
+    <script src="/static/js/common.js"></script>
 {% endblock %}
