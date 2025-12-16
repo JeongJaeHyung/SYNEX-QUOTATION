@@ -1,5 +1,4 @@
-# app/api/v1/quotation/general/handler.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from uuid import UUID
 from database import get_db
@@ -7,104 +6,39 @@ from . import crud, schemas
 
 handler = APIRouter()
 
-# ============================================================
-# Schema 생성 함수
-# ============================================================
-
+# --- Schema 정의 함수 (같은 파일 내에 있음) ---
 def get_general_schema() -> dict:
-    """General 스키마 정의 (사용자용)"""
     return {
-        "name": {
-            "title": "견적서명",
-            "type": "string",
-            "ratio": 3
-        },
-        "client": {
-            "title": "고객사",
-            "type": "string",
-            "ratio": 2
-        },
-        "creator": {
-            "title": "작성자",
-            "type": "string",
-            "ratio": 1
-        },
-        "updated_at": {
-            "title": "최종수정일",
-            "type": "datetime",
-            "format": "YYYY-MM-DD HH:mm",
-            "ratio": 2
-        },
-        "description": {
-            "title": "비고",
-            "type": "string",
-            "ratio": 3
-        }
+        "category": { "title": "구분", "type": "string", "ratio": 1 }, # 💡 목록 조회용 스키마에 맞게 수정 필요하면 변경
+        "name": { "title": "견적서명", "type": "string", "ratio": 3 },
+        "client": { "title": "고객사", "type": "string", "ratio": 2 },
+        "creator": { "title": "작성자", "type": "string", "ratio": 1 },
+        "updated_at": { "title": "최종수정일", "type": "datetime", "format": "YYYY-MM-DD HH:mm", "ratio": 2 },
+        "description": { "title": "비고", "type": "string", "ratio": 3 }
     }
-
 
 def get_general_relations_schema() -> dict:
-    """General 연관 테이블 스키마 정의"""
     return {
-        "table_name": {
-            "title": "구분",
-            "type": "string",
-            "ratio": 2
-        },
-        "creator": {
-            "title": "작성자",
-            "type": "string",
-            "ratio": 1
-        },
-        "updated_at": {
-            "title": "최종수정일",
-            "type": "datetime",
-            "format": "YYYY-MM-DD HH:mm",
-            "ratio": 2
-        },
-        "description": {
-            "title": "비고",
-            "type": "string",
-            "ratio": 4
-        }
+        "category": { "title": "구분", "type": "string", "ratio": 1 },
+        "title": { "title": "제목/비고", "type": "string", "ratio": 3 },
+        "creator": { "title": "작성자", "type": "string", "ratio": 1 },
+        "updated_at": { "title": "최종수정일", "type": "datetime", "format": "YYYY-MM-DD HH:mm", "ratio": 1.5 }
     }
 
+# --- Endpoints ---
 
-# ============================================================
-# General Endpoints
-# ============================================================
-
-@handler.post("", status_code=201)
+@handler.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.GeneralResponse)
 def create_general(
     general_data: schemas.GeneralCreate,
     db: Session = Depends(get_db)
 ):
-    """
-    General 생성
-    
-    - name: 견적서명 (필수)
-    - client: 고객사 (선택)
-    - creator: 작성자 (필수)
-    - description: 비고 (선택)
-    """
-    general = crud.create_general(
+    return crud.create_general(
         db=db,
         name=general_data.name,
         client=general_data.client,
         creator=general_data.creator,
         description=general_data.description
     )
-    
-    return {
-        "id": general.id,
-        "name": general.name,
-        "client": general.client,
-        "creator": general.creator,
-        "description": general.description,
-        "created_at": general.created_at,
-        "message": "General created successfully"
-    }
-
 
 @handler.get("")
 def get_generals(
@@ -113,19 +47,8 @@ def get_generals(
     limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db)
 ):
-    """
-    General 목록 조회 (전체)
-    
-    - include_schema: true면 schema 포함
-    - skip: 건너뛸 개수
-    - limit: 가져올 개수
-    
-    응답: id, name, client, creator, created_at, updated_at, description
-    사용자 표시용: name, client, creator, updated_at, description (id, created_at 제외)
-    """
     total, generals = crud.get_generals(db, skip=skip, limit=limit)
     
-    # 전체 데이터 (id, created_at 포함)
     items = [
         {
             "id": g.id,
@@ -140,10 +63,11 @@ def get_generals(
     ]
     
     if include_schema:
+        # 💡 [수정됨] 잘못된 import 제거하고 함수 직접 호출
         return {
-            "schema": get_general_schema(),  # id, created_at 제외된 스키마
+            "schema": get_general_schema(),
             "total": total,
-            "items": items,  # 전체 데이터 (id, created_at 포함)
+            "items": items,
             "skip": skip,
             "limit": limit
         }
@@ -155,63 +79,37 @@ def get_generals(
         "limit": limit
     }
 
-
-@handler.get("/{general_id}")
+@handler.get("/{general_id}", response_model=schemas.GeneralResponse)
 def get_general(
     general_id: UUID,
-    include_relations: bool = Query(False, description="연관 테이블 포함 여부"),
-    include_schema: bool = Query(False, description="스키마 포함 여부"),
+    include_schema: bool = Query(False, description="연관 테이블 스키마 포함 여부"), # 💡 파라미터 추가
     db: Session = Depends(get_db)
 ):
-    """
-    General 단일 조회
+    # 1. 데이터 조회
+    result = crud.get_general_with_relations(db, general_id)
     
-    - general_id: General ID (UUID)
-    - include_relations: true면 PriceCompare, Detailed, Quotation 목록 포함
-    - include_schema: true면 연관 테이블 스키마 포함
+    if not result:
+        raise HTTPException(status_code=404, detail="General quotation not found")
     
-    반환 필드: table_name(구분), id, creator, updated_at, description
-    사용자 표시: table_name, creator, updated_at, description (id 제외)
-    """
-    if include_relations:
-        # 연관 테이블 포함
-        result = crud.get_general_with_relations(db, general_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="General not found")
+    # 2. 스키마 포함 요청 시 추가 💡
+    if include_schema:
+        # Pydantic 모델에는 'schema' 필드가 없으므로, 
+        # 임시로 dict로 변환해서 넣어주거나 프론트엔드에서 처리해야 함.
+        # 하지만 프론트엔드 코드(loadRelationsData)를 보니 response.json()에 schema가 있기를 기대함.
         
-        if include_schema:
-            result["schema"] = get_general_relations_schema()
+        # 방법: Pydantic 모델을 우회하여 dict 반환 (가장 빠름)
+        response_data = schemas.GeneralResponse.model_validate(result).model_dump()
+        response_data['schema'] = get_general_relations_schema()
+        return response_data
         
-        return result
-    else:
-        # 기본 정보만
-        general = crud.get_general_by_id(db, general_id)
-        if not general:
-            raise HTTPException(status_code=404, detail="General not found")
-        
-        return {
-            "id": general.id,
-            "name": general.name,
-            "client": general.client,
-            "creator": general.creator,
-            "description": general.description,
-            "created_at": general.created_at,
-            "updated_at": general.updated_at
-        }
+    return result
 
-
-@handler.put("/{general_id}")
+@handler.put("/{general_id}", response_model=schemas.GeneralResponse)
 def update_general(
     general_id: UUID,
     general_update: schemas.GeneralUpdate,
     db: Session = Depends(get_db)
 ):
-    """
-    General 수정 (부분 수정)
-    
-    - general_id: General ID (UUID)
-    - name, client, creator, description 중 수정할 항목만 전송
-    """
     updated_general = crud.update_general(
         db=db,
         general_id=general_id,
@@ -224,28 +122,13 @@ def update_general(
     if not updated_general:
         raise HTTPException(status_code=404, detail="General not found")
     
-    return {
-        "id": updated_general.id,
-        "name": updated_general.name,
-        "client": updated_general.client,
-        "creator": updated_general.creator,
-        "description": updated_general.description,
-        "updated_at": updated_general.updated_at,
-        "message": "General updated successfully"
-    }
-
+    return updated_general
 
 @handler.delete("/{general_id}")
 def delete_general(
     general_id: UUID,
     db: Session = Depends(get_db)
 ):
-    """
-    General 삭제
-    
-    - general_id: General ID (UUID)
-    - CASCADE로 연관된 Quotation, Detailed, PriceCompare도 자동 삭제
-    """
     success = crud.delete_general(db, general_id)
     if not success:
         raise HTTPException(status_code=404, detail="General not found")

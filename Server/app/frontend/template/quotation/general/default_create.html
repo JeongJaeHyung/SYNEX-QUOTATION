@@ -57,10 +57,18 @@
         <div id="relationsTableContainer"></div>
     </div>
 
-    {# 액션 푸터 #}
+    {# 액션 푸터 (버튼 영역) #}
     <div class="action-footer">
-        <button class="btn btn-secondary btn-lg" onclick="goToList()">목록으로</button>
-        <button class="btn btn-success btn-lg" onclick="submitGeneral()" id="submitBtn">등록완료</button>
+        <div id="derivativeBtnGroup" class="derivative-group" style="display: none;">
+            <button class="btn btn-secondary" onclick="alert('견적서(갑지) 기능 준비 중')">📄 갑지 만들기</button>
+            <button class="btn btn-secondary" onclick="alert('견적서(을지) 기능 준비 중')">📑 을지 만들기</button>
+            <button class="btn btn-primary" onclick="createPriceCompare()">💰 내정가 견적비교서 만들기</button>
+        </div>
+
+        <div class="right-group">
+            <button class="btn btn-secondary btn-lg" onclick="goToList()">목록으로</button>
+            <button class="btn btn-success btn-lg" onclick="submitGeneral()" id="submitBtn">등록완료</button>
+        </div>
     </div>
 </div>
 
@@ -86,6 +94,7 @@ function initializePage() {
     const submitBtn = document.getElementById('submitBtn');
     const viewOnlyFields = document.getElementById('viewOnlyFields');
     const relationsSection = document.getElementById('relationsSection');
+    const derivativeBtnGroup = document.getElementById('derivativeBtnGroup'); // 추가됨
     
     if (pageMode === 'create') {
         // 생성 모드
@@ -94,13 +103,15 @@ function initializePage() {
         submitBtn.style.display = 'inline-block';
         viewOnlyFields.style.display = 'none';
         relationsSection.style.display = 'none';
+        derivativeBtnGroup.style.display = 'none'; // 생성 중엔 숨김
         
     } else if (pageMode === 'view') {
         // 조회 모드 - 모든 필드 비활성화
         titleElement.textContent = '견적서(일반) 조회';
-        submitBtn.style.display = 'none';
+        submitBtn.style.display = 'none'; // 저장 버튼 숨김 (필요시 수정버튼으로 변경 가능)
         viewOnlyFields.style.display = 'flex';
         relationsSection.style.display = 'block';
+        derivativeBtnGroup.style.display = 'flex'; // [핵심] 파생 버튼 보임
         
         // 입력 필드 모두 비활성화
         disableAllInputs();
@@ -111,6 +122,13 @@ function initializePage() {
             loadRelationsData(generalId);
         }
     }
+}
+
+// [추가된 함수] 내정가 비교서 만들기 페이지 이동
+function createPriceCompare() {
+    if (!generalId) return alert('잘못된 접근입니다.');
+    // 우리가 만든 서브 페이지로 이동 (General ID 전달)
+    window.location.href = `/service/quotation/general/price_compare/register?general_id=${generalId}`;
 }
 
 // 모든 입력 필드 비활성화 (View 모드)
@@ -132,19 +150,21 @@ async function loadGeneralData(id) {
         
         const data = await response.json();
         
-        // 상단 정보 설정
-        document.getElementById('generalName').value = data.name || '';
-        document.getElementById('client').value = data.client || '';
-        document.getElementById('creator').value = data.creator || '';
-        document.getElementById('description').value = data.description || '';
+        // 상단 정보 설정 (Response basic 구조 대응)
+        const info = data.general || data; // 구조 유연하게 처리
+
+        document.getElementById('generalName').value = info.name || '';
+        document.getElementById('client').value = info.client || '';
+        document.getElementById('creator').value = info.creator || '';
+        document.getElementById('description').value = info.description || '';
         
         // 날짜 포맷팅
-        if (data.created_at) {
-            const createdDate = new Date(data.created_at);
+        if (info.created_at) {
+            const createdDate = new Date(info.created_at);
             document.getElementById('createdAt').value = formatDateTime(createdDate);
         }
-        if (data.updated_at) {
-            const updatedDate = new Date(data.updated_at);
+        if (info.updated_at) {
+            const updatedDate = new Date(info.updated_at);
             document.getElementById('updatedAt').value = formatDateTime(updatedDate);
         }
         
@@ -163,7 +183,8 @@ async function loadRelationsData(id) {
     tableContainer.innerHTML = '';
     
     try {
-        const response = await fetch(`/api/v1/quotation/general/${id}?include_relations=true&include_schema=true`);
+        // API 호출
+        const response = await fetch(`/api/v1/quotation/general/${id}?include_relations=true`);
         
         if (!response.ok) {
             throw new Error('연관 데이터 로드 실패');
@@ -171,17 +192,23 @@ async function loadRelationsData(id) {
         
         const data = await response.json();
         
+        // 기본 스키마 정의
+        const schema = data.schema || {
+            "category": { "title": "구분", "type": "string", "ratio": 1 },
+            "title": { "title": "제목/비고", "type": "string", "ratio": 3 },
+            "creator": { "title": "작성자", "type": "string", "ratio": 1 },
+            "updated_at": { "title": "최종수정일", "type": "datetime", "format": "YYYY-MM-DD HH:mm", "ratio": 1.5 }
+        };
+        
+        // 데이터 필드명 매핑 (API 응답 -> 테이블 표시용)
+        const items = data.related_documents || data.items || [];
+
         // 연관 테이블 렌더링
-        renderRelationsTable(data.schema, data.relations);
+        renderRelationsTable(schema, items);
         
     } catch (error) {
         console.error('Error:', error);
-        tableContainer.innerHTML = `
-            <div class="empty-state" style="color: #ef4444;">
-                연관 데이터를 불러오는데 실패했습니다.<br>
-                <small>${error.message}</small>
-            </div>
-        `;
+        tableContainer.innerHTML = '<div class="empty-state">연관 데이터를 불러오지 못했습니다.</div>';
     } finally {
         loading.style.display = 'none';
     }
@@ -196,40 +223,41 @@ function renderRelationsTable(schema, items) {
         return;
     }
     
-    // ratio 합계 계산
     let totalRatio = 0;
     for (const key in schema) {
         totalRatio += schema[key].ratio || 1;
     }
     
-    // 테이블 HTML 생성
     let html = '<div class="table-container"><table class="data-table" id="relationsTable">';
     
-    // 헤더
     html += '<thead><tr>';
-    
     for (const key in schema) {
         const col = schema[key];
         const width = ((col.ratio || 1) / totalRatio * 100).toFixed(1);
         html += `<th class="col-left" style="width: ${width}%">${col.title}</th>`;
     }
-    
     html += '</tr></thead><tbody>';
     
-    // 데이터 행
     items.forEach((item) => {
         const relationId = item.id;
         const tableName = item.table_name;
         
-        // 테이블 종류에 따라 다른 링크 생성
         let detailUrl = '#';
-        if (tableName === 'Quotation') {
-            detailUrl = `/service/quotation/parts/form?mode=view&id=${relationId}`;
-        } else if (tableName === 'Detailed') {
+
+        // ▼▼▼ [핵심 수정 부분] 테이블 이름에 따른 상세 페이지 매핑 ▼▼▼
+        if (tableName === 'Quotation' || tableName === 'Machine' || tableName === '장비 견적서') { 
+            // 장비 견적서 상세 (mode=view)
+            detailUrl = `/service/quotation/machine/form?mode=view&id=${relationId}`;
+        } 
+        else if (tableName === 'Detailed' || tableName === '견적서(상세)') {
+            // 을지 상세 (mode=view)
             detailUrl = `/service/quotation/detailed/form?mode=view&id=${relationId}`;
-        } else if (tableName === 'PriceCompare') {
-            detailUrl = `/service/quotation/compare/form?mode=view&id=${relationId}`;
+        } 
+        else if (tableName === 'PriceCompare' || tableName === '내정가비교' || tableName === '비교 견적서') { 
+            // [중요] 내정가 비교서 상세 페이지 (/detail/{id})
+            detailUrl = `/service/quotation/general/price_compare/detail/${relationId}`;
         }
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
         
         html += `<tr class="clickable" onclick="window.location.href='${detailUrl}'">`;
         
@@ -238,36 +266,32 @@ function renderRelationsTable(schema, items) {
             const value = item[key];
             
             html += `<td class="col-left">`;
-            
-            // 구분(table_name)에 뱃지 표시
             if (key === 'table_name') {
                 html += formatTableName(value);
             } else {
                 html += formatValue(value, col.type, col.format);
             }
-            
             html += '</td>';
         }
-        
         html += '</tr>';
     });
     
     html += '</tbody></table></div>';
-    
     tableContainer.innerHTML = html;
 }
 
-// 테이블명 포맷팅 (뱃지)
 function formatTableName(tableName) {
+    // 뱃지 표시 로직
     const badges = {
-        'Quotation': '<span class="badge badge-primary">견적서(부품)</span>',
+        'Quotation': '<span class="badge badge-primary">장비 견적서</span>',
+        'Machine': '<span class="badge badge-primary">장비 견적서</span>',
         'Detailed': '<span class="badge badge-info">견적서(상세)</span>',
-        'PriceCompare': '<span class="badge badge-warning">견적서(비교)</span>'
+        'PriceCompare': '<span class="badge badge-warning">내정가 비교</span>',
+        '비교 견적서': '<span class="badge badge-warning">내정가 비교</span>' // 한글 이름 대응
     };
     return badges[tableName] || tableName;
 }
 
-// 날짜 포맷팅
 function formatDateTime(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -277,48 +301,30 @@ function formatDateTime(date) {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
-// 값 포맷팅
 function formatValue(value, type, format) {
     if (value === null || value === undefined || value === '') {
         return '<span class="text-muted">-</span>';
     }
-    
     switch(type) {
         case 'datetime':
-            if (format === 'YYYY-MM-DD HH:mm') {
-                return value.substring(0, 16).replace('T', ' ');
-            }
+            if (format === 'YYYY-MM-DD HH:mm') return value.substring(0, 16).replace('T', ' ');
             return value;
-        
         case 'date':
             return value.substring(0, 10).replace(/-/g, '. ');
-        
         default:
             return value;
     }
 }
 
-// 견적서 등록
 async function submitGeneral() {
     const generalName = document.getElementById('generalName').value.trim();
     const client = document.getElementById('client').value.trim();
     const creator = document.getElementById('creator').value.trim();
     const description = document.getElementById('description').value.trim();
     
-    // 유효성 검증
-    if (!generalName) {
-        alert('견적서명을 입력하세요.');
-        document.getElementById('generalName').focus();
-        return;
-    }
+    if (!generalName) { alert('견적서명을 입력하세요.'); document.getElementById('generalName').focus(); return; }
+    if (!creator) { alert('작성자명을 입력하세요.'); document.getElementById('creator').focus(); return; }
     
-    if (!creator) {
-        alert('작성자명을 입력하세요.');
-        document.getElementById('creator').focus();
-        return;
-    }
-    
-    // API 요청 데이터 구성
     const requestData = {
         name: generalName,
         client: client || null,
@@ -326,9 +332,6 @@ async function submitGeneral() {
         description: description || null
     };
     
-    console.log('Request Data:', requestData);
-    
-    // API 호출
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = '등록 중...';
@@ -336,16 +339,13 @@ async function submitGeneral() {
     try {
         const response = await fetch('/api/v1/quotation/general', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData)
         });
         
         if (response.ok) {
             const data = await response.json();
             alert(`견적서(일반)가 등록되었습니다!\nID: ${data.id}`);
-            // 조회 페이지로 이동
             window.location.href = `/service/quotation/general/form?mode=view&id=${data.id}`;
         } else {
             const error = await response.json();
@@ -360,9 +360,8 @@ async function submitGeneral() {
     }
 }
 
-// 목록으로 이동
 function goToList() {
-    window.location.href = '/service/quotation/general/list';
+    window.location.href = '/service/quotation/general';
 }
 </script>
 
@@ -467,20 +466,9 @@ function goToList() {
     font-weight: 600;
 }
 
-.badge-primary {
-    background-color: #dbeafe;
-    color: #1e40af;
-}
-
-.badge-info {
-    background-color: #e0e7ff;
-    color: #4338ca;
-}
-
-.badge-warning {
-    background-color: #fef3c7;
-    color: #92400e;
-}
+.badge-primary { background-color: #dbeafe; color: #1e40af; }
+.badge-info { background-color: #e0e7ff; color: #4338ca; }
+.badge-warning { background-color: #fef3c7; color: #92400e; }
 
 /* 테이블 행 호버 */
 .data-table tbody tr.clickable {
@@ -503,11 +491,21 @@ function goToList() {
 /* 액션 푸터 */
 .action-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+    justify-content: space-between; /* 양 끝 정렬 */
+    align-items: center;
     margin-top: 24px;
     padding-top: 24px;
     border-top: 1px solid #e5e7eb;
+}
+
+.derivative-group {
+    display: flex;
+    gap: 8px;
+}
+
+.right-group {
+    display: flex;
+    gap: 12px;
 }
 
 .btn-lg {
@@ -534,6 +532,15 @@ function goToList() {
 @media (max-width: 1024px) {
     .form-row {
         grid-template-columns: 1fr;
+    }
+    .action-footer {
+        flex-direction: column;
+        gap: 16px;
+    }
+    .derivative-group, .right-group {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 }
 </style>

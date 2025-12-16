@@ -1,0 +1,109 @@
+/* price_compare_detail.css */
+
+.page-content {
+    background-color: #fff;
+    padding: 20px;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+}
+
+.header-section h2 { margin: 0; font-size: 24px; color: #111; }
+.doc-info { font-size: 13px; color: #666; }
+
+/* 엑셀 테이블 스타일 */
+.excel-table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid #000; /* 외곽선 진하게 */
+    font-size: 13px;
+    color: #000;
+}
+
+.excel-table th, .excel-table td {
+    border: 1px solid #999; /* 내부 선 */
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+/* 헤더 스타일 */
+.excel-table thead th {
+    background-color: #f3f3f3;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* 특정 색상 */
+.yellow-bg {
+    background-color: #ffff00 !important; /* 엑셀의 쨍한 노란색 */
+}
+
+.header-top th { border-bottom: 1px solid #999; }
+
+/* 정렬 유틸리티 */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+.font-bold { font-weight: 700; }
+.text-red { color: red; }
+
+/* 섹션별 스타일 */
+.section-subtotal-label {
+    background-color: #e0e0e0;
+    text-align: center;
+    font-weight: 600;
+}
+
+.highlight-row td {
+    background-color: #f0f0f0;
+    border-top: 2px solid #000;
+    border-bottom: 2px solid #000;
+}
+
+.final-total-row td {
+    background-color: #e6e6e6;
+    border-top: 2px solid #000;
+    height: 40px;
+    font-size: 15px;
+}
+
+/* 특이사항 섹션 */
+.remarks-section {
+    display: flex;
+    border: 1px solid #000;
+    min-height: 60px;
+    margin-top: 20px;
+}
+
+.remarks-label {
+    width: 100px;
+    background-color: #f3f3f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    border-right: 1px solid #000;
+}
+
+.remarks-content {
+    flex: 1;
+    padding: 10px;
+    white-space: pre-wrap;
+}
+
+/* 하단 버튼 */
+.action-footer {
+    margin-top: 20px;
+    text-align: right;
+}
