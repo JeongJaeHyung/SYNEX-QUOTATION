@@ -146,6 +146,17 @@ body {
     border-radius: var(--border-radius-md);
 }
 
+.main-content.flat-main {
+    padding-top: 0;
+}
+
+.content-container.no-padding {
+    background-color: transparent;
+    padding: 0;
+    min-height: 0;
+    border-radius: 0;
+}
+
 /* ========================================
    하단 푸터
    ======================================== */

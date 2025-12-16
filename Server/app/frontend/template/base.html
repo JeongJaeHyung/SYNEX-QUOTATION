@@ -18,6 +18,12 @@
             
             <!-- 메인 메뉴 -->
             <nav class="navbar-menu">
+                <a href="/service/quotation/summary" class="nav-item {% if current_page == 'quotation_summary' %}active{% endif %}">
+                    견적서(갑지)
+                </a>
+                <a href="/service/quotation/detailed" class="nav-item {% if current_page == 'quotation_detailed' %}active{% endif %}">
+                    견적서(을지)
+                </a>
                 <a href="/service/quotation/default" class="nav-item {% if current_page == 'quotation_default' %}active{% endif %}">
                     견적서(일반)
                 </a>
@@ -32,8 +38,8 @@
     </header>
 
     <!-- 메인 콘텐츠 영역 -->
-    <main class="main-content">
-        <div class="content-container">
+    <main class="main-content {% if current_page in ['quotation_summary', 'quotation_detailed'] %}flat-main{% endif %}">
+        <div class="content-container {% if current_page in ['quotation_summary', 'quotation_detailed'] %}no-padding{% endif %}">
             {% block content %}
             <!-- 여기에 각 페이지의 내용이 들어갑니다 -->
             {% endblock %}
