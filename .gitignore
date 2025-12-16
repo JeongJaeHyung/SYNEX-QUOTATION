@@ -1,2 +1,6 @@
 __pycache__/
 *.py[cod]
+
+# Markdown files except README
+*.md
+!README.md

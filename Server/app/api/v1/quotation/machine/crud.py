@@ -183,7 +183,10 @@ def get_machine_resources_detail(db: Session, machine_id: UUID) -> List[dict]:
     machine_resources = (
         db.query(MachineResources)
         .filter(MachineResources.machine_id == machine_id)
-        .filter(MachineResources.quantity > 0) # 수량이 0보다 큰 항목만 포함
+        .filter(
+            (MachineResources.quantity > 0) |
+            ((MachineResources.maker_id == "T000") & (MachineResources.display_major.like("%인건비%")))
+        ) # 수량>0 또는 인건비(T000+display_major=인건비)
         .order_by(MachineResources.order_index.asc()) # 표시 순서대로 정렬
         .all()
     )
@@ -191,20 +194,75 @@ def get_machine_resources_detail(db: Session, machine_id: UUID) -> List[dict]:
     resources = [] # 최종 반환될 자재 상세 정보 리스트
     
     for mr in machine_resources:
+        # --- T000 타입: display_major로 인건비/집계 구분 ---
+        # T000은 인건비와 집계 항목 모두에 사용되므로 display_major를 확인해서 분기
+        if mr.maker_id == "T000":
+            is_labor = mr.display_major and "인건비" in mr.display_major
+
+            if is_labor:
+                # 인건비 항목
+                labor_name = mr.display_model_name or mr.resources_id.replace("LABOR_", "인건비 ")
+                resources.append({
+                    'item_code': f"{mr.maker_id}-{mr.resources_id}",
+                    'maker_id': mr.maker_id,
+                    'resources_id': mr.resources_id,
+                    'model_name': labor_name,
+                    'unit': mr.display_unit or 'M/D',
+                    'category_major': mr.display_major or '인건비',
+                    'category_minor': mr.display_minor or '인건비',
+                    'maker_name': mr.display_maker_name or '-',
+                    'ul': False,
+                    'ce': False,
+                    'kc': False,
+                    'etc': None,
+                    'solo_price': mr.solo_price,
+                    'quantity': mr.quantity,
+                    'subtotal': mr.solo_price * mr.quantity,
+                    'order_index': mr.order_index,
+                    'display_major': mr.display_major,
+                    'display_minor': mr.display_minor,
+                    'display_model_name': mr.display_model_name,
+                })
+            else:
+                # 집계 항목
+                item_name_map = {
+                    "LOCAL_MAT": "Local 자재",
+                    "OPERATION_PC": "운영 PC/주액 PC",
+                }
+                resources.append({
+                    'item_code': f"{mr.maker_id}-{mr.resources_id}",
+                    'maker_id': mr.maker_id,
+                    'resources_id': mr.resources_id,
+                    'model_name': mr.display_model_name or item_name_map.get(mr.resources_id, mr.resources_id),
+                    'unit': mr.display_unit or 'ea',
+                    'category_major': mr.display_major or '집계',
+                    'category_minor': mr.display_minor or '수동입력',
+                    'maker_name': mr.display_maker_name or '-',
+                    'ul': False,
+                    'ce': False,
+                    'kc': False,
+                    'etc': None,
+                    'solo_price': mr.solo_price,
+                    'quantity': mr.quantity,
+                    'subtotal': mr.solo_price * mr.quantity,
+                    'order_index': mr.order_index,
+                    'display_major': mr.display_major,
+                    'display_minor': mr.display_minor,
+                    'display_model_name': mr.display_model_name,
+                })
+
         # --- SUMMARY 타입 (Local 자재, 운영 PC 등) 처리 ---
-        # 이 항목들은 실제 Resources 테이블에 매핑되지 않고, 가상으로 생성됩니다.
-        if mr.maker_id == "SUMMARY" or mr.maker_id == "T000": # T000도 SUMMARY처럼 처리될 수 있음 (관례)
+        elif mr.maker_id == "SUMMARY":
             item_name_map = {
                 "LOCAL_MAT": "Local 자재",
                 "OPERATION_PC": "운영 PC/주액 PC",
-                # "CABLE_ETC"도 여기에 추가될 수 있음
             }
-            
+
             resources.append({
                 'item_code': f"{mr.maker_id}-{mr.resources_id}",
                 'maker_id': mr.maker_id,
                 'resources_id': mr.resources_id,
-                'model_name': mr.display_model_name or item_name_map.get(mr.resources_id, mr.resources_id), # 화면 표시용 이름
+                'model_name': mr.display_model_name or item_name_map.get(mr.resources_id, mr.resources_id),
                 'unit': mr.display_unit or 'ea',
                 'category_major': mr.display_major or '집계',
                 'category_minor': mr.display_minor or '수동입력',
@@ -212,18 +270,20 @@ def get_machine_resources_detail(db: Session, machine_id: UUID) -> List[dict]:
                 'ul': False,
                 'ce': False,
                 'kc': False,
-                'etc': None, # SUMMARY 항목은 기타 인증/비고 없음
+                'etc': None,
                 'solo_price': mr.solo_price,
                 'quantity': mr.quantity,
-                'subtotal': mr.solo_price * mr.quantity
+                'subtotal': mr.solo_price * mr.quantity,
+                'order_index': mr.order_index,
+                'display_major': mr.display_major,
+                'display_minor': mr.display_minor,
+                'display_model_name': mr.display_model_name,
             })
-            
+
         # --- LABOR 타입 (인건비) 처리 ---
-        # 인건비 항목 역시 가상으로 데이터를 생성합니다.
-        elif mr.maker_id == "LABOR" or mr.maker_id == "T000": # T000이 LABOR로도 쓰일 수 있음
-            # resources_id가 "LABOR_0", "LABOR_1"과 같은 형식일 경우 "인건비 " 접두사를 붙여 이름 생성
+        elif mr.maker_id == "LABOR":
             labor_name = mr.display_model_name or mr.resources_id.replace("LABOR_", "인건비 ")
-            
+
             resources.append({
                 'item_code': f"{mr.maker_id}-{mr.resources_id}",
                 'maker_id': mr.maker_id,
@@ -236,10 +296,14 @@ def get_machine_resources_detail(db: Session, machine_id: UUID) -> List[dict]:
                 'ul': False,
                 'ce': False,
                 'kc': False,
-                'etc': None, # 인건비는 기타 인증/비고 없음
+                'etc': None,
                 'solo_price': mr.solo_price,
                 'quantity': mr.quantity,
-                'subtotal': mr.solo_price * mr.quantity
+                'subtotal': mr.solo_price * mr.quantity,
+                'order_index': mr.order_index,
+                'display_major': mr.display_major,
+                'display_minor': mr.display_minor,
+                'display_model_name': mr.display_model_name,
             })
             
         # --- 일반 부품 처리 ---
@@ -251,6 +315,7 @@ def get_machine_resources_detail(db: Session, machine_id: UUID) -> List[dict]:
                     MachineResources.resources_id,
                     MachineResources.solo_price,
                     MachineResources.quantity,
+                    MachineResources.order_index,
                     MachineResources.display_major,
                     MachineResources.display_minor,
                     MachineResources.display_model_name,
@@ -300,7 +365,11 @@ def get_machine_resources_detail(db: Session, machine_id: UUID) -> List[dict]:
                     'etc': result.etc,
                     'solo_price': result.solo_price,
                     'quantity': result.quantity,
-                    'subtotal': result.solo_price * result.quantity # 소계 계산
+                    'subtotal': result.solo_price * result.quantity,
+                    'order_index': result.order_index,
+                    'display_major': mr.display_major,
+                    'display_minor': mr.display_minor,
+                    'display_model_name': mr.display_model_name,
                 })
     
     return resources

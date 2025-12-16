@@ -28,7 +28,7 @@ PARTS_LIST_URL = f"{API_BASE_URL}/parts"
 PARTS_CREATE_URL = f"{API_BASE_URL}/parts"
 MAKER_CREATE_URL = f"{API_BASE_URL}/maker"
 
-EXCEL_FILE_PATH = "tmp/SYNEX+QUOTATION INFO (1).xlsx"
+EXCEL_FILE_PATH = "SYNEX+QUOTATION INFO (1).xlsx"
 
 # 엑셀 시트 인덱스(0-based): 1~3번 시트는 마스터, 4~9번 시트는 템플릿(= 3~8)
 TEMPLATE_SHEET_INDICES = list(range(3, 9))
@@ -191,6 +191,13 @@ def add_part_to_index(parts_index: dict, part: dict) -> None:
         if key_mm[0] and key_mm[1]:
             parts_index["by_major_minor_empty_name"].setdefault(key_mm, part_payload)
 
+    # 인건비/집계 항목은 by_minor_labor에도 추가 (major+minor 키로 저장)
+    if "인건비" in major or "집계" in major or part.get("maker_id") == "T000":
+        if minor:
+            # major+minor 조합으로 저장하여 인건비/집계 구분
+            major_key = "집계" if "집계" in major else "인건비"
+            parts_index["by_minor_labor"].setdefault((major_key, normalize_key(minor)), part_payload)
+
 
 def create_part_from_template_row(parts_index: dict, row_payload: dict) -> dict | None:
     """
@@ -220,7 +227,7 @@ def create_part_from_template_row(parts_index: dict, row_payload: dict) -> dict 
 
     payload = {
         "maker_name": maker_name,
-        "major_category": major,
+        "major_category": "인건비" if major in LABOR_MAJORS else major,
         "minor_category": minor,
         "name": name,  # labor/summary는 "" 가능
         "unit": clean_value(row_payload.get("unit")) or ("M/D" if major in LABOR_MAJORS else "ea"),
@@ -329,7 +336,7 @@ def deduplicate_template_name(machine_name: str, template_title: str) -> str | N
         new_name = f"[DUPLICATE] {template_title} ({mid})"
         put_json(f"{MACHINE_API_URL}{mid}", {"name": new_name})
 
-    print(f"🧹 템플릿 이름 중복 해소: '{machine_name}' -> keep={keep}, renamed={len(to_rename)}")
+    print(f"[*] 템플릿 이름 중복 해소: '{machine_name}' -> keep={keep}, renamed={len(to_rename)}")
     return keep
 
 
@@ -344,6 +351,7 @@ def fetch_all_parts_index() -> dict:
     by_maker_model: dict[tuple[str, str], dict] = {}
     by_maker_model_loose: dict[tuple[str, str], dict] = {}
     by_major_minor_empty_name: dict[tuple[str, str, str], dict] = {}
+    by_minor_labor: dict[str, dict] = {}  # [신규] 인건비 항목은 minor만으로 매칭 시도
 
     skip = 0
     limit = 1000
@@ -368,8 +376,15 @@ def fetch_all_parts_index() -> dict:
                 "resources_id": item.get("id"),
                 "solo_price": item.get("solo_price", 0) or 0,
                 "unit": item.get("unit") or "",
-                "name": item.get("name") or "",  # [추가] 이름 정보 저장
+                "name": item.get("name") or "",
             }
+
+            # [신규] 인건비/집계 인덱싱 (major가 인건비 또는 집계인 경우)
+            if "인건비" in major or "집계" in major or item.get("maker_id") == "T000":
+                if minor:
+                    # major+minor 조합으로 저장하여 인건비/집계 구분
+                    major_key = "집계" if "집계" in major else "인건비"
+                    by_minor_labor[(major_key, normalize_key(minor))] = part_payload
 
             # 1) maker + model (가장 안정적인 매칭)
             maker_k = normalize_key(maker_name)
@@ -394,6 +409,7 @@ def fetch_all_parts_index() -> dict:
         "by_maker_model": by_maker_model,
         "by_maker_model_loose": by_maker_model_loose,
         "by_major_minor_empty_name": by_major_minor_empty_name,
+        "by_minor_labor": by_minor_labor, # 반환
     }
 
 
@@ -414,6 +430,20 @@ def find_part(parts_index: dict, maker_name: str, major: str, minor: str, name: 
     if major and minor and not name_k:
         key_mm = (normalize_key(major), normalize_key(minor), normalize_key(name))
         found = parts_index["by_major_minor_empty_name"].get(key_mm)
+        if found:
+            return found
+
+    # 3) 인건비/집계 항목: major+minor로 매칭 (major가 인건비/집계이거나 maker가 공백/" "인 경우)
+    if minor and (major in (LABOR_MAJORS | SUMMARY_MAJORS) or maker_name in ("", " ", "공백")):
+        major_key = "집계" if major in SUMMARY_MAJORS else "인건비"
+        found = parts_index["by_minor_labor"].get((major_key, normalize_key(minor)))
+        if found:
+            return found
+
+    # 4) 인건비/집계 항목: major+name으로 매칭 시도 (name이 있는 경우)
+    if name_k and (major in (LABOR_MAJORS | SUMMARY_MAJORS) or maker_name in ("", " ", "공백")):
+        major_key = "집계" if major in SUMMARY_MAJORS else "인건비"
+        found = parts_index["by_minor_labor"].get((major_key, normalize_key(name)))
         if found:
             return found
 
@@ -448,7 +478,8 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
         row_unit = clean_value(row[header_map["단위"]] if "단위" in header_map and header_map["단위"] < len(row) else None)
 
         qty = parse_int(row[header_map["수량"]] if header_map["수량"] < len(row) else None, default=0)
-        if qty <= 0 and major not in (SUMMARY_MAJORS | LABOR_MAJORS):
+        # 인건비/집계는 qty=0이어도 저장, 일반부품은 qty>0만 저장
+        if qty <= 0 and major not in (LABOR_MAJORS | SUMMARY_MAJORS):
             continue
 
         # 일반 부품은 모델명이 필요하지만, 집계/인건비는 name이 비어있을 수 있음
@@ -463,6 +494,19 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
 
         part = find_part(parts_index, maker_name=maker_name, major=major, minor=minor, name=name)
         
+        # [Fix] 엑셀의 Unit(major) 컬럼이 깨져서 읽히더라도, DB상 T000(인건비/집계)이면 인건비로 강제 보정
+        if part and (part.get("maker_id") in ("T000", "SUMMARY") or "LABOR" in str(part.get("item_code", ""))):
+             # 이미 등록된 인건비 부품이면 major를 '인건비'로 통일 (단, SUMMARY는 '전장/제어부 집계'일 수 있음)
+             # 여기서는 T000 중에서도 이름이나 기존 카테고리를 보고 판단해야 함.
+             # 단순히 T000이면 다 인건비로 취급하기엔 '전장/제어부 집계' 등과 섞일 수 있음.
+             # 하지만 인건비 항목들은 보통 가격이 있거나 이름에 특징이 있음.
+             # 가장 안전한 건: DB 부품의 major_category가 '인건비'이면 그대로 따르는 것.
+             # 근데 DB 부품 major도 깨져있을 수 있음.
+             
+             # 가격이 있는 T000은 대부분 인건비임 (집계 항목은 0원)
+             if part.get("solo_price", 0) > 0 or price > 0:
+                 major = "인건비"
+
         # [신규] 기존 인건비/집계 항목이 부실하면(이름 없음, 가격 0) 업데이트
         if part and major in (SUMMARY_MAJORS | LABOR_MAJORS):
             need_update = False
@@ -526,18 +570,26 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
             )
             continue
 
+        # 인건비/집계 구분: 엑셀 Unit(major) 컬럼을 그대로 사용
+        # - T000이라도 Unit이 "전장/제어부 집계"이면 집계, "인건비"이면 인건비
+        is_labor_item = major in LABOR_MAJORS
+        is_summary_item = major in SUMMARY_MAJORS
+        is_special_item = is_labor_item or is_summary_item or part.get("maker_id") == "T000"
+        display_name = name or (minor if is_special_item else None)
+
         resources.append(
             {
                 "maker_id": part["maker_id"],
                 "resources_id": part["resources_id"],
                 "solo_price": int(price) if int(price) > 0 else int(part.get("solo_price", 0) or 0),
                 "quantity": int(qty),
-                # 템플릿 표시값은 마스터(Resources) 분류와 다를 수 있으므로 별도 저장
+                "order_index": len(resources),  # 엑셀 순서 유지
+                # 템플릿 표시값: 엑셀 Unit(major) 컬럼을 그대로 저장
                 "display_major": major or None,
                 "display_minor": minor or None,
-                "display_model_name": name or None,
+                "display_model_name": display_name,
                 "display_maker_name": maker_name or None,
-                "display_unit": row_unit or None,
+                "display_unit": "M/D" if is_labor_item and not row_unit else (row_unit or None),
             }
         )
 
@@ -574,17 +626,17 @@ def main():
         try:
             resources, missing, created_parts_count = parse_template_sheet(ws, parts_index)
         except Exception as e:
-            print(f"❌ 실패: 시트 파싱 오류: {e}")
+            print(f"[FAIL] 실패: 시트 파싱 오류: {e}")
             continue
 
         if missing:
-            print(f"⚠️ 매칭 실패 {len(missing)}건 (Parts에 없는 행).")
+            print(f"[WARN] 매칭 실패 {len(missing)}건 (Parts에 없는 행).")
             for m in missing[:15]:
                 print(f"  - row {m['row']}: {m['maker_name']} | {m['Unit']} | {m['품목']} | {m['모델명/규격']} (qty={m['수량']}, price={m['단가']})")
             if len(missing) > 15:
                 print("  ... (생략)")
             if STRICT_MODE:
-                print("❌ STRICT_MODE=True 이므로 이 시트는 등록하지 않습니다.")
+                print("[FAIL] STRICT_MODE=True 이므로 이 시트는 등록하지 않습니다.")
                 continue
 
         if not resources:
@@ -592,7 +644,7 @@ def main():
             continue
 
         if created_parts_count:
-            print(f"🧩 마스터에 자동 추가된 Parts: {created_parts_count}개")
+            print(f"[*] 마스터에 자동 추가된 Parts: {created_parts_count}개")
 
         payload = {
             "name": machine_name,
@@ -615,12 +667,12 @@ def main():
         if 200 <= status < 300:
             try:
                 resp = json.loads(body)
-                print(f"✅ {action} 완료: {machine_name} (id={resp.get('id')}, resources={resp.get('resource_count')}, total_price={resp.get('total_price')})")
+                print(f"[OK] {action} 완료: {machine_name} (id={resp.get('id')}, resources={resp.get('resource_count')}, total_price={resp.get('total_price')})")
             except Exception:
-                print(f"✅ {action} 완료: {machine_name} (status={status})")
+                print(f"[OK] {action} 완료: {machine_name} (status={status})")
         else:
             preview = body[:300] + ("..." if len(body) > 300 else "")
-            print(f"❌ {action} 실패: {machine_name} (status={status}) 응답={preview}")
+            print(f"[FAIL] {action} 실패: {machine_name} (status={status}) 응답={preview}")
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ class MachineResourceCreate(BaseModel):
     resources_id: str = Field(..., max_length=6)
     solo_price: int = Field(..., ge=0)
     quantity: int = Field(..., ge=0)
+    order_index: Optional[int] = Field(None, ge=0)
     display_major: Optional[str] = Field(None, max_length=50)
     display_minor: Optional[str] = Field(None, max_length=50)
     display_model_name: Optional[str] = Field(None, max_length=100)
@@ -38,6 +39,10 @@ class MachineResourceDetail(BaseModel):
     solo_price: int
     quantity: int
     subtotal: int
+    order_index: Optional[int] = None
+    display_major: Optional[str] = None
+    display_minor: Optional[str] = None
+    display_model_name: Optional[str] = None
 
 # ============================================================
 # Machine Schemas

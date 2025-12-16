@@ -10,8 +10,7 @@ let currentSortOrder = 'asc';
 // [수정] 수동 항목 관리 객체에 id 필드 추가 (API에서 받아온 실제 ID 저장용)
 let manualSummaryItems = {
     LOCAL_MAT: { id: null, price: 0, quantity: 0, subtotal: 0 },     // Local 자재
-    OPERATION_PC: { id: null, price: 0, quantity: 0, subtotal: 0 },  // 운영 PC
-    CABLE_ETC: { id: null, price: 0, quantity: 0, subtotal: 0 }      // [신규] 케이블 및 기타 잡자재
+    OPERATION_PC: { id: null, price: 0, quantity: 0, subtotal: 0 }   // 운영 PC
 };
 let laborItems = []; 
 
@@ -255,14 +254,19 @@ function applyMachineResourcesToForm(machineDetailData) {
     laborItems.forEach(item => {
         item.quantity = 0;
         item.subtotal = 0;
-        item.isTemplate = false; // [신규] 템플릿 포함 여부 초기화
+        item.isTemplate = false; 
     });
+
+    let orderedLaborItems = [];
+    let usedLaborIds = new Set();
 
     resources.forEach(resource => {
         const itemCode = resource.item_code;
 
-        // T000 시리즈 (집계 항목 및 인건비)
-        if (resource.maker_id === 'SUMMARY' || resource.maker_id === 'T000') {
+        // T000 시리즈 (집계 항목 및 인건비) - 인건비만 처리, 집계는 일반 부품으로 처리
+        const majorCategory = resource.display_major || resource.category_major || '';
+        const isLabor = majorCategory.includes('인건비');
+        if (resource.maker_id === 'SUMMARY' || (resource.maker_id === 'T000' && isLabor)) {
             // 1) 수동 항목 확인 (ID로 매칭)
             if (resource.resources_id === manualSummaryItems.LOCAL_MAT.id) {
                 updateManualItemFromDB('LOCAL_MAT', resource);
@@ -271,20 +275,72 @@ function applyMachineResourcesToForm(machineDetailData) {
             if (resource.resources_id === manualSummaryItems.OPERATION_PC.id) {
                 updateManualItemFromDB('OPERATION_PC', resource);
                 return;
-            }
-            if (resource.resources_id === manualSummaryItems.CABLE_ETC.id) {
-                updateManualItemFromDB('CABLE_ETC', resource);
-                return;
             }       
             // 2) 인건비 항목 확인
-            const targetItem = laborItems.find(i => i.id === resource.resources_id);
-            if (targetItem) {
+            let targetItem = laborItems.find(i => i.id === resource.resources_id);
+            
+            // [신규] 인건비/경비 항목 ID 매핑 (구 데이터 호환용 + 최신 DB 현행화)
+            const laborIdNames = {
+                "000010": "전장설계",
+                "000011": "PLC 프로그램 설계",
+                "000012": "HMI 작화",
+                "000013": "중판배선(I/O CHECK)",
+                "000014": "장비 배선(기구 Test)",
+                "000015": "전장 조립(Dry Run)",
+                "000016": "현장 설치 시운전(Wet Run)",
+                "000017": "운영 PC 셋팅",
+                "000018": "운영 PC 작화",
+                "000019": "중판배선",
+                "000020": "기체배선",
+                "000021": "IO CHECK 및 대응",
+                "000022": "하네스 인건비",
+                "000023": "해체 및 포장",
+                "000024": "고객사 셋업 및 대응",
+                "000025": "숙식비",
+                "000026": "일반관리비 + 안전관리비",
+                "000027": "제어 하드웨어 설계",
+                "000028": "제어 설치"
+            };
+
+            if (!targetItem) {
+                // API 목록에 없는 경우 (구버전 ID 등), 저장된 정보로 동적 생성
+                const resolvedName = resource.display_model_name || 
+                                     laborIdNames[resource.resources_id] || 
+                                     resource.model_name || 
+                                     resource.name ||
+                                     resource.display_minor ||
+                                     '인건비';
+                                     
+                targetItem = {
+                    item_code: resource.item_code || `LABOR-${resource.resources_id}`,
+                    id: resource.resources_id,
+                    name: resolvedName,
+                    unit: resource.display_unit || resource.unit || 'M/D',
+                    price: resource.solo_price || 0,
+                    quantity: resource.quantity || 0,
+                    subtotal: (resource.solo_price || 0) * (resource.quantity || 0),
+                    maker_id: resource.maker_id,
+                    isTemplate: true,
+                    ul: false, ce: false, kc: false, etc: null
+                };
+                // laborItems에 바로 넣지 않음 (순서 보장 위해 orderedLaborItems 사용)
+            } else {
                 targetItem.price = resource.solo_price;
                 targetItem.quantity = resource.quantity;
                 targetItem.subtotal = resource.solo_price * resource.quantity;
-                targetItem.isTemplate = true; // [신규] 템플릿에 포함된 항목임
-                return;
+                targetItem.isTemplate = true; 
+                
+                // 저장된 커스텀 이름/단위가 있다면 반영
+                if (resource.display_model_name) targetItem.name = resource.display_model_name;
+                else if (laborIdNames[resource.resources_id]) targetItem.name = laborIdNames[resource.resources_id]; 
+                
+                if (resource.display_unit) targetItem.unit = resource.display_unit;
             }
+
+            // 순서 보장을 위해 새 리스트에 추가
+            orderedLaborItems.push(targetItem);
+            usedLaborIds.add(targetItem.id);
+            return;
         }
         // 그 외 일반 부품
         // resource 객체에 id 필드가 없으면 resources_id를 id로 매핑
@@ -304,6 +360,19 @@ function applyMachineResourcesToForm(machineDetailData) {
             selectedOrder.push(itemCode);
         }
     });
+
+    // 템플릿에 없는 나머지 마스터 인건비 항목들을 뒤에 추가
+    laborItems.forEach(item => {
+        if (!usedLaborIds.has(item.id)) {
+            item.quantity = 0;
+            item.subtotal = 0;
+            item.isTemplate = false;
+            orderedLaborItems.push(item);
+        }
+    });
+
+    // 전역 laborItems 교체
+    laborItems = orderedLaborItems;
 
     setPartsViewMode('TEMPLATE');
     renderPartsTable();
@@ -414,9 +483,6 @@ async function loadParts(highlightItemCode = null) {
             if (item.minor_category === '운영 PC/주액 PC') {
                 manualSummaryItems.OPERATION_PC.id = item.id; // 예: "000009"
             }
-            if (item.minor_category === '케이블 및 기타 잡자재') { // [신규]
-                manualSummaryItems.CABLE_ETC.id = item.id;
-            }
         });
 
         // 일반 부품 필터링
@@ -427,8 +493,9 @@ async function loadParts(highlightItemCode = null) {
         
         // 인건비 데이터 추출
         const laborMasterData = (data.items || []).filter(item => {
-            return (item.major_category || item.category_major) === '인건비';
-        }).sort((a, b) => b.item_code.localeCompare(a.item_code)); 
+            const major = item.major_category || item.category_major || '';
+            return major.includes('인건비');
+        }).sort((a, b) => a.item_code.localeCompare(b.item_code)); // 오름차순 (등록 순서 유지) 
 
         if (laborItems.length === 0) {
             laborItems = laborMasterData.map(item => ({
@@ -983,16 +1050,27 @@ function updateSubtotal(itemCode) {
 function updateSummary() {
     const categoryOrder = ['전장 판넬 판금 및 명판', '판넬 차단기류', 'PLC Set', 'Touch Screen', '판넬 주요자재', '판넬 기타자재', '케이블 및 기타 잡자재'];
     const categoryTotals = {};
-    categoryOrder.forEach(cat => categoryTotals[cat] = 0);
-    
+    const categoryQty = {};
+    categoryOrder.forEach(cat => {
+        categoryTotals[cat] = 0;
+        categoryQty[cat] = 0;
+    });
+
     selectedParts.forEach(item => {
         const major = item.part.major_category || item.part.category_major || '기타';
-        if (categoryTotals[major] !== undefined) categoryTotals[major] += item.subtotal;
+        if (categoryTotals[major] !== undefined) {
+            categoryTotals[major] += item.subtotal;
+            categoryQty[major] += item.quantity || 0;
+        }
     });
-    
+
     categoryOrder.forEach(cat => {
         const row = document.querySelector(`#summaryTable tr[data-category="${cat}"]`);
-        if (row) row.querySelector('.summary-amount').textContent = categoryTotals[cat].toLocaleString('ko-KR');
+        if (row) {
+            row.querySelector('.summary-amount').textContent = categoryTotals[cat].toLocaleString('ko-KR');
+            const qtyCell = row.querySelector('.summary-qty');
+            if (qtyCell) qtyCell.textContent = categoryQty[cat].toLocaleString('ko-KR');
+        }
     });
     
     let materialTotal = 0;
@@ -1069,11 +1147,23 @@ async function submitMachine() {
         if (item.quantity > 0) {
             // ID가 없으면 에러 방지를 위해 경고 (정상적이라면 loadParts에서 채워짐)
             const resourceId = item.id || (key === 'LOCAL_MAT' ? '000008' : (key === 'OPERATION_PC' ? '000009' : '000000')); 
-            resources.push({ 
-                maker_id: "T000", 
+            
+            const manualItemNames = {
+                LOCAL_MAT: "Local 자재",
+                OPERATION_PC: "운영 PC/주액 PC"
+            };
+
+            resources.push({
+                maker_id: "T000",
                 resources_id: resourceId, // 6글자 ID
-                solo_price: item.price, 
-                quantity: item.quantity 
+                solo_price: item.price,
+                quantity: item.quantity,
+                // [신규] 화면 표시용 데이터 전송 (저장 후 로드 시 이름 유지)
+                display_major: "전장/제어부 집계",
+                display_minor: "수동입력",
+                display_model_name: manualItemNames[key] || "기타 자재",
+                display_maker_name: "-",
+                display_unit: "ea"
             });
         }
     });
@@ -1085,7 +1175,13 @@ async function submitMachine() {
                 maker_id: item.maker_id || "T000", 
                 resources_id: item.id, // [중요] item.item_code(11자) 대신 item.id(6자) 사용
                 solo_price: item.price, 
-                quantity: item.quantity 
+                quantity: item.quantity,
+                // [신규] 화면 표시용 데이터 전송 (저장 후 로드 시 이름 유지)
+                display_major: "인건비",
+                display_minor: "인건비",
+                display_model_name: item.name,
+                display_maker_name: "-",
+                display_unit: item.unit
             });
         }
     });
@@ -1180,7 +1276,24 @@ async function updateMachine() {
         const item = manualSummaryItems[key];
         if (item.quantity > 0) {
             const resourceId = item.id || (key === 'LOCAL_MAT' ? '000008' : (key === 'OPERATION_PC' ? '000009' : '000000'));
-            resources.push({ maker_id: "T000", resources_id: resourceId, solo_price: item.price, quantity: item.quantity });
+            
+            const manualItemNames = {
+                LOCAL_MAT: "Local 자재",
+                OPERATION_PC: "운영 PC/주액 PC"
+            };
+
+            resources.push({
+                maker_id: "T000",
+                resources_id: resourceId,
+                solo_price: item.price,
+                quantity: item.quantity,
+                // [신규] 화면 표시용 데이터 전송
+                display_major: "전장/제어부 집계",
+                display_minor: "수동입력",
+                display_model_name: manualItemNames[key] || "기타 자재",
+                display_maker_name: "-",
+                display_unit: "ea"
+            });
         }
     });
     
@@ -1190,7 +1303,13 @@ async function updateMachine() {
                 maker_id: item.maker_id || "T000", 
                 resources_id: item.id, // [중요] 6글자 ID 사용
                 solo_price: item.price, 
-                quantity: item.quantity 
+                quantity: item.quantity,
+                // [신규] 화면 표시용 데이터 전송
+                display_major: "인건비",
+                display_minor: "인건비",
+                display_model_name: item.name,
+                display_maker_name: "-",
+                display_unit: item.unit
             });
         }
     });
@@ -1298,7 +1417,24 @@ async function saveDraft(isSilent = false) {
         const item = manualSummaryItems[key];
         if (item.quantity > 0) {
             const resourceId = item.id || (key === 'LOCAL_MAT' ? '000008' : (key === 'OPERATION_PC' ? '000009' : '000000'));
-            resources.push({ maker_id: "T000", resources_id: resourceId, solo_price: item.price, quantity: item.quantity });
+            
+            const manualItemNames = {
+                LOCAL_MAT: "Local 자재",
+                OPERATION_PC: "운영 PC/주액 PC"
+            };
+
+            resources.push({
+                maker_id: "T000",
+                resources_id: resourceId,
+                solo_price: item.price,
+                quantity: item.quantity,
+                // [신규] 화면 표시용 데이터 전송
+                display_major: "전장/제어부 집계",
+                display_minor: "수동입력",
+                display_model_name: manualItemNames[key] || "기타 자재",
+                display_maker_name: "-",
+                display_unit: "ea"
+            });
         }
     });
     
@@ -1308,7 +1444,13 @@ async function saveDraft(isSilent = false) {
                 maker_id: item.maker_id || "T000", 
                 resources_id: item.id,
                 solo_price: item.price, 
-                quantity: item.quantity 
+                quantity: item.quantity,
+                // [신규] 화면 표시용 데이터 전송
+                display_major: "인건비",
+                display_minor: "인건비",
+                display_model_name: item.name,
+                display_maker_name: "-",
+                display_unit: item.unit
             });
         }
     });
