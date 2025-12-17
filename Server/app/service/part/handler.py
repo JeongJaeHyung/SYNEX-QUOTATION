@@ -3,11 +3,12 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from utils.path_utils import get_resource_path
 
 router = APIRouter()
-router.mount("/static", StaticFiles(directory="frontend/static"), name="static")
-router.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
-templates = Jinja2Templates(directory="frontend")
+router.mount("/static", StaticFiles(directory=get_resource_path("frontend/static")), name="static")
+router.mount("/assets", StaticFiles(directory=get_resource_path("frontend/assets")), name="assets")
+templates = Jinja2Templates(directory=get_resource_path("frontend"))
 
 
 @router.get("/", response_class=HTMLResponse)

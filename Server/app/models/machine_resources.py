@@ -1,8 +1,8 @@
 # app/models/machine_resources.py
 from sqlalchemy import Column, String, Integer, ForeignKeyConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
+from db_types import UUID
 
 
 class MachineResources(Base):
@@ -14,7 +14,7 @@ class MachineResources(Base):
     
     # --- 복합 Primary Key 정의 (또한 복합 외래 키 역할) ---
     # 어떤 견적서의 어떤 자재인지를 고유하게 식별합니다.
-    machine_id = Column(UUID(as_uuid=True), primary_key=True) # 견적서 ID (Machine 테이블의 id 참조)
+    machine_id = Column(UUID, primary_key=True) # 견적서 ID (Machine 테이블의 id 참조)
     maker_id = Column(String(4), primary_key=True) # 자재의 제조사 ID (Resources 테이블의 maker_id 참조)
     resources_id = Column(String(6), primary_key=True) # 자재 ID (Resources 테이블의 id 참조)
     

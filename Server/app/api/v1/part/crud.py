@@ -153,11 +153,11 @@ def get_parts_list(
     
     # --- 필터링 조건 적용 ---
     if filters.id is not None:
-        query = query.filter(Resources.id.ilike(f"%{filters.id}%"))
+        query = query.filter(Resources.id.like(f"%{filters.id}%"))
     if filters.maker_id is not None:
         query = query.filter(Resources.maker_id == filters.maker_id)
     if filters.name is not None:
-        query = query.filter(Resources.name.ilike(f"%{filters.name}%"))
+        query = query.filter(Resources.name.like(f"%{filters.name}%"))
     if filters.unit is not None:
         query = query.filter(Resources.unit == filters.unit)
     if filters.min_price is not None:
@@ -165,9 +165,9 @@ def get_parts_list(
     if filters.max_price is not None:
         query = query.filter(Resources.solo_price <= filters.max_price)
     if filters.major is not None:
-        query = query.filter(Resources.major.ilike(f"%{filters.major}%"))
+        query = query.filter(Resources.major.like(f"%{filters.major}%"))
     if filters.minor is not None:
-        query = query.filter(Resources.minor.ilike(f"%{filters.minor}%"))
+        query = query.filter(Resources.minor.like(f"%{filters.minor}%"))
     
     # Certification 필터 (Certification 테이블과의 조인이 필요)
     if filters.ul is not None or filters.ce is not None or filters.kc is not None:
@@ -213,15 +213,15 @@ def search_parts(
     
     # search_fields에 따라 동적으로 검색 조건을 추가합니다.
     if 'name' in search_fields:
-        conditions.append(Resources.name.ilike(f"%{query}%"))
+        conditions.append(Resources.name.like(f"%{query}%"))
     if 'id' in search_fields:
-        conditions.append(Resources.id.ilike(f"%{query}%"))
+        conditions.append(Resources.id.like(f"%{query}%"))
     if 'maker_name' in search_fields:
-        conditions.append(Maker.name.ilike(f"%{query}%"))
+        conditions.append(Maker.name.like(f"%{query}%"))
     if 'major' in search_fields:
-        conditions.append(Resources.major.ilike(f"%{query}%"))
+        conditions.append(Resources.major.like(f"%{query}%"))
     if 'minor' in search_fields:
-        conditions.append(Resources.minor.ilike(f"%{query}%"))
+        conditions.append(Resources.minor.like(f"%{query}%"))
     
     if conditions:
         query_obj = query_obj.filter(or_(*conditions)) # OR 조건 적용

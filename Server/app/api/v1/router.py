@@ -1,6 +1,6 @@
 # SYNEX+QUOTATION/Server/app/api/v1/router.py
 from fastapi import APIRouter
-from core.route_class import RBACRoute 
+from core.route_class import RBACRoute
 from .maker.handler import handler as maker_handler
 from .part.handler import handler as part_handler
 from .account.handler import handler as account_handler

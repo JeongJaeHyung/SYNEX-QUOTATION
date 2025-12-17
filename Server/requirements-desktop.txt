@@ -1,0 +1,38 @@
+# SYNEX+QUOTATION 데스크톱 앱 의존성
+# SQLite 모드용 (psycopg2 제외)
+#
+# 설치: pip install -r requirements-desktop.txt
+
+# === Web Framework ===
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# === Database (SQLite only) ===
+sqlalchemy==2.0.36
+alembic==1.13.1
+# psycopg2-binary 제외 (PostgreSQL 드라이버 불필요)
+
+# === Authentication ===
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+bcrypt==4.0.1
+
+# === Validation & Settings ===
+pydantic==2.10.3
+pydantic-settings==2.6.1
+email-validator==2.1.0
+
+# === Templates & Forms ===
+Jinja2==3.1.4
+python-multipart==0.0.12
+
+# === Utilities ===
+python-dotenv==1.0.1
+openpyxl==3.1.5
+requests==2.31.0
+
+# === Desktop App ===
+pywebview==5.0.5
+
+# === Build Tools ===
+pyinstaller==6.3.0

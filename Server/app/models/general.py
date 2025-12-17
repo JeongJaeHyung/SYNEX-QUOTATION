@@ -1,17 +1,17 @@
 #app/models/general.py
 
 from sqlalchemy import Column, String, TIMESTAMP, Text
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import uuid
 from database import Base
+from db_types import UUID
 
 class General(Base):
     __tablename__ = "general"
     
     # ID (Primary Key, UUID)만 사용, 중복 uuid 컬럼 제거
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     client = Column(String(50), nullable=True)
     creator = Column(String(25), nullable=False)

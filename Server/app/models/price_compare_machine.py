@@ -1,18 +1,18 @@
 # app/models/price_compare_machine.py
 
 from sqlalchemy import Column, ForeignKeyConstraint, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
+from db_types import UUID
 
 class PriceCompareMachine(Base):
     __tablename__ = "price_compare_machine"
     
     # PK, FK to price_compare
-    price_compare_id = Column(UUID(as_uuid=True), ForeignKey('price_compare.id', ondelete="CASCADE"), primary_key=True) 
-    
+    price_compare_id = Column(UUID, ForeignKey('price_compare.id', ondelete="CASCADE"), primary_key=True)
+
     # PK, FK to machine
-    machine_id = Column(UUID(as_uuid=True), ForeignKey('machine.id', ondelete="CASCADE"), primary_key=True) 
+    machine_id = Column(UUID, ForeignKey('machine.id', ondelete="CASCADE"), primary_key=True) 
     
     # Relationships
     price_compare = relationship("PriceCompare", back_populates="price_compare_machines")

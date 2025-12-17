@@ -1,20 +1,20 @@
 #app/models/price_compare.py
 
 from sqlalchemy import Column, String, TIMESTAMP, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import uuid
 from database import Base
+from db_types import UUID
 
 class PriceCompare(Base):
     __tablename__ = "price_compare"
     
     # ID (Primary Key, UUID)만 사용, 중복 uuid 컬럼 제거
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+
     # FK to general
-    general_id = Column(UUID(as_uuid=True), ForeignKey("general.id", ondelete="CASCADE"), nullable=False)
+    general_id = Column(UUID, ForeignKey("general.id", ondelete="CASCADE"), nullable=False)
     
     creator = Column(String(25), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())

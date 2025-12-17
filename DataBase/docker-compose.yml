@@ -14,12 +14,13 @@ services:
     networks:
       - synex-network
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # 포트를 노출하지 않음 - 같은 네트워크의 컨테이너만 접근 가능
 
 networks:
   synex-network:

@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from utils.path_utils import get_resource_path
 
 # [변경] router 변수명을 handler로 변경했습니다.
 handler = APIRouter()
 
-templates = Jinja2Templates(directory="frontend")
+templates = Jinja2Templates(directory=get_resource_path("frontend"))
 
 
 @handler.get("/", response_class=HTMLResponse)

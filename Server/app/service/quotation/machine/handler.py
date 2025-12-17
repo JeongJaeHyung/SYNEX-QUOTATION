@@ -2,9 +2,10 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from utils.path_utils import get_resource_path
 
 handler = APIRouter()
-templates = Jinja2Templates(directory="frontend")
+templates = Jinja2Templates(directory=get_resource_path("frontend"))
 
 
 @handler.get("/", response_class=HTMLResponse)

@@ -7,8 +7,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from service.router import router as service_router
 from api.router import router as api_router
+from utils.path_utils import get_resource_path
 
-app = FastAPI()
+
+# ============================================================
+# FastAPI 앱 설정
+# ============================================================
+app = FastAPI(
+    title="SYNEX+ 견적 시스템",
+    description="산업용 장비 견적 관리 시스템",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,21 +28,28 @@ app.add_middleware(
 )
 
 
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
-app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
+# ============================================================
+# 정적 파일 및 템플릿 설정 (PyInstaller 호환)
+# ============================================================
+STATIC_DIR = get_resource_path("frontend/static")
+ASSETS_DIR = get_resource_path("frontend/assets")
+TEMPLATES_DIR = get_resource_path("frontend")
 
-templates = Jinja2Templates(directory="frontend")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+
+# ============================================================
+# 페이지 라우트
+# ============================================================
 @app.get("/")
-async def root(request: Request):  # 1. 함수 인자에 request 추가
+async def root(request: Request):
     return templates.TemplateResponse(
-        "template/home.html", 
-        {"request": request}       # 2. 컨텍스트 딕셔너리에 request 객체 전달 필수
+        "template/home.html",
+        {"request": request}
     )
-
-
-
-
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -53,22 +69,24 @@ async def register_page(request: Request):
     )
 
 @app.get("/quotation_detailed", response_class=HTMLResponse)
-async def register_page(request: Request):
-    """을지"""
+async def quotation_detailed_page(request: Request):
+    """견적 상세 페이지"""
     return templates.TemplateResponse(
         "template/quotation/general/quotation_detailed.html",
         {"request": request}
     )
 
 @app.get("/quotation_summary", response_class=HTMLResponse)
-async def register_page(request: Request):
-    """을지"""
+async def quotation_summary_page(request: Request):
+    """견적 요약 페이지"""
     return templates.TemplateResponse(
         "template/quotation/general/quotation_summary.html",
         {"request": request}
     )
 
 
-
+# ============================================================
+# API 라우터 등록
+# ============================================================
 app.include_router(api_router, prefix="/api")
 app.include_router(service_router, prefix="/service", tags=["service"])

@@ -1,15 +1,15 @@
 # app/models/detailed_resources.py
 
 from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
+from db_types import UUID
 
 class DetailedResources(Base):
     __tablename__ = "detailed_resources"
     
     # PK, FK to detailed
-    detailed_id = Column(UUID(as_uuid=True), primary_key=True)
+    detailed_id = Column(UUID, primary_key=True)
     
     # PK
     major = Column(String(30), primary_key=True)

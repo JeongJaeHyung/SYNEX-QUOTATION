@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, TIMESTAMP, ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database import Base
+from db_types import UUID
 
 class Account(Base):
     __tablename__ = "account"
@@ -16,7 +16,7 @@ class Account(Base):
     e_mail = Column(String(255), nullable=False, unique=True)
     
     # [추가] Role 연결 (N:1)
-    role_id = Column(UUID(as_uuid=True), ForeignKey("role.id"), nullable=True)
+    role_id = Column(UUID, ForeignKey("role.id"), nullable=True)
     
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp())

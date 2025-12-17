@@ -1,15 +1,15 @@
 # app/models/quotation_resources.py
 
 from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
+from db_types import UUID
 
 class QuotationResources(Base):
     __tablename__ = "quotation_resources"
     
     # PK, FK to quotation
-    quotation_id = Column(UUID(as_uuid=True), primary_key=True) 
+    quotation_id = Column(UUID, primary_key=True) 
     
     # PK
     name = Column(String(100), primary_key=True)

@@ -1,17 +1,17 @@
 # app/models/price_compare_resources.py
 from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint, Float
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
+from db_types import UUID
 
 class PriceCompareResources(Base):
     __tablename__ = "price_compare_resources"
     
     # 1. PK: 어떤 견적 비교서인지
-    price_compare_id = Column(UUID(as_uuid=True), primary_key=True) 
-    
-    # 2. PK [추가]: 어떤 장비의 자원인지 (이게 있어야 장비별 구분이 됨) 💡
-    machine_id = Column(UUID(as_uuid=True), primary_key=True)
+    price_compare_id = Column(UUID, primary_key=True)
+
+    # 2. PK [추가]: 어떤 장비의 자원인지 (이게 있어야 장비별 구분이 됨)
+    machine_id = Column(UUID, primary_key=True)
     major = Column(String(30), primary_key=True)
     minor = Column(String(50), primary_key=True)
     

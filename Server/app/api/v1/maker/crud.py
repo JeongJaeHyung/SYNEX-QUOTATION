@@ -145,7 +145,7 @@ def search_makers(
     Returns:
         Tuple[int, List[Maker]]: (총 검색 결과 개수, 검색된 Maker 객체 리스트).
     """
-    query_obj = db.query(Maker).filter(Maker.name.ilike(f"%{query}%")) # 이름 부분 매칭 (대소문자 구분 없음)
+    query_obj = db.query(Maker).filter(Maker.name.like(f"%{query}%")) # 이름 부분 매칭
     total = query_obj.count() # 검색 결과 총 개수
     makers = (
         query_obj

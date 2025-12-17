@@ -1,12 +1,12 @@
 from sqlalchemy import Column, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from database import Base
+from db_types import UUID
 
 class Permission(Base):
     __tablename__ = "permission"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     
     resource = Column(String(50), nullable=False) # 예: machine
     action = Column(String(50), nullable=False)   # 예: create
