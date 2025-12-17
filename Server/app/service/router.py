@@ -10,4 +10,4 @@ async def root():
     return "Here is root, /service/"
 
 router.include_router(quotation_router, prefix="/quotation")
-router.include_router(part_handler, prefix="/part")
+router.include_router(part_handler, prefix="/part")#
