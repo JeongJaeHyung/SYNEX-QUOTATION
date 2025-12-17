@@ -30,32 +30,32 @@ def get_parts_schema() -> dict:
         "item_code": {
             "title": "품목코드", # 테이블 헤더에 표시될 이름
             "type": "string",
-            "ratio": 1.4 # 컬럼 너비 비율
+            "ratio": 2 # 컬럼 너비 비율
         }, 
         "maker_name": {
             "title": "Maker",
             "type": "string",
-            "ratio": 1.5
+            "ratio": 2
         },
         "major_category": {
             "title": "Unit",
             "type": "string",
-            "ratio": 2
+            "ratio": 4
         },
         "minor_category": {
             "title": "품목",
             "type": "string",
-            "ratio": 2
+            "ratio": 3
         },
         "name": {
             "title": "모델명/규격",
             "type": "string",
-            "ratio": 4
+            "ratio": 10
         },
         "unit": {
             "title": "단위",
             "type": "string",
-            "ratio": 0.5
+            "ratio": 0.1
         },
         "solo_price": {
             "title": "금액",
@@ -66,17 +66,17 @@ def get_parts_schema() -> dict:
         "ul": {
             "title": "UL",
             "type": "boolean",
-            "ratio": 1
+            "ratio": 0.1
         },
         "ce": {
             "title": "CE",
             "type": "boolean",
-            "ratio": 1
+            "ratio": 0.1
         },
         "kc": {
             "title": "KC",
             "type": "boolean",
-            "ratio": 1
+            "ratio": 0.1
         },
         "etc": {
             "title": "기타",

@@ -1,4 +1,4 @@
-/* 페이지 컨텐츠 */
+/* 페이지 컨텐츠 컨테이너 */
 .page-content {
     background-color: #fff;
     border-radius: 8px;
@@ -6,7 +6,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* 생성 헤더 */
+/* 헤더 영역 */
 .create-header {
     margin-bottom: 24px;
 }
@@ -18,6 +18,7 @@
     color: #1f2937;
 }
 
+/* 폼 레이아웃 */
 .header-form {
     display: flex;
     flex-direction: column;
@@ -64,14 +65,13 @@
     cursor: not-allowed;
 }
 
-/* 구분선 */
+/* 구분선 및 섹션 */
 .divider {
     border: none;
     border-top: 1px solid #e5e7eb;
     margin: 32px 0;
 }
 
-/* 섹션 헤더 */
 .section-header {
     margin-bottom: 16px;
 }
@@ -89,7 +89,7 @@
     margin: 0;
 }
 
-/* 뱃지 */
+/* 뱃지 스타일 */
 .badge {
     display: inline-block;
     padding: 4px 8px;
@@ -102,7 +102,7 @@
 .badge-info { background-color: #e0e7ff; color: #4338ca; }
 .badge-warning { background-color: #fef3c7; color: #92400e; }
 
-/* 테이블 행 호버 */
+/* 테이블 스타일 */
 .data-table tbody tr.clickable {
     cursor: pointer;
     transition: background-color 0.2s;
@@ -112,7 +112,6 @@
     background-color: #f3f4f6;
 }
 
-/* Empty State */
 .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -120,10 +119,10 @@
     font-size: 14px;
 }
 
-/* 액션 푸터 */
+/* 하단 버튼 영역 */
 .action-footer {
     display: flex;
-    justify-content: space-between; /* 양 끝 정렬 */
+    justify-content: space-between;
     align-items: center;
     margin-top: 24px;
     padding-top: 24px;
@@ -161,6 +160,7 @@
     cursor: not-allowed;
 }
 
+/* 반응형 처리 */
 @media (max-width: 1024px) {
     .form-row {
         grid-template-columns: 1fr;

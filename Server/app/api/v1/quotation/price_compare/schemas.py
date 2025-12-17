@@ -19,7 +19,7 @@ class ResourceItem(BaseModel):
     quotation_unit: str = Field(..., max_length=10, description="견적 단위")
     quotation_compare: int = Field(..., description="견적 수량")
     
-    upper: int = Field(..., description="상승 반영율(%)")
+    upper: float = Field(..., description="상승 반영율(%)")
     description: Optional[str] = Field(None, description="비고 (자동계산 시 장비명)")
 
     model_config = ConfigDict(from_attributes=True)
