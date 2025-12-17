@@ -12,7 +12,6 @@
     justify-content: center; /* 가로 중앙 정렬 */
     align-items: center;     /* 세로 중앙 정렬 */
     min-height: 100vh;       /* 뷰포트 전체 높이 */
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 배경 그라데이션 */
     padding: 20px;           /* 페이지 여백 */
 }
 
@@ -42,7 +41,7 @@
 }
 
 .auth-logo span {
-    color: #2563eb; /* '+' 부분 강조 색상 */
+    color: #258beb; /* '+' 부분 강조 색상 */
 }
 
 .auth-subtitle {
@@ -79,7 +78,7 @@
 
 .form-input:focus {
     outline: none;
-    border-color: #2563eb;
+    border-color: #258beb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); /* 포커스 시 테두리 및 그림자 강조 */
 }
 
@@ -123,7 +122,7 @@
 }
 
 .auth-footer a {
-    color: #2563eb;
+    color: #258beb;
     text-decoration: none;
     font-weight: 500;
 }

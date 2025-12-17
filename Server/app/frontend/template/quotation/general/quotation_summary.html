@@ -3,7 +3,7 @@
 {% block title %}견적서 갑지 - SYNEX+{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation_summary.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/general/quotation_summary.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -130,41 +130,41 @@
                 <tbody id="quotationTableBody">
                     <tr>
                         <td class="col-no">1</td>
-                        <td class="col-name editable" contenteditable="true">재료비</td>
-                        <td class="col-spec editable" contenteditable="true"></td>
-                        <td class="col-quantity editable" contenteditable="true">1</td>
-                        <td class="col-unit editable" contenteditable="true">식</td>
-                        <td class="col-price editable" contenteditable="true">114,447,900</td>
+                        <td class="col-name">재료비</td>
+                        <td class="col-spec"></td>
+                        <td class="col-quantity">1</td>
+                        <td class="col-unit">식</td>
+                        <td class="col-price">114,447,900</td>
                         <td class="col-unit-price">114,447,900</td>
                         <td class="col-remarks editable" contenteditable="true"></td>
                     </tr>
                     <tr>
                         <td class="col-no">2</td>
-                        <td class="col-name editable" contenteditable="true">인건비</td>
-                        <td class="col-spec editable" contenteditable="true"></td>
-                        <td class="col-quantity editable" contenteditable="true">1</td>
-                        <td class="col-unit editable" contenteditable="true">식</td>
-                        <td class="col-price editable" contenteditable="true">232,200,000</td>
+                        <td class="col-name">인건비</td>
+                        <td class="col-spec"></td>
+                        <td class="col-quantity">1</td>
+                        <td class="col-unit">식</td>
+                        <td class="col-price">232,200,000</td>
                         <td class="col-unit-price">232,200,000</td>
                         <td class="col-remarks editable" contenteditable="true"></td>
                     </tr>
                     <tr>
                         <td class="col-no">3</td>
-                        <td class="col-name editable" contenteditable="true">경비</td>
-                        <td class="col-spec editable" contenteditable="true"></td>
-                        <td class="col-quantity editable" contenteditable="true">1</td>
-                        <td class="col-unit editable" contenteditable="true">식</td>
-                        <td class="col-price editable" contenteditable="true">22,300,000</td>
+                        <td class="col-name">경비</td>
+                        <td class="col-spec"></td>
+                        <td class="col-quantity">1</td>
+                        <td class="col-unit">식</td>
+                        <td class="col-price">22,300,000</td>
                         <td class="col-unit-price">22,300,000</td>
                         <td class="col-remarks editable" contenteditable="true"></td>
                     </tr>
                     <tr>
                         <td class="col-no">4</td>
-                        <td class="col-name editable" contenteditable="true">안전관리비 및 기업이윤</td>
-                        <td class="col-spec editable" contenteditable="true"></td>
-                        <td class="col-quantity editable" contenteditable="true">5</td>
-                        <td class="col-unit editable" contenteditable="true">%</td>
-                        <td class="col-price editable" contenteditable="true">18,417,395</td>
+                        <td class="col-name">안전관리비 및 기업이윤</td>
+                        <td class="col-spec"></td>
+                        <td class="col-quantity">5</td>
+                        <td class="col-unit">%</td>
+                        <td class="col-price">18,417,395</td>
                         <td class="col-unit-price">18,417,395</td>
                         <td class="col-remarks editable" contenteditable="true"></td>
                     </tr>
@@ -203,19 +203,22 @@
                 <tfoot>
                     <tr class="summary-row">
                         <td colspan="3" class="col-center summary-label">견적 총 금액</td>
-                        <td class="col-center editable" contenteditable="true">1</td>
-                        <td class="col-center editable" contenteditable="true">Set</td>
+                        <td class="col-center">1</td>
+                        <td class="col-center">Set</td>
                         <td colspan="3" class="col-right summary-amount" id="summaryAmount">387,395,295</td>
                     </tr>
                 </tfoot>
             </table>
 
-            <h2 class="document-title" id="documentTitle2">비&nbsp;&nbsp;&nbsp;&nbsp;고(특이사항)</h2>
-
-            <div class="footer-note">
-                <p><strong>1. 2</strong>개라인 기준의 견적서 입니다.</p>
+            <!-- 상단 비고란 (2개라인 기준 등) -->
+            <div class="remarks-section" style="margin-bottom: 20px;">
+                <div class="remarks-title">비&nbsp;&nbsp;&nbsp;&nbsp;고(특이사항)</div>
+                <div class="remarks-content editable" contenteditable="true" style="min-height: 80px; background-color: #fffbe6;">
+                    1. 2개라인 기준의 견적서 입니다.
+                </div>
             </div>
 
+            <!-- 합계 섹션 -->
             <div class="bottom-section">
                 <div class="total-section">
                     <div class="total-row">
@@ -224,17 +227,18 @@
                     </div>
                     <div class="total-row nego">
                         <span class="total-label">Best nego Total</span>
-                        <span class="total-value nego-value" id="negoTotal">380,000,000</span>
+                        <span class="total-value nego-value editable" id="negoTotal" contenteditable="true">380,000,000</span>
                     </div>
                 </div>
             </div>
 
-            <div class="remarks-section">
+            <!-- 하단 비고란 (납기, 지불조건 등) -->
+            <div class="remarks-section" style="margin-top: 20px;">
                 <div class="remarks-title">비 고</div>
-                <div class="remarks-content">
-                    <div class="remark-item">- 납기 : 협의사항</div>
-                    <div class="remark-item">- 지불조건 : 선금금 30%, 중도금 50%, 잔금 20%</div>
-                    <div class="remark-item">- 기타 : 견적유효기간 10 일</div>
+                <div class="remarks-content editable" contenteditable="true" style="min-height: 100px; background-color: #fffbe6;">
+                    - 납기 : 협의사항<br>
+                    - 지불조건 : 선금금 30%, 중도금 50%, 잔금 20%<br>
+                    - 기타 : 견적유효기간 10 일
                 </div>
             </div>
         </div>
@@ -250,5 +254,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{{ url_for('static', path='/js/page/quotation_summary.js') }}"></script>
+    <script src="{{ url_for('static', path='/js/page/quotation/general/quotation_summary.js') }}"></script>
 {% endblock %}

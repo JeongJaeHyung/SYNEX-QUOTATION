@@ -1,4 +1,4 @@
-.quotation-comparison-page {
+.quotation-cover-page {
     background: #f9fafb;
     padding: 3.5rem 1rem 4rem;
     min-height: calc(100vh - 180px);
@@ -9,17 +9,35 @@
     justify-content: flex-start;
 }
 
-.comparison-shell {
-    width: min(1400px, 100%);
-    display: grid;
-    justify-items: center;
-    gap: 0.6rem;
-    background: #ffffff;
-    margin-top: -2rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.quotation-cover-page .page-heading {
+    text-align: center;
+    max-width: 720px;
 }
 
-.comparison-inner {
+.quotation-cover-page .page-heading h1 {
+    margin-bottom: 0.35rem;
+    font-size: 2.2rem;
+    letter-spacing: 0.08em;
+    color: #1d2330;
+}
+
+.quotation-cover-page .page-heading .page-subtitle {
+    margin: 0;
+    color: #5e6271;
+    font-size: 1rem;
+}
+
+.cover-shell {
+      width: min(1200px, 100%);
+      display: grid;
+      justify-items: center;
+      gap: 0.6rem;
+      background: #ffffff;
+      margin-top: -2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cover-inner {
     width: 100%;
     min-height: 320px;
     background: #ffffff;
@@ -29,7 +47,14 @@
     gap: 1rem;
 }
 
-.comparison-inner header {
+.cover-inner p {
+    margin: 0;
+    color: #4a4c5f;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.cover-inner header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -39,7 +64,7 @@
     background: #ffffff;
 }
 
-.comparison-inner header h2 {
+.cover-inner header h2 {
     margin: 0;
     font-size: 60px;
     font-weight: 700;
@@ -52,217 +77,118 @@
     display: block;
 }
 
-/* 테이블 스타일 */
-.comparison-table {
+.cover-inner table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
-    border: 1px solid #cbd5e1;
-}
-
-.comparison-table th,
-.comparison-table td {
-    padding: 0.5rem 0.4rem;
-    border: 1px solid #cbd5e1;
-    text-align: center;
-    vertical-align: middle;
-    height: 40px;
-    min-height: 40px;
-}
-
-/* 헤더 스타일 */
-.comparison-table thead tr:first-child th {
-    background: #ffffff;
-    font-weight: 700;
     font-size: 0.95rem;
-    padding: 0.75rem 0.5rem;
 }
 
-.comparison-table .header-internal {
-    background: #fef9c3 !important;
-    border: 2px solid #eab308;
-}
-
-.comparison-table .header-estimate {
-    background: #fef9c3 !important;
-    border: 2px solid #eab308;
-}
-
-.comparison-table .sub-header {
-    background: #ffffff;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-/* 컬럼 너비 */
-.comparison-table .col-category {
-    width: 80px;
-    min-width: 80px;
-}
-
-.comparison-table .col-item {
-    width: 180px;
-    min-width: 180px;
-}
-
-.comparison-table .col-note {
-    width: 160px;
-    min-width: 160px;
-}
-
-/* 내정가/견적가 컬럼들 너비 조정 */
-.comparison-table .sub-header {
-    background: #ffffff;
-    font-weight: 600;
-    font-size: 0.85rem;
-    max-width: 60px;
-    width: 60px;
-}
-
-/* 카테고리 셀 */
-.comparison-table .category-cell {
-    background: #dbeafe;
-    font-weight: 700;
-    color: #1e3a8a;
-    vertical-align: middle;
-}
-
-.comparison-table .category-row {
-    background: #f8fafc;
-}
-
-/* 소계 행 */
-.comparison-table .subtotal-row {
-    background: #fef9c3;
-}
-
-.comparison-table .subtotal-cell {
-    background: #fef9c3;
-    font-weight: 700;
-    color: #854d0e;
-}
-
-.comparison-table .difference-cell {
-    background: #ffffff;
-    font-weight: 700;
-    color: #dc2626;
-}
-
-/* PJT Manager 행 */
-.comparison-table .pjt-manager-row {
-    background: #fce7f3;
-}
-
-.comparison-table .pjt-manager-cell {
-    background: #fce7f3;
-    font-weight: 600;
-    color: #831843;
-}
-
-/* 관리비 행 */
-.comparison-table .management-row {
-    background: #f0fdf4;
-}
-
-.comparison-table .management-row .category-cell {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-/* 전체 합계 행 */
-.comparison-table .total-row {
-    background: #fef9c3;
-    font-weight: 700;
-}
-
-.comparison-table .total-cell {
-    background: #fef9c3;
-    font-weight: 700;
-    font-size: 1rem;
-    color: #854d0e;
-}
-
-/* 최종 합계 행 */
-.comparison-table .final-total-row {
-    background: #fef9c3;
-    font-weight: 700;
-    border-top: 3px solid #eab308;
-}
-
-.comparison-table .final-total-cell {
-    background: #fef9c3;
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: #854d0e;
-}
-
-/* 이익률 표시 행 */
-.comparison-table .markup-row {
-    background: #ffffff;
-}
-
-.comparison-table .markup-cell {
-    background: #ffffff;
-    text-align: right;
-    font-weight: 600;
-    color: #1e40af;
-    font-size: 0.9rem;
-}
-
-/* 특이사항 섹션 */
-.notes-section {
-    margin-top: 2rem;
-    border: 1px solid #cbd5e1;
-    background: #fef2f2;
-}
-
-.notes-section .notes-header {
-    background: #fef2f2;
-    padding: 0.75rem 1rem;
-    font-weight: 700;
-    color: #991b1b;
+.cover-inner th,
+.cover-inner td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #cbd5e1;
+    border-right: 1px solid #cbd5e1;
     text-align: center;
-    border-bottom: 1px solid #fecaca;
 }
 
-/* 비고란 강조 */
-.comparison-table tbody tr:not(.subtotal-row):not(.total-row):not(.final-total-row):not(.markup-row) td:last-child {
-    background-color: #fffbe6;
+.cover-inner th:last-child,
+.cover-inner td:last-child {
+    border-right: none;
 }
 
-/* 특이사항 영역 강조 */
-.notes-content {
-    background-color: #fffbe6;
+.cover-inner thead {
+    background: #e0f2fe;
 }
 
-/* 빈 셀 스타일 */
-.comparison-table td:empty {
+.cover-inner tbody tr:nth-child(even) {
     background: #f8fafc;
 }
 
-/* 반응형 */
-@media (max-width: 1400px) {
-    .comparison-shell {
-        width: 100%;
-    }
-
-    .comparison-table {
-        font-size: 0.75rem;
-    }
-
-    .comparison-table th,
-    .comparison-table td {
-        padding: 0.4rem 0.3rem;
-    }
+.cover-inner .section-title {
+    background: #a5c0ff !important;
+    color: #0f1c4c;
+    font-weight: 600;
+    text-align: left;
+    font-size: 1rem;
+    border-bottom: 1px solid #7d9ff5;
 }
 
-@media print {
-    .quotation-comparison-page {
-        background: #ffffff;
-        padding: 1rem;
-    }
+.cover-inner .section-title td {
+    color: inherit;
+    border-bottom: none;
+}
 
-    .comparison-shell {
-        box-shadow: none;
-    }
+.cover-inner .section-subtitle {
+    background: #d4e0ff !important;
+    font-weight: 600;
+    text-align: left;
+    color: #0f1c4c;
+}
+
+.cover-inner .summary-row {
+    background: #a8bfff !important;
+    color: #0f1c4c;
+    font-weight: 700;
+    border-top: 1px solid #7d9ff5;
+}
+
+.cover-inner .summary-row td {
+    text-align: center;
+}
+
+.cover-inner .summary-row td:first-child,
+.cover-inner .summary-row td:nth-child(2) {
+    text-align: center;
+}
+
+.cover-inner .summary-row .summary-white {
+    background: white !important;
+    color: #1f2937;
+}
+
+.cover-inner .summary-row .summary-white.total-amount {
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.cover-inner .notes-row {
+    background: white !important;
+}
+
+.cover-inner .notes-header {
+    text-align: center;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    background: #f0f9ff;
+}
+
+.cover-inner .notes-content {
+    text-align: left;
+    padding: 1rem;
+    height: 80px;
+    vertical-align: top;
+    background: white;
+}
+
+.cover-inner tfoot {
+    background: #f8fafc;
+}
+
+.cover-inner tfoot tr {
+    background: #e6ecff;
+}
+
+.cover-inner .total-amount {
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.cover-inner .notes {
+    margin: 1rem;
+    font-size: 0.9rem;
+    color: #475467;
+    background: #f0f9ff;
+    padding: 0.6rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid #c7d2fe;
 }

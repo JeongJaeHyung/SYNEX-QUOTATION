@@ -1,0 +1,138 @@
+{% extends "template/base.html" %} {# base.html 템플릿을 상속받아 공통 레이아웃 사용 #}
+
+{% block title %}부품/자재 목록 - SYNEX+{% endblock %} {# 페이지의 제목 설정 #}
+
+{% block extra_css %}
+    <!-- 페이지 전용 CSS -->
+    {# static/css/page/parts_list_direct.css 파일을 로드합니다. #}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/page/part/parts_list_direct.css') }}">
+{% endblock %}
+
+{% block content %} {# base.html의 content 블록에 현재 페이지의 내용을 삽입합니다. #}
+<div class="page-content">
+    {# 상단 액션 바: 부품 등록, 선택 삭제, 검색, 카테고리 필터 기능을 제공합니다. #}
+    <div class="action-bar">
+        <div class="action-bar-left">
+            {# '부품 등록' 모달을 여는 버튼 #}
+            <button class="btn btn-primary" onclick="openCreatePopup()">
+                <span>+</span> 부품 등록
+            </button>
+            {# 선택된 부품을 삭제하는 버튼 #}
+            <button class="btn btn-danger" onclick="deleteSelected()">
+                선택 삭제
+            </button>
+        </div>
+        <div class="action-bar-right">
+            {# 카테고리 필터 드롭다운 (현재 하드코딩 되어 있음) #}
+            <select class="input-select" id="categoryFilter" onchange="loadData(true)">
+                <option value="">전체 카테고리</option>
+                <option value="판넬">판넬</option>
+                <option value="잡재료 및 케이블">잡재료 및 케이블</option>
+            </select>
+            {# 검색어 입력 필드 #}
+            <input type="text" class="input-search" placeholder="검색어를 입력해 주세요" id="searchInput" onkeypress="handleSearch(event)">
+            {# 검색 실행 버튼 #}
+            <button class="btn btn-primary" onclick="loadData(true)">검색하기</button>
+        </div>
+    </div>
+
+    {# 로딩 인디케이터: 데이터를 불러오는 동안 표시됩니다. #}
+    <div id="loading" style="display: none; text-align: center; padding: 40px;">
+        <p>데이터를 불러오는 중...</p>
+    </div>
+
+    {# 테이블 컨테이너: 부품 목록 테이블이 렌더링될 영역입니다. #}
+    <div id="tableContainer"></div>
+    
+    {# 무한 스크롤 감지 센서: 이 요소가 뷰포트에 들어오면 다음 페이지 데이터를 로드합니다. #}
+    {# display: none; 초기에는 숨겨져 있으며, JS 로직에 따라 표시됩니다. #}
+    <div id="scrollSentinel" style="height: 40px; text-align: center; color: #6b7280; margin-top: 10px; display: none;">
+        <span class="loading-text">더 불러오는 중...</span>
+    </div>
+</div>
+
+{# 부품 등록 모달: 새로운 부품을 등록할 때 사용되는 팝업 창입니다. #}
+<div id="createModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        {# 모달 헤더 #}
+        <div class="modal-header">
+            <h3>부품 등록</h3>
+            <button class="close-btn" onclick="closeCreatePopup()">×</button>
+        </div>
+        {# 모달 바디: 부품 정보를 입력하는 폼 #}
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Maker <span class="required">*</span></label>
+                    {# 제조사 선택 드롭다운: openCreatePopup() 함수에서 동적으로 로드됩니다. #}
+                    <select id="regMaker" class="form-input" required>
+                        <option value="" disabled selected>제조사를 선택해주세요</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Unit (대분류) <span class="required">*</span></label>
+                    {# 대분류 선택 드롭다운: '기타' 선택 시 수동 입력 필드가 나타납니다. #}
+                    <select id="regMajor" class="form-input" required onchange="toggleMajorManual()">
+                        <option value="전장 판넬 판금 및 명판">전장 판넬 판금 및 명판</option>
+                        <option value="판넬 차단기류">판넬 차단기류</option>
+                        <option value="PLC Set">PLC Set</option>
+                        <option value="Touch Screen">Touch Screen</option>
+                        <option value="판넬 주요자재">판넬 주요자재</option>
+                        <option value="판넬 기타자재">판넬 기타자재</option>
+                        <option value="케이블 및 기타 잡자재">케이블 및 기타 잡자재</option>
+                        <option value="기타">기타 (직접 입력)</option>
+                    </select>
+                    {# '기타' 선택 시 나타나는 대분류 수동 입력 필드 #}
+                    <input type="text" id="regMajorManual" class="form-input" placeholder="대분류 입력" style="display: none; margin-top: 8px;">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>품목 (중분류) <span class="required">*</span></label>
+                    <input type="text" id="regMinor" class="form-input" placeholder="예: Circuit Breaker" required>
+                </div>
+                <div class="form-group">
+                    <label>모델명/규격 <span class="required">*</span></label>
+                    <input type="text" id="regName" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>단위 <span class="required">*</span></label>
+                    <input type="text" id="regUnit" class="form-input" value="ea" required>
+                </div>
+                <div class="form-group">
+                    <label>금액 <span class="required">*</span></label>
+                    <input type="number" id="regPrice" class="form-input" min="0" value="0" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>인증</label>
+                {# 인증 체크박스 그룹 #}
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="regUL"> UL</label>
+                    <label><input type="checkbox" id="regCE"> CE</label>
+                    <label><input type="checkbox" id="regKC"> KC</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>기타 인증/비고</label>
+                <input type="text" id="regEtc" class="form-input">
+            </div>
+        </div>
+        {# 모달 푸터 #}
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCreatePopup()">취소</button>
+            <button class="btn btn-primary" onclick="submitCreatePart()">등록</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %} {# base.html의 extra_js 블록에 현재 페이지의 JS 파일을 삽입합니다. #}
+    <!-- 페이지 전용 JS -->
+    {# static/js/page/parts_list_direct.js 파일을 로드합니다. #}
+    <script src="{{ url_for('static', path='/js/page/part/parts_list_direct.js') }}"></script>
+    <!-- 통합 JS -->
+    <script src="/static/js/common.js"></script>
+{% endblock %}part/parts
