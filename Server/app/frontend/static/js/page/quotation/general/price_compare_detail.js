@@ -1,147 +1,492 @@
-document.addEventListener('DOMContentLoaded', () => {
-    loadPriceCompareData();
+// ============================================================================
+// 내정가 견적가 비교 페이지 - price_compare_detail.js
+// API 데이터 기반 동적 렌더링
+// ============================================================================
+
+let priceCompareId = null;
+let priceCompareData = null;
+let markupRate = 5; // 기본 상승률 5%
+
+// ============================================================================
+// 페이지 초기화
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // URL에서 price_compare_id 추출
+    const pathParts = window.location.pathname.split('/');
+    priceCompareId = pathParts[pathParts.length - 1];
+    
+    if (priceCompareId) {
+        loadPriceCompareData(priceCompareId);
+    } else {
+        alert('비교서 ID가 없습니다.');
+        goBack();
+    }
+    
+    // 상승률 입력 이벤트
+    const markupInput = document.getElementById('markup-rate');
+    if (markupInput) {
+        markupInput.addEventListener('input', function() {
+            markupRate = parseFloat(this.value) || 0;
+            recalculateEstimates();
+        });
+    }
 });
 
-async function loadPriceCompareData() {
-    // PRICE_COMPARE_ID는 HTML에서 전역 변수로 선언됨
-    if(!PRICE_COMPARE_ID) return alert('ID가 없습니다.');
+// ============================================================================
+// API 데이터 로드
+// ============================================================================
 
+async function loadPriceCompareData(id) {
+    const loading = document.getElementById('loading');
+    const tableContainer = document.getElementById('tableContainer');
+    const controlsContainer = document.getElementById('controlsContainer');
+    const notesSection = document.getElementById('notesSection');
+    const actionFooter = document.getElementById('actionFooter');
+    
+    loading.style.display = 'block';
+    tableContainer.style.display = 'none';
+    
     try {
-        //
-        const res = await fetch(`/api/v1/quotation/price_compare/${PRICE_COMPARE_ID}?include_schema=true`);
-        if(!res.ok) throw new Error('데이터 로드 실패');
-
-        const data = await res.json();
-        renderHeader(data);
+        const response = await fetch(`/api/v1/quotation/price_compare/${id}`);
         
-        // 데이터가 없으면 빈 배열 처리
-        const items = data.price_compare_resources || data.resources?.items || [];
-        renderTableRows(items);
-
-    } catch(e) {
-        console.error(e);
-        alert('데이터를 불러오는 중 오류가 발생했습니다.');
+        if (!response.ok) {
+            throw new Error('데이터 로드 실패');
+        }
+        
+        priceCompareData = await response.json();
+        
+        // 작성자, 작성일 표시
+        document.getElementById('creatorName').textContent = priceCompareData.creator || '-';
+        document.getElementById('createdDate').textContent = formatDate(priceCompareData.created_at);
+        
+        // 테이블 렌더링
+        renderComparisonTable(priceCompareData.price_compare_resources);
+        
+        // 특이사항 표시
+        const notesContent = document.getElementById('notesContent');
+        notesContent.textContent = priceCompareData.description || '내정가의 단가와 제출할 수 있는 견적가의 단가가 동일함. 내정가 단가는 실 금액 반영 필요';
+        
+        // UI 표시
+        controlsContainer.style.display = 'flex';
+        tableContainer.style.display = 'block';
+        notesSection.style.display = 'block';
+        actionFooter.style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('데이터를 불러오는데 실패했습니다.');
+    } finally {
+        loading.style.display = 'none';
     }
 }
 
-function renderHeader(data) {
-    if(data.description) document.getElementById('mainDescription').textContent = data.description;
-    if(data.creator) document.getElementById('docCreator').textContent = `작성자: ${data.creator}`;
-    if(data.created_at) document.getElementById('docDate').textContent = `작성일: ${new Date(data.created_at).toLocaleDateString()}`;
-}
+// ============================================================================
+// 테이블 렌더링
+// ============================================================================
 
-function renderTableRows(items) {
-    // 1. 카테고리별 분류
-    const groups = {
-        material: items.filter(i => (i.major || i.category_major) === '자재비'),
-        labor: items.filter(i => (i.major || i.category_major) === '인건비'),
-        expense: items.filter(i => (i.major || i.category_major).includes('경비'))
-    };
-
-    // 2. 각 섹션 렌더링 및 합계 계산
-    const matTotal = renderSection('materialBody', '자재비', groups.material);
-    const labTotal = renderSection('laborBody', '인건비', groups.labor);
-    const expTotal = renderSection('expenseBody', '경비', groups.expense);
-
-    // 3. Sub Total 업데이트
-    const subCost = matTotal.cost + labTotal.cost;
-    const subQuot = matTotal.quot + labTotal.quot;
-
-    document.getElementById('matCostTotal').textContent = formatNum(matTotal.cost);
-    document.getElementById('matQuotTotal').textContent = formatNum(matTotal.quot);
-    
-    document.getElementById('labCostTotal').textContent = formatNum(labTotal.cost);
-    document.getElementById('labQuotTotal').textContent = formatNum(labTotal.quot);
-    
-    document.getElementById('expCostTotal').textContent = formatNum(expTotal.cost);
-    document.getElementById('expQuotTotal').textContent = formatNum(expTotal.quot);
-
-    document.getElementById('subCostTotal').textContent = formatNum(subCost);
-    document.getElementById('subQuotTotal').textContent = formatNum(subQuot);
-
-    // 4. 관리비/이윤 계산 (견적가 기준 6%, 4% 가정)
-    // 실제로는 DB에 저장된 값을 써야 할 수도 있으나, 여기선 자동계산 예시
-    const adminRate = 0.06;
-    const profitRate = 0.04;
-
-    const adminFee = Math.round(subQuot * adminRate);
-    const corpProfit = Math.round(subQuot * profitRate);
-
-    document.getElementById('adminFee').textContent = formatNum(adminFee);
-    document.getElementById('corpProfit').textContent = formatNum(corpProfit);
-
-    // 5. Final Total
-    // 내정가는 관리비/이윤 제외하고 Sub Total 그대로 (스크린샷 기준)
-    const finalCost = subCost; 
-    const finalQuot = subQuot + adminFee + corpProfit;
-
-    document.getElementById('finalCostTotal').textContent = formatNum(finalCost);
-    document.getElementById('finalQuotTotal').textContent = formatNum(finalQuot);
-
-    // 이익률 계산 ( (견적 - 내정) / 견적 * 100 )
-    if(finalQuot > 0) {
-        const margin = ((finalQuot - finalCost) / finalQuot) * 100;
-        document.getElementById('profitRate').textContent = `${margin.toFixed(1)}% 이익율`;
-    }
-}
-
-/**
- * 섹션 렌더링 헬퍼 함수
- * @returns { cost: number, quot: number } 합계 객체
- */
-function renderSection(tbodyId, label, items) {
-    const tbody = document.getElementById(tbodyId);
+function renderComparisonTable(resources) {
+    const tbody = document.getElementById('comparisonTableBody');
     tbody.innerHTML = '';
     
-    let totalCost = 0;
-    let totalQuot = 0;
-
-    items.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        
-        // 내정가 계산
-        const costPrice = item.cost_solo_price || 0;
-        const costQty = item.cost_compare || 0;
-        const costAmt = costPrice * costQty;
-        totalCost += costAmt;
-
-        // 견적가 계산
-        const quotPrice = item.quotation_solo_price || 0;
-        const quotQty = item.quotation_compare || item.cost_compare || 0; // 견적 수량 없으면 내정 수량 사용
-        const quotAmt = quotPrice * quotQty;
-        totalQuot += quotAmt;
-
-        // HTML 구성
-        let html = '';
-        
-        // 첫 번째 행에만 대분류(rowspan) 표시
-        if (index === 0) {
-            html += `<td rowspan="${items.length}" class="text-center font-bold bg-white" style="vertical-align: top;">${label}</td>`;
-        }
-
-        html += `
-            <td class="text-left">${item.minor || item.category_minor || item.model_name || '-'}</td>
-            
-            <td class="text-center yellow-bg">${formatNum(costQty)}</td>
-            <td class="text-center yellow-bg">${item.cost_unit || item.unit || '식'}</td>
-            <td class="text-right yellow-bg">${formatNum(costPrice)}</td>
-            <td class="text-right yellow-bg">${formatNum(costAmt)}</td>
-            
-            <td class="text-center">${formatNum(quotQty)}</td>
-            <td class="text-center">${item.quotation_unit || item.unit || '식'}</td>
-            <td class="text-right">${formatNum(quotPrice)}</td>
-            <td class="text-right">${formatNum(quotAmt)}</td>
-            
-            <td class="text-left" style="font-size: 11px;">${item.description || ''}</td>
-        `;
-
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
-    });
-
-    return { cost: totalCost, quot: totalQuot };
+    // 데이터를 major로 그룹화
+    const groupedData = groupByMajor(resources);
+    
+    // 각 그룹별 렌더링
+    let html = '';
+    
+    // 자재비
+    if (groupedData['자재비'] && groupedData['자재비'].length > 0) {
+        html += renderCategoryGroup('자재비', groupedData['자재비']);
+    }
+    
+    // 인건비
+    if (groupedData['인건비'] && groupedData['인건비'].length > 0) {
+        html += renderCategoryGroup('인건비', groupedData['인건비']);
+    }
+    
+    // 출장 경비 (있다면)
+    if (groupedData['출장 경비'] && groupedData['출장 경비'].length > 0) {
+        html += renderCategoryGroup('출장 경비', groupedData['출장 경비']);
+    }
+    
+    // Sub Total
+    html += renderSubTotalRow();
+    
+    // 관리비 (고정)
+    html += renderManagementRows();
+    
+    // TOTAL
+    html += renderFinalTotalRow();
+    
+    // 이익률
+    html += renderMarkupRow();
+    
+    tbody.innerHTML = html;
+    
+    // 계산 실행
+    calculateAllTotals();
 }
 
-function formatNum(n) {
-    return (n || 0).toLocaleString('ko-KR');
+// major로 그룹화
+function groupByMajor(resources) {
+    const groups = {};
+    
+    resources.forEach(item => {
+        const major = item.major || '기타';
+        if (!groups[major]) {
+            groups[major] = [];
+        }
+        groups[major].push(item);
+    });
+    
+    return groups;
+}
+
+// 카테고리 그룹 렌더링
+function renderCategoryGroup(categoryName, items) {
+    let html = '';
+    const rowspan = items.length;
+    
+    items.forEach((item, index) => {
+        html += '<tr class="category-row" data-category="' + categoryName + '">';
+        
+        // 첫 번째 행에만 카테고리 셀 추가
+        if (index === 0) {
+            html += `<td rowspan="${rowspan}" class="category-cell">${categoryName}</td>`;
+        }
+        
+        // 구분
+        html += `<td>${item.minor || ''}</td>`;
+        
+        // 내정가
+        html += `<td class="cost-qty">${item.cost_compare || ''}</td>`;
+        html += `<td>${item.cost_unit || ''}</td>`;
+        html += `<td class="cost-price">${formatNumber(item.cost_solo_price)}</td>`;
+        html += `<td class="cost-amount"></td>`;
+        
+        // 견적가
+        html += `<td class="quote-qty">${item.quotation_compare || ''}</td>`;
+        html += `<td>${item.quotation_unit || ''}</td>`;
+        html += `<td class="quote-price" contenteditable="true" data-original="${item.quotation_solo_price}">${formatNumber(item.quotation_solo_price)}</td>`;
+        html += `<td class="quote-amount"></td>`;
+        
+        // 비고
+        html += `<td contenteditable="true">${item.description || ''}</td>`;
+        
+        html += '</tr>';
+    });
+    
+    // 소계 행
+    html += `<tr class="subtotal-row" data-subtotal-category="${categoryName}">`;
+    html += `<td colspan="2">${categoryName} 소계</td>`;
+    html += '<td></td><td></td><td></td>';
+    html += '<td class="subtotal-cell cost-subtotal">0</td>';
+    html += '<td></td><td></td><td></td>';
+    html += '<td class="subtotal-cell quote-subtotal">0</td>';
+    html += '<td class="difference-cell">0</td>';
+    html += '</tr>';
+    
+    return html;
+}
+
+// Sub Total 행
+function renderSubTotalRow() {
+    let html = '<tr class="total-row">';
+    html += '<td colspan="5">Sub Total</td>';
+    html += '<td class="total-cell cost-total">0</td>';
+    html += '<td></td><td></td><td></td>';
+    html += '<td class="total-cell quote-total">0</td>';
+    html += '<td class="difference-cell">0</td>';
+    html += '</tr>';
+    return html;
+}
+
+// 관리비 행
+function renderManagementRows() {
+    let html = '<tr class="management-row">';
+    html += '<td rowspan="2" class="category-cell">관리비</td>';
+    html += '<td>일반관리비</td>';
+    html += '<td></td><td></td><td></td><td></td>';
+    html += '<td class="mgmt-rate" contenteditable="true">6</td>';
+    html += '<td></td><td></td>';
+    html += '<td class="mgmt-amount">0</td>';
+    html += '<td></td>';
+    html += '</tr>';
+    
+    html += '<tr class="management-row">';
+    html += '<td>기업이윤</td>';
+    html += '<td></td><td></td><td></td><td></td>';
+    html += '<td class="profit-rate" contenteditable="true">4</td>';
+    html += '<td></td><td></td>';
+    html += '<td class="profit-amount">0</td>';
+    html += '<td></td>';
+    html += '</tr>';
+    
+    return html;
+}
+
+// TOTAL 행
+function renderFinalTotalRow() {
+    let html = '<tr class="final-total-row">';
+    html += '<td colspan="5">TOTAL</td>';
+    html += '<td class="final-total-cell cost-final-total">0</td>';
+    html += '<td></td><td></td><td></td>';
+    html += '<td class="final-total-cell quote-final-total">0</td>';
+    html += '<td class="difference-cell">0</td>';
+    html += '</tr>';
+    return html;
+}
+
+// 이익률 행
+function renderMarkupRow() {
+    let html = '<tr class="markup-row">';
+    html += '<td colspan="9"></td>';
+    html += '<td class="margin-cell">0 %</td>';
+    html += '<td class="markup-cell">이익률</td>';
+    html += '</tr>';
+    return html;
+}
+
+// ============================================================================
+// 계산 로직
+// ============================================================================
+
+function calculateAllTotals() {
+    const tbody = document.getElementById('comparisonTableBody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    const categoryTotals = {}; // 카테고리별 합계
+    let currentCategory = null;
+    let costSum = 0;
+    let quoteSum = 0;
+    
+    rows.forEach(row => {
+        // 카테고리 행 처리
+        if (row.classList.contains('category-row')) {
+            const category = row.dataset.category;
+            
+            // 새 카테고리 시작
+            if (category !== currentCategory) {
+                // 이전 카테고리 저장
+                if (currentCategory) {
+                    categoryTotals[currentCategory] = { cost: costSum, quote: quoteSum };
+                }
+                
+                currentCategory = category;
+                costSum = 0;
+                quoteSum = 0;
+            }
+            
+            // 금액 계산
+            const costQty = parseNumber(row.querySelector('.cost-qty')?.textContent);
+            const costPrice = parseNumber(row.querySelector('.cost-price')?.textContent);
+            const quoteQty = parseNumber(row.querySelector('.quote-qty')?.textContent);
+            const quotePrice = parseNumber(row.querySelector('.quote-price')?.textContent);
+            
+            const costAmount = costQty * costPrice;
+            const quoteAmount = quoteQty * quotePrice;
+            
+            // 금액 표시
+            row.querySelector('.cost-amount').textContent = formatNumber(costAmount);
+            row.querySelector('.quote-amount').textContent = formatNumber(quoteAmount);
+            
+            // 합계 누적
+            costSum += costAmount;
+            quoteSum += quoteAmount;
+        }
+        
+        // 소계 행 처리
+        if (row.classList.contains('subtotal-row')) {
+            const category = row.dataset.subtotalCategory;
+            
+            // 마지막 카테고리 저장
+            if (currentCategory) {
+                categoryTotals[currentCategory] = { cost: costSum, quote: quoteSum };
+            }
+            
+            // 소계 표시
+            row.querySelector('.cost-subtotal').textContent = formatNumber(costSum);
+            row.querySelector('.quote-subtotal').textContent = formatNumber(quoteSum);
+            row.querySelector('.difference-cell').textContent = formatNumber(quoteSum - costSum);
+            
+            // 리셋
+            currentCategory = null;
+            costSum = 0;
+            quoteSum = 0;
+        }
+    });
+    
+    // Sub Total 계산
+    let totalCost = 0;
+    let totalQuote = 0;
+    
+    Object.values(categoryTotals).forEach(totals => {
+        totalCost += totals.cost;
+        totalQuote += totals.quote;
+    });
+    
+    const totalRow = tbody.querySelector('.total-row');
+    if (totalRow) {
+        totalRow.querySelector('.cost-total').textContent = formatNumber(totalCost);
+        totalRow.querySelector('.quote-total').textContent = formatNumber(totalQuote);
+        totalRow.querySelector('.difference-cell').textContent = formatNumber(totalQuote - totalCost);
+    }
+    
+    // 관리비 계산
+    const mgmtRow = tbody.querySelectorAll('.management-row')[0];
+    const profitRow = tbody.querySelectorAll('.management-row')[1];
+    
+    const mgmtRate = parseFloat(mgmtRow.querySelector('.mgmt-rate').textContent) || 0;
+    const profitRate = parseFloat(profitRow.querySelector('.profit-rate').textContent) || 0;
+    
+    const mgmtAmount = Math.round(totalQuote * mgmtRate / 100);
+    const profitAmount = Math.round(totalQuote * profitRate / 100);
+    
+    mgmtRow.querySelector('.mgmt-amount').textContent = formatNumber(mgmtAmount);
+    profitRow.querySelector('.profit-amount').textContent = formatNumber(profitAmount);
+    
+    // 최종 합계
+    const finalQuoteTotal = totalQuote + mgmtAmount + profitAmount;
+    
+    const finalRow = tbody.querySelector('.final-total-row');
+    if (finalRow) {
+        finalRow.querySelector('.cost-final-total').textContent = formatNumber(totalCost);
+        finalRow.querySelector('.quote-final-total').textContent = formatNumber(finalQuoteTotal);
+        finalRow.querySelector('.difference-cell').textContent = formatNumber(finalQuoteTotal - totalCost);
+    }
+    
+    // 이익률 계산
+    const markupRow = tbody.querySelector('.markup-row');
+    if (markupRow && finalQuoteTotal > 0) {
+        const margin = ((finalQuoteTotal - totalCost) / finalQuoteTotal * 100).toFixed(0);
+        markupRow.querySelector('.margin-cell').textContent = margin + ' %';
+    }
+}
+
+// 견적가 재계산 (상승률 변경 시)
+function recalculateEstimates() {
+    const tbody = document.getElementById('comparisonTableBody');
+    const rows = tbody.querySelectorAll('tr.category-row');
+    
+    rows.forEach(row => {
+        const quotePriceCell = row.querySelector('.quote-price');
+        if (quotePriceCell && !quotePriceCell.dataset.manual) {
+            const originalPrice = parseFloat(quotePriceCell.dataset.original) || 0;
+            const newPrice = Math.round(originalPrice * (1 + markupRate / 100));
+            quotePriceCell.textContent = formatNumber(newPrice);
+        }
+    });
+    
+    calculateAllTotals();
+}
+
+// ============================================================================
+// 이벤트 핸들러
+// ============================================================================
+
+// 견적 단가 수동 입력 처리
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('quote-price')) {
+        e.target.dataset.manual = 'true';
+        calculateAllTotals();
+    }
+    
+    if (e.target.classList.contains('mgmt-rate') || e.target.classList.contains('profit-rate')) {
+        calculateAllTotals();
+    }
+});
+
+// ============================================================================
+// 저장 기능
+// ============================================================================
+
+async function saveChanges() {
+    if (!priceCompareId) return;
+    
+    const tbody = document.getElementById('comparisonTableBody');
+    const rows = tbody.querySelectorAll('tr.category-row');
+    
+    const updatedResources = [];
+    
+    rows.forEach(row => {
+        const minor = row.cells[1]?.textContent.trim();
+        const costQty = parseNumber(row.querySelector('.cost-qty')?.textContent);
+        const costPrice = parseNumber(row.querySelector('.cost-price')?.textContent);
+        const quoteQty = parseNumber(row.querySelector('.quote-qty')?.textContent);
+        const quotePrice = parseNumber(row.querySelector('.quote-price')?.textContent);
+        const description = row.cells[row.cells.length - 1]?.textContent.trim();
+        
+        const category = row.dataset.category;
+        const costUnit = row.cells[3]?.textContent.trim();
+        const quoteUnit = row.cells[7]?.textContent.trim();
+        
+        updatedResources.push({
+            major: category,
+            minor: minor,
+            cost_solo_price: costPrice,
+            cost_unit: costUnit,
+            cost_compare: costQty,
+            quotation_solo_price: quotePrice,
+            quotation_unit: quoteUnit,
+            quotation_compare: quoteQty,
+            upper: markupRate,
+            description: description
+        });
+    });
+    
+    const notesContent = document.getElementById('notesContent').textContent.trim();
+    
+    const requestData = {
+        creator: priceCompareData.creator,
+        description: notesContent,
+        machine_ids: priceCompareData.machine_ids,
+        price_compare_resources: updatedResources
+    };
+    
+    try {
+        const response = await fetch(`/api/v1/quotation/price_compare/${priceCompareId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (response.ok) {
+            alert('저장되었습니다.');
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('저장 실패: ' + (error.detail || JSON.stringify(error)));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('저장 중 오류가 발생했습니다.');
+    }
+}
+
+// ============================================================================
+// 유틸리티 함수
+// ============================================================================
+
+function parseNumber(text) {
+    if (!text || text.trim() === '' || text === '-') return 0;
+    return parseInt(text.toString().replace(/,/g, '')) || 0;
+}
+
+function formatNumber(num) {
+    if (num === 0 || num === null || num === undefined) return '';
+    return num.toLocaleString('ko-KR');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function goBack() {
+    window.history.back();
 }

@@ -77,3 +77,8 @@ async def redirect_view(quotation_id: str):
         url=f"/service/quotation/default/form?mode=view&id={quotation_id}",
         status_code=302
     )
+
+
+@handler.get("/compare/form", response_class=HTMLResponse)
+def price_compare_form(request: Request):
+    return templates.TemplateResponse("quotation/general/price_compare_detail.html", {"request": request})
