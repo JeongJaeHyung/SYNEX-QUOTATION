@@ -1,5 +1,5 @@
 # app/models/price_compare_resources.py
-from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint
+from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
@@ -22,7 +22,7 @@ class PriceCompareResources(Base):
     quotation_solo_price = Column(Integer, nullable=False)
     quotation_unit = Column(String(10), nullable=False)
     quotation_compare = Column(Integer, nullable=False)
-    upper = Column(Integer, nullable=False)
+    upper = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
     
     # Relationships

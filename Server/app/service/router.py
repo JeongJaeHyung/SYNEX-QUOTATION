@@ -1,7 +1,7 @@
 # SYNEX+QUOTATION/Server/app/service/router.py
 from fastapi import APIRouter
 from .quotation.router import router as quotation_router
-from .parts.handler import router as parts_handler
+from .part.handler import router as part_handler
 
 router = APIRouter()
 
@@ -10,4 +10,4 @@ async def root():
     return "Here is root, /service/"
 
 router.include_router(quotation_router, prefix="/quotation")
-router.include_router(parts_handler, prefix="/parts")
+router.include_router(part_handler, prefix="/part")#

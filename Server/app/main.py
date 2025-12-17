@@ -52,11 +52,21 @@ async def register_page(request: Request):
         {"request": request}
     )
 
+@app.get("/quotation_detailed", response_class=HTMLResponse)
+async def register_page(request: Request):
+    """을지"""
+    return templates.TemplateResponse(
+        "template/quotation/general/quotation_detailed.html",
+        {"request": request}
+    )
 
-
-
-
-
+@app.get("/quotation_summary", response_class=HTMLResponse)
+async def register_page(request: Request):
+    """을지"""
+    return templates.TemplateResponse(
+        "template/quotation/general/quotation_summary.html",
+        {"request": request}
+    )
 
 
 
