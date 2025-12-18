@@ -1,11 +1,9 @@
 # SYNEX+QUOTATION/Server/app/service/quotation/machine/handler.py
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from main import templates
 
 handler = APIRouter()
-templates = Jinja2Templates(directory="frontend")
-
 
 @handler.get("/", response_class=HTMLResponse)
 async def machine_list(request: Request):

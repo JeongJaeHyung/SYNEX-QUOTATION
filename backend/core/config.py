@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from fastapi.templating import Jinja2Templates
 
 class Settings:
     # [보안] 실무에서는 반드시 환경변수나 .env 파일에서 가져와야 합니다.
@@ -8,3 +10,10 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1일 (24시간)
 
 settings = Settings()
+
+# main.py가 있는 app 폴더 기준
+BASE_DIR = Path(__file__).resolve().parent.parent
+TEMPLATE_DIR = os.path.join(BASE_DIR, "frontend")
+
+# 전역에서 사용할 templates 객체 하나만 생성
+templates = Jinja2Templates(directory=TEMPLATE_DIR)
