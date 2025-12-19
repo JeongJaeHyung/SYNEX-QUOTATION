@@ -1,7 +1,7 @@
 # SYNEX+QUOTATION/Server/app/service/part/router.py
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from main import templates
+from backend.core.config import templates
 
 router = APIRouter()
 

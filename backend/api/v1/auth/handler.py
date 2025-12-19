@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from database import get_db
-from models.account import Account
-from core import security
+from backend.database import get_db
+from backend.models.account import Account
+from backend.core import security
 from .schemas import LoginRequest, Token
 
 # [중요] 로그인은 보안 검사를 받으면 안 되므로 일반 APIRouter 사용

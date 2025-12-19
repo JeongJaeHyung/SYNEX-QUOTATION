@@ -7,7 +7,7 @@
 from sqlalchemy.orm import Session # 데이터베이스 세션 관리를 위함
 from sqlalchemy import func # SQLAlchemy 함수 (예: max, count) 임포트
 from typing import List, Optional, Tuple # 타입 힌트 (선택적 인자, 리스트, 튜플)
-from models.maker import Maker # Maker 모델 임포트
+from backend.models import Maker # Maker 모델 임포트
 
 # ============================================================
 # 헬퍼 함수

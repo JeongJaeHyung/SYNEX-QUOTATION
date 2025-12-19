@@ -2,7 +2,7 @@
 from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 class PriceCompareResources(Base):
     __tablename__ = "price_compare_resources"

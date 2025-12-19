@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from uuid import UUID
 from typing import List, Optional, Tuple
-from models.general import General
+from backend.models.general import General
 
 # ============================================================
 # CRUD Functions

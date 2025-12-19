@@ -1,6 +1,6 @@
 # app/__init__.py
 
-from database import Base
+from backend.database import Base
 
 # 기존 모델
 from .maker import Maker

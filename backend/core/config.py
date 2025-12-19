@@ -12,8 +12,8 @@ class Settings:
 settings = Settings()
 
 # main.py가 있는 app 폴더 기준
-BASE_DIR = Path(__file__).resolve().parent.parent
-TEMPLATE_DIR = os.path.join(BASE_DIR, "frontend")
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
 
-# 전역에서 사용할 templates 객체 하나만 생성
-templates = Jinja2Templates(directory=TEMPLATE_DIR)
+# 템플릿 설정 단일화
+templates = Jinja2Templates(directory=str(FRONTEND_DIR))

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
-from api.v1.account import schemas, crud
+from backend.database import get_db
+from backend.api.v1.account import schemas, crud
 
 # [중요] 회원가입/중복체크는 로그인 없이 가능해야 하므로 RBACRoute 적용 안 함 (또는 Whitelist 등록)
 handler = APIRouter()

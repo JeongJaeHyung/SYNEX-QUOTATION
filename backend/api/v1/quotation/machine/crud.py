@@ -9,11 +9,11 @@ from sqlalchemy.orm import Session, joinedload # 데이터베이스 세션 및 �
 from sqlalchemy import func, desc # SQLAlchemy 함수 (예: count, 내림차순 정렬) 임포트
 from uuid import UUID # UUID 타입 사용 (견적서 ID)
 from typing import List, Optional, Tuple # 타입 힌트
-from models.machine import Machine # Machine 모델 임포트
-from models.machine_resources import MachineResources # MachineResources 모델 임포트
-from models.resources import Resources # Resources 모델 임포트 (자재 마스터)
-from models.maker import Maker # Maker 모델 임포트 (제조사)
-from models.certification import Certification # Certification 모델 임포트 (인증 정보)
+from backend.models.machine import Machine # Machine 모델 임포트
+from backend.models.machine_resources import MachineResources # MachineResources 모델 임포트
+from backend.models.resources import Resources # Resources 모델 임포트 (자재 마스터)
+from backend.models.maker import Maker # Maker 모델 임포트 (제조사)
+from backend.models.certification import Certification # Certification 모델 임포트 (인증 정보)
 
 # ============================================================
 # Machine CRUD 함수

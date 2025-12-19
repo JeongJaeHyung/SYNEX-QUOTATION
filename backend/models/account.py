@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, TIMESTAMP, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 class Account(Base):
     __tablename__ = "account"

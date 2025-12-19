@@ -3,11 +3,11 @@ from uuid import UUID
 from typing import List, Dict, Tuple
 
 # Models Import
-from models.price_compare import PriceCompare
-from models.price_compare_machine import PriceCompareMachine
-from models.price_compare_resources import PriceCompareResources
-from models.machine_resources import MachineResources
-from models.machine import Machine # 💡 장비명 조회를 위해 필수
+from backend.models.price_compare import PriceCompare
+from backend.models.price_compare_machine import PriceCompareMachine
+from backend.models.price_compare_resources import PriceCompareResources
+from backend.models.machine_resources import MachineResources
+from backend.models.machine import Machine # 💡 장비명 조회를 위해 필수
 
 from . import schemas
 

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from database import Base
+from backend.database import Base
 
 class Permission(Base):
     __tablename__ = "permission"

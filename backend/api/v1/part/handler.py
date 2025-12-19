@@ -8,7 +8,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException # FastAPI 라우터, 의존성 주입, 쿼리 파라미터, HTTP 예외 처리
 from sqlalchemy.orm import Session # 데이터베이스 세션 관리를 위함
 from typing import Optional, List # 타입 힌트 (선택적 인자, 리스트)
-from database import get_db # 데이터베이스 세션 의존성 주입
+from backend.database import get_db # 데이터베이스 세션 의존성 주입
 from . import crud, schemas # Part CRUD 함수 및 스키마(DTO) 임포트
 
 # API 라우터 인스턴스 생성

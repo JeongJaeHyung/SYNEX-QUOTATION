@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import uuid
-from database import Base
+from backend.database import Base
 
 class PriceCompare(Base):
     __tablename__ = "price_compare"

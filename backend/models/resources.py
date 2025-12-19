@@ -2,7 +2,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 class Resources(Base):
     __tablename__ = "resources"

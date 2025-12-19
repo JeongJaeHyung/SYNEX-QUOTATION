@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import Optional
-from models.account import Account
-from models.role import Role
-from core.security import get_password_hash
+from backend.models.account import Account
+from backend.models.role import Role
+from backend.core.security import get_password_hash
 
 # ============================================================
 # Account CRUD

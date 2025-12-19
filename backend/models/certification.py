@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKeyConstraint, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 class Certification(Base):
     __tablename__ = "certification"

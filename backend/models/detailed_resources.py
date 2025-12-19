@@ -3,7 +3,7 @@
 from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 class DetailedResources(Base):
     __tablename__ = "detailed_resources"

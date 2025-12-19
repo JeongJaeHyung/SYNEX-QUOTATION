@@ -7,9 +7,9 @@
 from sqlalchemy.orm import Session # 데이터베이스 세션 관리를 위함
 from sqlalchemy import and_, or_, func # SQLAlchemy AND, OR 조건 및 함수 사용을 위함
 from typing import List, Tuple, Optional # 타입 힌트
-from models.resources import Resources # Resources 모델 임포트
-from models.maker import Maker # Maker 모델 임포트
-from models.certification import Certification # Certification 모델 임포트
+from backend.models.resources import Resources # Resources 모델 임포트
+from backend.models.maker import Maker # Maker 모델 임포트
+from backend.models.certification import Certification # Certification 모델 임포트
 from .schemas import PartsFilter # 부품 필터링 스키마 임포트
 
 # ============================================================

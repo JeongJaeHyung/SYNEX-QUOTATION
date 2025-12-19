@@ -2,7 +2,7 @@ from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
-from database import Base
+from backend.database import Base
 
 # 중계 테이블 import
 from .role_permission import role_permission

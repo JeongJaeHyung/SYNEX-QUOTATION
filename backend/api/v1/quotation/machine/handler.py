@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query # FastAPI 라우터
 from sqlalchemy.orm import Session # 데이터베이스 세션 관리를 위함
 from typing import Optional, Union # 타입 힌트 (선택적 인자, Union 타입)
 from uuid import UUID # UUID 타입 (경로 파라미터 등)
-from database import get_db # 데이터베이스 세션 의존성 주입
-from api.v1.quotation.machine import schemas, crud # Machine 스키마(DTO) 및 CRUD 함수 임포트
-from models.resources import Resources # Resources 모델 임포트 (자재 존재 여부 검증용)
+from backend.database import get_db # 데이터베이스 세션 의존성 주입
+from backend.api.v1.quotation.machine import schemas, crud # Machine 스키마(DTO) 및 CRUD 함수 임포트
+from backend.models.resources import Resources # Resources 모델 임포트 (자재 존재 여부 검증용)
 
 # API 라우터 인스턴스 생성
 handler = APIRouter()

@@ -2,7 +2,7 @@
 from sqlalchemy import Column, String, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 class Maker(Base):
     __tablename__ = "maker"

@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from backend.core.config import templates, BASE_DIR
 
 # 1. 경로 설정 (PyInstaller EXE 빌드 대응)
 if getattr(sys, 'frozen', False):

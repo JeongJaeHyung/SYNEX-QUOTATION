@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.dialects.postgresql import UUID
-from database import Base
+from backend.database import Base
 
 # Association Table (클래스가 아닌 Table 객체로 정의)
 role_permission = Table(

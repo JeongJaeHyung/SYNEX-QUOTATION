@@ -1,7 +1,7 @@
 # SYNEX+QUOTATION/Server/app/service/quotation/machine/handler.py
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from main import templates
+from backend.core.config import templates
 
 handler = APIRouter()
 

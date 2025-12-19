@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-from main import templates
+from backend.core.config import templates
 
 # [변경] router 변수명을 handler로 변경했습니다.
 handler = APIRouter()
