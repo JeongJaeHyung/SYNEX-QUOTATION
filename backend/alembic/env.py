@@ -1,49 +1,34 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, create_engine
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 from alembic import context
-from urllib.parse import quote_plus
 import os
 import sys
+from pathlib import Path
 
-# 경로 설정
-sys.path.insert(0, '/app')
+# 1. 경로 설정: 프로젝트 루트를 sys.path에 추가하여 'backend' 패키지를 인식하게 함
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(BASE_DIR))
 
-# 모델 import
-from database import Base
-from models.maker import Maker
-from models.resources import Resources
-from models.certification import Certification
-from models.machine import Machine
-from models.machine_resources import MachineResources
-from models.account import Account
+# 2. 모델 import: 모든 모델이 등록된 __init__.py를 가져옵니다.
+from backend.database import Base
+# 모든 모델을 임포트해야 Alembic이 테이블 변화를 감지합니다.
+import backend.models 
 
-# Alembic Config
+# 3. Alembic 설정 객체
 config = context.config
 
-# 환경변수에서 개별 값 가져오기
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "synex_quotation_db")
-
-# 비밀번호 URL 인코딩 (특수문자 처리)
-DB_PASSWORD_ENCODED = quote_plus(DB_PASSWORD)
-
-# DATABASE_URL 생성
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-# Logging 설정
+# 4. Logging 설정
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 메타데이터
+# 5. 메타데이터 설정
 target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
+    """Offline 모드에서 마이그레이션 실행"""
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=DATABASE_URL,  # 직접 사용!
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -53,8 +38,13 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def run_migrations_online() -> None:
-    # 직접 engine 생성!
-    connectable = create_engine(DATABASE_URL)
+    """Online 모드에서 마이그레이션 실행"""
+    # alembic.ini의 설정을 사용하여 엔진 생성
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
 
     with connectable.connect() as connection:
         context.configure(

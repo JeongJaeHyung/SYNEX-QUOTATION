@@ -1,33 +1,37 @@
-# SYNEX+QUOTATION/Server/app/database.py
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from urllib.parse import quote_plus
+# backend/core/database.py
 import os
+from pathlib import Path
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.engine import Engine
 
-# 환경 변수에서 개별 값 가져오기
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "synex_quotation_db")
+# 1. 절대 경로로 프로젝트 루트 찾기
+# 현재 파일: .../backend/core/database.py -> .parent(core) -> .parent(backend) -> .parent(root)
+BASE_DIR = Path(__file__).resolve().parent.parent
+DB_DIR = BASE_DIR / "database"
+DB_PATH = DB_DIR / "jlt_quotation.db"
 
-# 비밀번호 URL 인코딩 (특수문자 처리)
-DB_PASSWORD_ENCODED = quote_plus(DB_PASSWORD)
+# 폴더 자동 생성
+DB_DIR.mkdir(exist_ok=True)
 
-# DATABASE_URL 생성
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# 2. SQLite URL 설정
+# 리눅스 환경에서는 sqlite:////절대경로 (슬래시 4개)가 가장 안전합니다.
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 
-if not all([DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME]):
-    raise ValueError("Database configuration is incomplete")
+# [중요] 앱 실행 시 터미널에서 이 경로가 아까 alembic이 건드린 경로와 같은지 확인하세요!
+print(f"[*] 연결된 실제 DB 경로: {DB_PATH}")
 
-# Engine 생성
 engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"check_same_thread": False}
 )
+
+# SQLite 외래키 활성화
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

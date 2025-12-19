@@ -26,23 +26,18 @@ BASE_DIR = Path(__file__).resolve().parent
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "frontend" / "static")), name="static")
 app.mount("/assets", StaticFiles(directory=str(BASE_DIR / "frontend" / "assets")), name="assets")
-
 templates = Jinja2Templates(directory=str(BASE_DIR / "frontend"))
 
 
 
 @app.get("/")
-async def root(request: Request):  # 1. 함수 인자에 request 추가
+async def root(request: Request):
     return templates.TemplateResponse(
         "template/home.html", 
-        {"request": request}       # 2. 컨텍스트 딕셔너리에 request 객체 전달 필수
+        {"request": request}
     )
 
-
-
-
-
-
+'''
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """로그인 페이지"""
@@ -58,6 +53,8 @@ async def register_page(request: Request):
         "template/register.html",
         {"request": request}
     )
+
+'''
 
 @app.get("/quotation_detailed", response_class=HTMLResponse)
 async def register_page(request: Request):
@@ -75,7 +72,6 @@ async def register_page(request: Request):
         {"request": request}
     )
 
-
-
 app.include_router(api_router, prefix="/api")
+
 app.include_router(service_router, prefix="/service", tags=["service"])

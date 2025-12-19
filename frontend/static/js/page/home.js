@@ -1,4 +1,4 @@
-const CTA_TARGET_URL = '/login';
+const CTA_TARGET_URL = '/service/quotation/machine/';
 
 document.addEventListener('DOMContentLoaded', () => {
   const heroVideo = document.getElementById('heroVideo');

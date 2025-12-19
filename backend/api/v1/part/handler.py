@@ -121,7 +121,7 @@ def convert_to_parts_response(resource) -> dict:
 # Parts Endpoints (부품 관련 API)
 # ============================================================
 
-@handler.post("", status_code=201)
+@handler.post("/", status_code=201)
 def create_parts(
     parts_data: schemas.PartsCreate, # 요청 바디는 PartsCreate 스키마를 따름
     db: Session = Depends(get_db) # DB 세션 의존성 주입

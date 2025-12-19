@@ -1,8 +1,13 @@
+# =================================================================
+# JLT Quotation System - Requirements
+# =================================================================
+
 # 프레임워크 & 서버
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 
-# 데이터베이스 (현재 PostgreSQL 유지)
+# 데이터베이스
+# SQLite는 파이썬 내장이나, SQLAlchemy 및 마이그레이션을 위해 아래 패키지가 필요합니다.
 sqlalchemy==2.0.36
 psycopg2-binary==2.9.10
 alembic==1.13.1
@@ -23,13 +28,11 @@ pyjwt==2.10.1
 passlib[bcrypt]==1.7.4
 email-validator==2.1.0
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
 
 # 데스크톱 앱 전환 및 빌드
 pywebview==5.3
 pyinstaller==6.11.1
 
-# JLT Desktop UI 전용
-pywebview
+# JLT Desktop UI 전용 (GUI 엔진)
 PyQt6
 PyQt6-WebEngine

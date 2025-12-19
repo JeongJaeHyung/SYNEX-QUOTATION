@@ -21,7 +21,7 @@ from openpyxl import load_workbook
 from datetime import datetime
 
 # --- Configuration ---
-API_BASE_URL = "http://localhost:8030/api/v1"
+API_BASE_URL = "http://localhost:8000/api/v1"
 MACHINE_API_URL = f"{API_BASE_URL}/quotation/machine/"
 MACHINE_SEARCH_URL = f"{API_BASE_URL}/quotation/machine/search"
 PARTS_LIST_URL = f"{API_BASE_URL}/parts"

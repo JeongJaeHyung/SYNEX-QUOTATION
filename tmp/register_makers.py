@@ -6,7 +6,7 @@ import urllib.request
 import urllib.error
 
 # --- Configuration ---
-API_URL = "http://localhost:8030/api/v1/maker"
+API_URL = "http://localhost:8000/api/v1/maker"
 EXCEL_FILE_PATH = "tmp/data.xlsx"
 MAKER_SHEET_NAME = 2 # 엑셀 파일의 제조사 데이터 시트 인덱스 (이전 디버깅 결과에 따라 1로 유지)
 
