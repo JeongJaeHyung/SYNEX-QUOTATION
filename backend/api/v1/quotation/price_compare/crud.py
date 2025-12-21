@@ -63,7 +63,9 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
     
     for (m_id, major, minor), data in aggregated.items():
         initial_data.append({
-            "machine_id": m_id,  # 💡 DB에 저장될 machine_id
+            "machine_id": m_id,
+            # 장비명 별도 필드로 저장
+            "machine_name": data['machine_name'],
             "major": major,
             "minor": minor,
             "cost_solo_price": data['price'],
@@ -72,10 +74,40 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
             "quotation_solo_price": data['price'],
             "quotation_unit": "식",
             "quotation_compare": 1,
-            "upper": 0,
+            "upper": 15,
             
-            # 💡 비고에 장비명 입력 (예: "주액기")
-            "description": data['machine_name'] 
+            # 비고는 별도 필드(자동계산시 필요시 None)
+            "description": None
+        })
+    
+    # 4. 출장 경비 항목 추가 💡
+    business_trip_items = [
+        {"minor": "식대", "description": ""},
+        {"minor": "숙박비", "description": ""},
+        {"minor": "교통비", "description": ""},
+        {"minor": "운송비", "description": ""}
+    ]
+    
+    # 첫 번째 machine_id 사용 (또는 None)
+    first_machine_id = machine_ids[0] if machine_ids else None
+    first_machine_name = None
+    if first_machine_id:
+        first_machine_name = db.query(Machine.name).filter(Machine.id == first_machine_id).scalar()
+    
+    for item in business_trip_items:
+        initial_data.append({
+            "machine_id": first_machine_id,
+            "machine_name": first_machine_name,
+            "major": "출장 경비",
+            "minor": item['minor'],
+            "cost_solo_price": 0,
+            "cost_unit": "원",
+            "cost_compare": 1,
+            "quotation_solo_price": 0,
+            "quotation_unit": "원",
+            "quotation_compare": 1,
+            "upper": 15,
+            "description": item['description']
         })
         
     return initial_data
@@ -108,6 +140,8 @@ def create_price_compare(db: Session, request: schemas.PriceCompareCreate) -> Pr
             
             # 💡 machine_id 저장
             machine_id=item['machine_id'],
+            # 💡 machine_name 별도 필드 저장
+            machine_name=item.get('machine_name'),
             
             major=item['major'],
             minor=item['minor'],
@@ -118,7 +152,7 @@ def create_price_compare(db: Session, request: schemas.PriceCompareCreate) -> Pr
             quotation_unit=item['quotation_unit'],
             quotation_compare=item['quotation_compare'],
             upper=item['upper'],
-            description=item['description'] # 장비명
+            description=item.get('description')
         )
         db.add(resource)
         
@@ -168,6 +202,8 @@ def update_price_compare_overwrite(
             
             # 💡 machine_id 저장
             machine_id=item['machine_id'],
+            # machine_name 저장 (수동/자동 모두 가능)
+            machine_name=item.get('machine_name'),
             
             major=item['major'],
             minor=item['minor'],

@@ -7,6 +7,8 @@ from datetime import datetime
 class ResourceItem(BaseModel):
     # [중요] 리소스 식별용 장비 ID (PK) 💡
     machine_id: UUID = Field(..., description="장비 ID (PK)")
+    # 장비명 필드 추가 (비고가 아닌 별도 필드)
+    machine_name: Optional[str] = Field(None, description="장비명")
     
     major: str = Field(..., max_length=30, description="대분류 (PK)")
     minor: str = Field(..., max_length=50, description="중분류 (PK)")

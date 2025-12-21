@@ -54,13 +54,9 @@ app.include_router(service_router, prefix="/service", tags=["service"])
 async def root(request: Request):
     return templates.TemplateResponse("template/home.html", {"request": request})
 
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    return templates.TemplateResponse("template/login.html", {"request": request})
-
-@app.get("/register", response_class=HTMLResponse)
-async def register_page(request: Request):
-    return templates.TemplateResponse("template/register.html", {"request": request})
+@app.get("/quotation_detailed", response_class=HTMLResponse)
+async def root(request: Request):
+    return templates.TemplateResponse("template/quotation/general/quotation_detailed.html", {"request":request})
 
 # =======================================================================================================================================
 # PY WEB VIEW, SET AND RUN SECTION

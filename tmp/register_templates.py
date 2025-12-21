@@ -25,8 +25,8 @@ API_BASE_URL = "http://localhost:8000/api/v1"
 MACHINE_API_URL = f"{API_BASE_URL}/quotation/machine/"
 MACHINE_SEARCH_URL = f"{API_BASE_URL}/quotation/machine/search"
 PARTS_LIST_URL = f"{API_BASE_URL}/parts"
-PARTS_CREATE_URL = f"{API_BASE_URL}/parts"
-MAKER_CREATE_URL = f"{API_BASE_URL}/maker"
+PARTS_CREATE_URL = f"{API_BASE_URL}/parts/"
+MAKER_CREATE_URL = f"{API_BASE_URL}/maker/"
 
 EXCEL_FILE_PATH = "tmp/data.xlsx"
 
@@ -483,7 +483,7 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
                 need_update = True
 
             if need_update:
-                put_url = f"{PARTS_CREATE_URL}/{part['resources_id']}/{part['maker_id']}"
+                put_url = f"{PARTS_CREATE_URL}{part['resources_id']}/{part['maker_id']}"
                 put_json(put_url, update_payload)
                 # 다음 로직을 위해 part 정보 갱신
                 if "solo_price" in update_payload:

@@ -12,6 +12,7 @@ class PriceCompareResources(Base):
     
     # 2. PK [추가]: 어떤 장비의 자원인지 (이게 있어야 장비별 구분이 됨) 💡
     machine_id = Column(UUID(as_uuid=True), primary_key=True)
+    machine_name = Column(String(100), primary_key=True)
     major = Column(String(30), primary_key=True)
     minor = Column(String(50), primary_key=True)
     
@@ -34,12 +35,6 @@ class PriceCompareResources(Base):
         ForeignKeyConstraint(
             ['price_compare_id'],
             ['price_compare.id'],
-            ondelete='CASCADE'
-        ),
-        # Machine 연결 (장비 삭제 시 해당 리소스도 삭제되도록) 💡
-        ForeignKeyConstraint(
-            ['machine_id'],
-            ['machine.id'],
             ondelete='CASCADE'
         ),
     )
