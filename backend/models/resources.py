@@ -10,11 +10,10 @@ class Resources(Base):
     # 복합 PK
     id = Column(String(6), primary_key=True)
     maker_id = Column(String(4), ForeignKey("maker.id"), primary_key=True)
-    
-    # 기본 컬럼
-    major = Column(String(50), nullable=False)
-    minor = Column(String(50), nullable=False)
-    name = Column(String(100), nullable=False)
+    major = Column(String(50), primary_key=True)
+    minor = Column(String(50), primary_key=True)
+    name = Column(String(100), primary_key=True)
+
     unit = Column(String(10), nullable=False)
     solo_price = Column(Integer, nullable=False)
     

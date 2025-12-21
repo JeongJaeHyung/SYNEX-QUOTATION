@@ -1,3 +1,5 @@
+# SYNEX+QUOTATION/backend/api/v1/quotation/price_compare/schemas.py
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from uuid import UUID
