@@ -1,194 +1,190 @@
+/* ============================================================================
+   견적서(을지) 상세 페이지 최종 스타일
+   - 디자인 언어: ECOUNT ERP + 내정가 비교표 스타일 통합
+   - 주요 기능: 우측 플로팅 바, View/Edit 모드 시각화, 인쇄 최적화
+   ============================================================================ */
+
+/* 1. 기본 레이아웃 */
 .quotation-cover-page {
-    background: #f9fafb;
-    padding: 3.5rem 1rem 4rem;
-    min-height: calc(100vh - 180px);
+    background: #f1f5f9;
+    padding: 3rem 1rem 5rem;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
     align-items: center;
-    justify-content: flex-start;
-}
-
-.quotation-cover-page .page-heading {
-    text-align: center;
-    max-width: 720px;
-}
-
-.quotation-cover-page .page-heading h1 {
-    margin-bottom: 0.35rem;
-    font-size: 2.2rem;
-    letter-spacing: 0.08em;
-    color: #1d2330;
-}
-
-.quotation-cover-page .page-heading .page-subtitle {
-    margin: 0;
-    color: #5e6271;
-    font-size: 1rem;
 }
 
 .cover-shell {
-      width: min(1200px, 100%);
-      display: grid;
-      justify-items: center;
-      gap: 0.6rem;
-      background: #ffffff;
-      margin-top: -2rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    /* 기존 1200px -> 1400px로 확장하여 시원한 뷰 제공 */
+    width: 98%; 
+    background: #ffffff;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    position: relative;
 }
 
 .cover-inner {
-    width: 100%;
-    min-height: 320px;
-    background: #ffffff;
-    padding: 2rem;
+    /* 좌우 패딩을 살짝 조절하여 테이블 가로 공간 확보 (60px -> 50px) */
+    padding: 40px 50px; 
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 2rem;
 }
 
-.cover-inner p {
-    margin: 0;
-    color: #4a4c5f;
-    font-size: 1rem;
-    line-height: 1.6;
-}
-
+/* 2. 헤더 디자인 (비교표 스타일 계승) */
 .cover-inner header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 3px solid #1e40af;
-    background: #ffffff;
+    padding-bottom: 25px;
+    border-bottom: 4px solid #1e40af; /* JLT 시그니처 블루 */
 }
 
 .cover-inner header h2 {
     margin: 0;
-    font-size: 60px;
-    font-weight: 700;
-    letter-spacing: 2px;
+    font-size: 54px;
+    font-weight: 800;
     color: #1e40af;
+    letter-spacing: -1px;
+    font-family: 'Pretendard', sans-serif;
 }
 
 .logo-placeholder img {
-    width: 244.34px;
-    display: block;
+    height: 45px;
+    width: auto;
 }
 
-.cover-inner table {
+/* 3. 테이블 스타일링 */
+.editable-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.95rem;
+    border: 1px solid #cbd5e1;
+    table-layout: fixed; /* 컬럼 너비 고정 */
 }
 
-.cover-inner th,
-.cover-inner td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid #cbd5e1;
-    border-right: 1px solid #cbd5e1;
-    text-align: center;
+.editable-table th, 
+.editable-table td {
+    border: 1px solid #cbd5e1;
+    padding: 10px 12px;
+    height: 44px;
+    word-break: break-all;
 }
 
-.cover-inner th:last-child,
-.cover-inner td:last-child {
-    border-right: none;
-}
-
-.cover-inner thead {
-    background: #e0f2fe;
-}
-
-.cover-inner tbody tr:nth-child(even) {
+.editable-table thead th {
     background: #f8fafc;
-}
-
-.cover-inner .section-title {
-    background: #a5c0ff !important;
-    color: #0f1c4c;
-    font-weight: 600;
-    text-align: left;
-    font-size: 1rem;
-    border-bottom: 1px solid #7d9ff5;
-}
-
-.cover-inner .section-title td {
-    color: inherit;
-    border-bottom: none;
-}
-
-.cover-inner .section-subtitle {
-    background: #d4e0ff !important;
-    font-weight: 600;
-    text-align: left;
-    color: #0f1c4c;
-}
-
-.cover-inner .summary-row {
-    background: #a8bfff !important;
-    color: #0f1c4c;
     font-weight: 700;
-    border-top: 1px solid #7d9ff5;
+    color: #334155;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.cover-inner .summary-row td {
-    text-align: center;
-}
+/* 컬럼 너비 비율 */
+.col-number { width: 50px; }
+.edit-unit { width: 70px; }
+.edit-qty { width: 80px; }
+.edit-price { width: 130px; }
+.row-subtotal { width: 150px; }
 
-.cover-inner .summary-row td:first-child,
-.cover-inner .summary-row td:nth-child(2) {
-    text-align: center;
-}
-
-.cover-inner .summary-row .summary-white {
-    background: white !important;
-    color: #1f2937;
-}
-
-.cover-inner .summary-row .summary-white.total-amount {
-    color: #1f2937;
-    font-weight: 700;
-}
-
-.cover-inner .notes-row {
-    background: white !important;
-}
-
-.cover-inner .notes-header {
-    text-align: center;
-    padding: 0.5rem 0.75rem;
-    font-weight: 600;
-    background: #f0f9ff;
-}
-
-.cover-inner .notes-content {
-    text-align: left;
-    padding: 1rem;
-    height: 80px;
-    vertical-align: top;
-    background: white;
-}
-
-.cover-inner tfoot {
-    background: #f8fafc;
-}
-
-.cover-inner tfoot tr {
-    background: #e6ecff;
-}
-
-.cover-inner .total-amount {
+/* 섹션 타이틀 */
+.section-title {
+    background: #f1f5f9 !important;
     font-weight: 700;
     color: #1e40af;
+    text-align: left;
+    font-size: 0.9rem;
 }
 
-.cover-inner .notes {
-    margin: 1rem;
-    font-size: 0.9rem;
-    color: #475467;
-    background: #f0f9ff;
-    padding: 0.6rem 0.9rem;
-    border-radius: 6px;
-    border: 1px solid #c7d2fe;
+.section-title td {
+    padding-left: 15px;
+}
+
+/* 4. 모드별 셀 스타일 (핵심) */
+
+/* 공통: 수정 가능 셀에 대한 베이스 */
+.editable-table td[contenteditable] {
+    transition: all 0.2s ease;
+}
+
+/* [조회 모드] - 일반 텍스트처럼 보임 */
+.editable-table[data-mode="view"] td[contenteditable] {
+    background-color: transparent !important;
+    border: 1px solid #cbd5e1 !important; /* 테이블 선 유지 */
+    cursor: default;
+}
+
+/* [수정 모드] - 입력 필드처럼 강조 */
+.editable-table[data-mode="edit"] td[contenteditable] {
+    background-color: #fffbeb !important; /* 연한 노란색 (ECOUNT 편집 스타일) */
+    border: 1px dashed #fcd34d !important;
+    cursor: text;
+}
+
+.editable-table[data-mode="edit"] td[contenteditable]:focus {
+    background-color: #ffffff !important;
+    box-shadow: inset 0 0 0 2px #3b82f6;
+    border: 1px solid #3b82f6 !important;
+    outline: none;
+}
+
+/* 5. 합계 및 푸터 영역 */
+.total-row {
+    background: #fef9c3 !important; /* 비교표와 동일한 강조색 */
+}
+
+.total-row td {
+    font-weight: 800;
+    border-top: 2px solid #eab308;
+}
+
+.total-amount-cell {
+    color: #b45309;
+    font-size: 1.15rem;
+    text-align: right;
+}
+
+/* 6. 우측 플로팅 사이드바 */
+.side-action-bar {
+    position: fixed;
+    /* 화면 끝이 아닌 쉘 우측 근처에 배치되도록 조정 */
+    right: 20px; 
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1000;
+}
+
+.side-action-bar .action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #ffffff;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.side-action-bar .btn {
+    width: 130px;
+    height: 42px;
+    justify-content: center;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* 7. 유틸리티 */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.no-print { display: block; }
+
+/* 8. 인쇄 최적화 */
+@media print {
+    .cover-shell {
+        width: 100%; /* 인쇄 시에는 용지 너비에 맞춤 */
+        box-shadow: none;
+    }
 }

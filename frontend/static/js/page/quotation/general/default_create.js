@@ -188,20 +188,38 @@ function renderRelationsTable(schema, items) {
  * 행 클릭 통합 핸들러 (ID 기반 API 요청 또는 페이지 이동)
  */
 async function handleRowClick(rowElement) {
-    // 1. 행의 data-id 속성값 가져오기
+    // 1. 행의 data-id와 data-table 속성값 가져오기
     const id = rowElement.getAttribute('data-id');
     
+    // [핵심 보완] data-table이 없거나 'undefined'일 경우를 대비해 
+    // 내부 텍스트(구분 열)를 통해 타입을 한 번 더 추론합니다.
+    let type = rowElement.getAttribute('data-table');
+    const categoryText = rowElement.cells[0].textContent.trim(); 
+
     // 2. id가 없는 경우 예외 처리
     if (!id || id === 'undefined') {
         console.error("아이템 ID를 찾을 수 없습니다.");
         return;
     }
 
-    // 3. 요청하신 상세 페이지 URL로 이동
-    // 경로: /service/quotation/general/price_compare/detail/{data_id}
-    const detailUrl = `/service/quotation/general/price_compare/detail/${id}`;
+    // 3. 타입 판별 로직 (데이터 우선순위: data-table > 표시 텍스트)
+    let detailUrl = '';
     
-    console.log(`상세 페이지 이동 시도: ${detailUrl}`);
+    // 상세 견적서(을지) 판별
+    if (type === 'Detailed' || categoryText.includes('상세')) {
+        detailUrl = `/service/quotation/general/detailed/detail/${id}`;
+    } 
+    // 내정가 비교표 판별
+    else if (type === 'PriceCompare' || type === '비교 견적서' || categoryText.includes('비교')) {
+        detailUrl = `/service/quotation/general/price_compare/detail/${id}`;
+    }
+    // 기본값 (기존 로직 유지)
+    else {
+        console.warn(`타입 판별 모호함(${type}), 기본 경로로 이동`);
+        detailUrl = `/service/quotation/general/price_compare/detail/${id}`;
+    }
+    
+    console.log(`페이지 이동 시도: ${detailUrl}`);
     window.location.href = detailUrl;
 }
 

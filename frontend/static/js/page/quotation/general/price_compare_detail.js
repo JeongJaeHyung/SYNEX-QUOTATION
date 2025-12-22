@@ -197,34 +197,7 @@ function groupByMajorThenMachine(resources) {
 // 요약 행 렌더링
 function renderSummaryRows(isEdit) {
     let html = '';
-    
-    html += `<tr class="total-row">
-                <td colspan="6">Sub Total</td>
-                <td class="total-cell cost-total">0</td>
-                <td colspan="4"></td>
-                <td class="total-cell quote-total">0</td>
-                <td class="difference-cell">0</td>
-             </tr>`;
-    
-    html += `<tr class="management-row">
-                <td rowspan="2" colspan="2" class="category-cell">관리비</td>
-                <td>일반관리비</td>
-                <td colspan="4"></td>
-                <td class="mgmt-rate ${isEdit ? 'editable-cell' : ''}" ${isEdit ? 'contenteditable="true"' : ''}>6</td>
-                <td colspan="3"></td>
-                <td class="mgmt-amount">0</td>
-                <td></td>
-             </tr>`;
-    
-    html += `<tr class="management-row">
-                <td>기업이윤</td>
-                <td colspan="4"></td>
-                <td class="profit-rate ${isEdit ? 'editable-cell' : ''}" ${isEdit ? 'contenteditable="true"' : ''}>4</td>
-                <td colspan="3"></td>
-                <td class="profit-amount">0</td>
-                <td></td>
-             </tr>`;
-    
+
     html += `<tr class="final-total-row">
                 <td colspan="6">TOTAL</td>
                 <td class="final-total-cell cost-final-total">0</td>

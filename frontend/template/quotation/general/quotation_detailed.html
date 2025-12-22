@@ -1,6 +1,7 @@
 {% extends "template/base.html" %}
+{% import "element/button.html" as btn %}
 
-{% block title %}견적서(을지) - SYNEX+{% endblock %}
+{% block title %}견적서(을지) 상세 - SYNEX+{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/general/quotation_detailed.css') }}">
@@ -13,38 +14,44 @@
 {% block content %}
 <div class="quotation-cover-page">
     <div class="cover-shell">
+        <div class="side-action-bar no-print" id="sideActionBar">
+            <div class="action-group" id="viewActions">
+                {{ btn.button("수정하기", type="primary", onclick="toggleEditMode('edit')") }}
+                {{ btn.button("인쇄하기", type="default", onclick="window.print()") }}
+                {{ btn.button("목록으로", type="secondary", onclick="goBack()") }}
+            </div>
+            <div class="action-group" id="editActions" style="display: none;">
+                {{ btn.blue_button("저장하기", id="saveBtn", onclick="saveDetailedData()") }}
+                {{ btn.button("취소", type="default", onclick="toggleEditMode('view')") }}
+            </div>
+        </div>
+
         <div class="cover-inner">
             <header>
-                <h2>상세 견적서</h2>
+                <h2 id="pageTitle">상세 견적서 (을지)</h2>
                 <div class="logo-placeholder">
                     <img src="/static/assets/images/jlt-logo.svg" alt="JLT Logo">
                 </div>
             </header>
             
-            {# 로딩 인디케이터 #}
             <div id="loading" style="display: block; text-align: center; padding: 40px;">
                 <p>데이터를 불러오는 중...</p>
             </div>
             
-            <table style="display: none;" id="detailedTable">
+            <table style="display: none;" id="detailedTable" class="editable-table">
                 <thead>
                     <tr>
                         <th class="col-number">No</th>
-                        <th>품명</th>
-                        <th>규격</th>
-                        <th>수량</th>
+                        <th>품명(중분류)</th>
                         <th>단위</th>
+                        <th>수량</th>
                         <th>단가</th>
                         <th>공급가액</th>
                         <th>비고</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- JavaScript로 동적 생성 -->
-                </tbody>
-                <tfoot>
-                    <!-- JavaScript로 동적 생성 -->
-                </tfoot>
+                <tbody></tbody>
+                <tfoot></tfoot>
             </table>
         </div>
     </div>

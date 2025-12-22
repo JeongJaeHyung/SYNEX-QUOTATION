@@ -1,216 +1,244 @@
 /**
- * 견적서(을지) 상세 페이지 - API 데이터 동적 렌더링
- * API: GET /api/v1/quotation/detailed/{detailed_id}
+ * 견적서(을지) 상세 - View/Edit 모드 및 실시간 편집 로직
+ * API: /api/v1/quotation/detailed/{id}
  */
 
 let detailedId = null;
-let detailedData = null;
+let originalData = null;
+let pageMode = 'view'; // 초기 모드: 'view' (조회)
 
 // ============================================================================
 // 페이지 초기화
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // URL에서 detailed_id 추출
+    // 1. URL에서 ID 추출
     const pathParts = window.location.pathname.split('/');
     detailedId = pathParts[pathParts.length - 1];
     
     if (detailedId) {
         loadDetailedData(detailedId);
-    } else {
-        alert('견적서 ID가 없습니다.');
-        goBack();
+    }
+
+    // 2. 실시간 계산 이벤트 위임 (수정 모드일 때만 작동)
+    const tbody = document.querySelector('#detailedTable tbody');
+    if (tbody) {
+        tbody.addEventListener('input', function(e) {
+            if (pageMode !== 'edit') return;
+
+            const row = e.target.closest('.data-row');
+            if (!row) return;
+
+            // 수량이나 단가가 변경될 때만 계산 실행
+            if (e.target.classList.contains('edit-qty') || e.target.classList.contains('edit-price')) {
+                updateRowSubtotal(row);
+                calculateGrandTotal();
+            }
+        });
     }
 });
 
 // ============================================================================
-// API 데이터 로드
+// 데이터 로드 및 모드 관리
 // ============================================================================
 
 async function loadDetailedData(id) {
-    const loading = document.getElementById('loading');
-    const table = document.getElementById('detailedTable');
-    
     try {
         const response = await fetch(`/api/v1/quotation/detailed/${id}`);
+        if (!response.ok) throw new Error('데이터 로드 실패');
         
-        if (!response.ok) {
-            throw new Error('데이터 로드 실패');
-        }
+        originalData = await response.json();
         
-        detailedData = await response.json();
+        // 테이블 렌더링 후 초기 모드 설정
+        renderDetailedTable(originalData.detailed_resources);
+        toggleEditMode('view');
         
-        // 테이블 렌더링
-        renderDetailedTable(detailedData.detailed_resources);
-        
-        // 로딩 숨기고 테이블 표시
-        if (loading) loading.style.display = 'none';
-        if (table) table.style.display = 'table';
-        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('detailedTable').style.display = 'table';
     } catch (error) {
-        console.error('Error:', error);
+        console.error(error);
         alert('데이터를 불러오는데 실패했습니다.');
-        if (loading) loading.innerHTML = '<p style="color: red;">데이터 로드 실패</p>';
+    }
+}
+
+/**
+ * View/Edit 모드 전환 함수
+ * @param {string} mode - 'view' 또는 'edit'
+ */
+function toggleEditMode(mode) {
+    pageMode = mode;
+    const table = document.getElementById('detailedTable');
+    const title = document.getElementById('pageTitle');
+    const viewActions = document.getElementById('viewActions');
+    const editActions = document.getElementById('editActions');
+
+    // 1. 테이블 데이터 속성 변경 (CSS 바인딩용)
+    table.dataset.mode = mode;
+    
+    // 2. 모든 편집 가능 셀의 속성 일괄 변경
+    const editableCells = table.querySelectorAll('[contenteditable]');
+    editableCells.forEach(cell => {
+        cell.contentEditable = (mode === 'edit');
+    });
+
+    // 3. 플로팅 사이드바 버튼 그룹 및 제목 토글
+    if (mode === 'edit') {
+        title.textContent = '상세 견적서 (수정 중)';
+        viewActions.style.display = 'none';
+        editActions.style.display = 'flex';
+    } else {
+        title.textContent = '상세 견적서 (을지)';
+        viewActions.style.display = 'flex';
+        editActions.style.display = 'none';
+        
+        // 취소 시 혹은 초기화 시 원본 데이터로 복구가 필요하면 다시 렌더링
+        if (originalData) renderDetailedTable(originalData.detailed_resources);
     }
 }
 
 // ============================================================================
-// 테이블 렌더링
+// 테이블 렌더링 및 계산 로직
 // ============================================================================
 
 function renderDetailedTable(resources) {
-    const tbody = document.querySelector('.cover-inner table tbody');
-    if (!tbody) return;
-    
+    const tbody = document.querySelector('#detailedTable tbody');
     tbody.innerHTML = '';
     
-    // 1. machine_name + major로 그룹화
     const groups = groupByMachineThenMajor(resources);
-    
     let html = '';
-    let rowNumber = 1; // No 번호
-    
-    // 2. 각 machine별로 순회
-    Object.keys(groups).forEach(machineName => {
-        const majorGroups = groups[machineName];
-        
-        // 3. 각 major(항목)별로 순회
-        Object.keys(majorGroups).forEach(major => {
-            const items = majorGroups[major];
+    let rowNo = 1;
+
+    Object.keys(groups).forEach(machine => {
+        Object.keys(groups[machine]).forEach(major => {
+            const items = groups[machine][major];
+            html += `<tr class="section-title"><td colspan="7">● ${machine} - ${major} 상세 내역</td></tr>`;
             
-            // 섹션 타이틀 행
-            const sectionTitle = getSectionTitle(major);
-            html += `<tr class="section-title"><td colspan="8">${sectionTitle}</td></tr>`;
-            
-            // 데이터 행
             items.forEach(item => {
-                html += `<tr>`;
-                html += `<td>${rowNumber++}</td>`;
-                html += `<td>${item.minor || ''}</td>`;
-                html += `<td></td>`; // 규격 (비어있음)
-                html += `<td>${item.compare || 1}</td>`;
-                html += `<td>${item.unit || '식'}</td>`;
-                html += `<td>${formatNumber(item.solo_price)}</td>`;
-                html += `<td>${formatNumber(item.subtotal)}</td>`;
-                html += `<td>${item.description || ''}</td>`;
-                html += `</tr>`;
+                html += `
+                <tr class="data-row" 
+                    data-machine="${item.machine_name}" 
+                    data-major="${item.major}" 
+                    data-minor="${item.minor}">
+                    <td class="text-center">${rowNo++}</td>
+                    <td>${item.minor}</td>
+                    <td contenteditable="false" class="edit-unit text-center">${item.unit || '식'}</td>
+                    <td contenteditable="false" class="edit-qty text-right">${item.compare}</td>
+                    <td contenteditable="false" class="edit-price text-right">${formatNumber(item.solo_price)}</td>
+                    <td class="row-subtotal text-right">${formatNumber(item.subtotal)}</td>
+                    <td contenteditable="false" class="edit-desc">${item.description || ''}</td>
+                </tr>`;
             });
-            
-            // 소계 행
-            const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-            html += renderSubtotalRow(major, subtotal);
         });
     });
     
-    // 비고 영역
-    html += `<tr class="notes-row">
-                <td colspan="8" class="notes-header">비&nbsp;&nbsp;&nbsp;&nbsp;고&nbsp;(&nbsp;특이사항&nbsp;)</td>
-             </tr>`;
-    html += `<tr class="notes-row">
-                <td colspan="8" class="notes-content">${detailedData.description || ''}</td>
-             </tr>`;
-    
     tbody.innerHTML = html;
-    
-    // 4. 전체 합계 계산
-    calculateTotalPrice();
+    calculateGrandTotal();
 }
 
-// machine → major로 그룹화
-function groupByMachineThenMajor(resources) {
-    const grouped = {};
-    
-    resources.forEach(item => {
-        const machineName = item.machine_name || '미분류';
-        const major = item.major || '기타';
-        
-        if (!grouped[machineName]) {
-            grouped[machineName] = {};
-        }
-        if (!grouped[machineName][major]) {
-            grouped[machineName][major] = [];
-        }
-        grouped[machineName][major].push(item);
-    });
-    
-    return grouped;
+function updateRowSubtotal(row) {
+    const qty = parseNumber(row.querySelector('.edit-qty').textContent);
+    const price = parseNumber(row.querySelector('.edit-price').textContent);
+    const subtotal = qty * price;
+    row.querySelector('.row-subtotal').textContent = formatNumber(subtotal);
 }
 
-// 섹션 타이틀 생성
-function getSectionTitle(major) {
-    const titles = {
-        '자재비': '자재비 상세 내역',
-        '인건비': '인건비 상세 내역',
-        '출장 경비': '경비 상세 내역_국내',
-        '출장경비': '경비 상세 내역_국내'
-    };
-    return titles[major] || `${major} 상세 내역`;
-}
-
-// 소계 행 렌더링
-function renderSubtotalRow(major, subtotal) {
-    let label = '';
-    
-    if (major === '자재비') {
-        label = '자재비 총 합계';
-    } else if (major === '인건비') {
-        label = '인건비 총 합계';
-    } else if (major.includes('출장') || major.includes('경비')) {
-        label = '출장 경비 총 합계';
-    } else {
-        label = `${major} 총 합계`;
-    }
-    
-    let html = `<tr class="summary-row">`;
-    html += `<td colspan="2">${label}</td>`;
-    html += `<td class="summary-white" colspan="4">Set</td>`;
-    html += `<td class="summary-white total-amount">${formatNumber(subtotal)}</td>`;
-    html += `<td class="summary-white"></td>`;
-    html += `</tr>`;
-    
-    return html;
-}
-
-// 전체 합계 계산
-function calculateTotalPrice() {
-    const tfoot = document.querySelector('.cover-inner table tfoot');
-    if (!tfoot) return;
-    
-    // 모든 소계 합산
-    const summaryRows = document.querySelectorAll('.summary-row');
+function calculateGrandTotal() {
+    const subtotals = document.querySelectorAll('.row-subtotal');
     let total = 0;
+    subtotals.forEach(cell => total += parseNumber(cell.textContent));
     
-    summaryRows.forEach(row => {
-        const amountCell = row.querySelector('.total-amount');
-        if (amountCell) {
-            const amount = parseNumber(amountCell.textContent);
-            total += amount;
-        }
+    const tfoot = document.querySelector('#detailedTable tfoot');
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr class="total-row">
+                <td colspan="5" class="text-center">합 계 (VAT 별도)</td>
+                <td class="total-amount-cell">${formatNumber(total)}</td>
+                <td></td>
+            </tr>`;
+    }
+}
+
+// ============================================================================
+// 서버 데이터 저장 (PUT)
+// ============================================================================
+
+async function saveDetailedData() {
+    const saveBtn = document.getElementById('saveBtn');
+    const rows = document.querySelectorAll('.data-row');
+    const resources = [];
+
+    // 화면의 수정된 데이터를 객체 배열로 수집
+    rows.forEach(row => {
+        resources.push({
+            machine_name: row.dataset.machine,
+            major: row.dataset.major,
+            minor: row.dataset.minor,
+            unit: row.querySelector('.edit-unit').textContent.trim(),
+            compare: parseNumber(row.querySelector('.edit-qty').textContent),
+            solo_price: parseNumber(row.querySelector('.edit-price').textContent),
+            description: row.querySelector('.edit-desc').textContent.trim()
+        });
     });
-    
-    // tfoot 업데이트
-    tfoot.innerHTML = `
-        <tr>
-            <td colspan="7">Total</td>
-            <td class="total-amount">${formatNumber(total)}</td>
-        </tr>
-    `;
+
+    const payload = {
+        creator: originalData.creator,
+        description: originalData.description,
+        detailed_resources: resources
+    };
+
+    if (!confirm('변경사항을 저장하시겠습니까?')) return;
+
+    saveBtn.disabled = true;
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '저장 중...';
+
+    try {
+        const response = await fetch(`/api/v1/quotation/detailed/${detailedId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            originalData = result; // 최신 데이터로 로컬 캐시 갱신
+            alert('성공적으로 저장되었습니다.');
+            toggleEditMode('view'); // 저장 후 조회 모드로 복귀
+        } else {
+            const err = await response.json();
+            throw new Error(err.detail || '저장 실패');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('저장 중 오류가 발생했습니다: ' + e.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+    }
 }
 
 // ============================================================================
 // 유틸리티 함수
 // ============================================================================
 
-function parseNumber(text) {
-    if (!text || text.trim() === '' || text === '-') return 0;
-    return parseInt(text.toString().replace(/,/g, '')) || 0;
+function formatNumber(n) { 
+    return (n || 0).toLocaleString('ko-KR'); 
 }
 
-function formatNumber(num) {
-    if (num === 0 || num === null || num === undefined) return '';
-    return num.toLocaleString('ko-KR');
+function parseNumber(s) { 
+    if (!s) return 0;
+    return parseInt(s.toString().replace(/,/g, '')) || 0; 
 }
 
-function goBack() {
-    window.history.back();
+function groupByMachineThenMajor(res) {
+    return res.reduce((acc, curr) => {
+        if (!acc[curr.machine_name]) acc[curr.machine_name] = {};
+        if (!acc[curr.machine_name][curr.major]) acc[curr.machine_name][curr.major] = [];
+        acc[curr.machine_name][curr.major].push(curr);
+        return acc;
+    }, {});
+}
+
+function goBack() { 
+    window.history.back(); 
 }
