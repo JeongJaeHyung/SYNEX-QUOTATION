@@ -1,6 +1,5 @@
 import os
 import sys
-import webview
 import uvicorn
 import threading
 from pathlib import Path
@@ -67,18 +66,31 @@ def run_fastapi():
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
 
 if __name__ == "__main__":
-    # 서버 기동
-    t = threading.Thread(target=run_fastapi, daemon=True)
-    t.start()   
+    use_gui = os.environ.get("JLT_GUI", "1").strip().lower() not in ("0", "false")
+    if use_gui:
+        try:
+            import webview
+        except Exception as e:
+            print(f"[warn] GUI start skipped: {e}")
+            use_gui = False
 
-    # 앱 창 생성
-    webview.create_window(
-        "JLT 견적 관리 시스템", 
-        "http://127.0.0.1:8000",
-        width=1280,
-        height=800,
-        confirm_close=True # 창 닫을 때 확인창 띄우기 (옵션)
-    )
-    
-    # 리눅스 환경에서 GTK 에러 방지를 위해 GUI 엔진 자동 선택을 맡깁니다.
-    webview.start(gui='qt')
+    if use_gui:
+        # Start server in background for GUI.
+        t = threading.Thread(target=run_fastapi, daemon=True)
+        t.start()
+
+        try:
+            webview.create_window(
+                "JLT Quotation System",
+                "http://127.0.0.1:8000",
+                width=1280,
+                height=800,
+                confirm_close=True
+            )
+            webview.start(gui="qt")
+            raise SystemExit(0)
+        except Exception as e:
+            print(f"[warn] GUI start failed, falling back to server only: {e}")
+            t.join()
+    else:
+        run_fastapi()

@@ -33,7 +33,7 @@ class PriceCompareCreate(BaseModel):
     general_id: UUID
     creator: str = Field(..., max_length=25)
     description: Optional[str] = None
-    machine_ids: List[UUID] = Field(..., min_length=1, description="연결할 장비 ID 목록")
+    machine_ids: List[UUID] = Field(..., description="연결할 장비 ID 목록")
 
 # --- Update Request ---
 class PriceCompareUpdate(BaseModel):

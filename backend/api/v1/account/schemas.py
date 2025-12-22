@@ -14,7 +14,7 @@ class AccountRegister(BaseModel):
     department: str = Field(..., max_length=25)
     position: str = Field(..., max_length=25)
     phone_number: str = Field(..., pattern=r'^\d{10,11}$', max_length=11)
-    e_mail: EmailStr = Field(..., max_length=255)
+    e_mail: EmailStr = Field(...)
 
 class AccountCheck(BaseModel):
     """
@@ -27,7 +27,7 @@ class AccountCheck(BaseModel):
     department: Optional[str] = Field(None, max_length=25)
     position: Optional[str] = Field(None, max_length=25)
     phone_number: Optional[str] = Field(None, max_length=11)
-    e_mail: Optional[EmailStr] = Field(None, max_length=255)
+    e_mail: Optional[EmailStr] = Field(None)
 
 class AccountRegisterResponse(BaseModel):
     """Account 등록 응답"""

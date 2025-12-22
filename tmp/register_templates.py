@@ -19,6 +19,7 @@ import urllib.request
 import urllib.error
 from openpyxl import load_workbook
 from datetime import datetime
+from pathlib import Path
 
 # --- Configuration ---
 API_BASE_URL = "http://localhost:8000/api/v1"
@@ -28,7 +29,7 @@ PARTS_LIST_URL = f"{API_BASE_URL}/parts"
 PARTS_CREATE_URL = f"{API_BASE_URL}/parts/"
 MAKER_CREATE_URL = f"{API_BASE_URL}/maker/"
 
-EXCEL_FILE_PATH = "tmp/data.xlsx"
+EXCEL_FILE_PATH = str(Path(__file__).resolve().parent / "data.xlsx")
 
 # 엑셀 시트 인덱스(0-based): 1~3번 시트는 마스터, 4~9번 시트는 템플릿(= 3~8)
 TEMPLATE_SHEET_INDICES = list(range(3, 9))
@@ -187,6 +188,10 @@ def add_part_to_index(parts_index: dict, part: dict) -> None:
             parts_index["by_maker_model_loose"].setdefault(loose_key, part_payload)
 
     if not name_k and major and minor:
+        key_mm = (normalize_key(major), normalize_key(minor), normalize_key(name))
+        if key_mm[0] and key_mm[1]:
+            parts_index["by_major_minor_empty_name"].setdefault(key_mm, part_payload)
+    if major in (SUMMARY_MAJORS | LABOR_MAJORS) and major and minor and not maker_k:
         key_mm = (normalize_key(major), normalize_key(minor), normalize_key(name))
         if key_mm[0] and key_mm[1]:
             parts_index["by_major_minor_empty_name"].setdefault(key_mm, part_payload)
@@ -387,6 +392,10 @@ def fetch_all_parts_index() -> dict:
                 key_mm = (normalize_key(major), normalize_key(minor), normalize_key(name))
                 if key_mm[0] and key_mm[1]:
                     by_major_minor_empty_name.setdefault(key_mm, part_payload)
+            if major in (SUMMARY_MAJORS | LABOR_MAJORS) and major and minor and not maker_k:
+                key_mm = (normalize_key(major), normalize_key(minor), normalize_key(name))
+                if key_mm[0] and key_mm[1]:
+                    by_major_minor_empty_name.setdefault(key_mm, part_payload)
 
         skip += limit
 
@@ -411,7 +420,7 @@ def find_part(parts_index: dict, maker_name: str, major: str, minor: str, name: 
             return found
 
     # 2) 집계/인건비(name="") 항목: major + minor + name("")로 매칭
-    if major and minor and not name_k:
+    if major and minor and (not name_k or major in (SUMMARY_MAJORS | LABOR_MAJORS)):
         key_mm = (normalize_key(major), normalize_key(minor), normalize_key(name))
         found = parts_index["by_major_minor_empty_name"].get(key_mm)
         if found:
@@ -461,7 +470,16 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
         if "단가" in header_map:
             price = parse_int(row[header_map["단가"]] if header_map["단가"] < len(row) else None, default=0)
 
-        part = find_part(parts_index, maker_name=maker_name, major=major, minor=minor, name=name)
+        display_name = name or minor
+        match_names = [name]
+        if not name and minor:
+            match_names.append(minor)
+
+        part = None
+        for match_name in match_names:
+            part = find_part(parts_index, maker_name=maker_name, major=major, minor=minor, name=match_name)
+            if part:
+                break
         
         # [신규] 기존 인건비/집계 항목이 부실하면(이름 없음, 가격 0) 업데이트
         if part and major in (SUMMARY_MAJORS | LABOR_MAJORS):
@@ -510,7 +528,10 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
             )
             if created:
                 created_parts_count += 1
-                part = find_part(parts_index, maker_name=maker_name, major=major, minor=minor, name=name)
+                for match_name in match_names:
+                    part = find_part(parts_index, maker_name=maker_name, major=major, minor=minor, name=match_name)
+                    if part:
+                        break
 
         if not part:
             missing.append(
@@ -535,7 +556,7 @@ def parse_template_sheet(ws, parts_index: dict) -> tuple[list[dict], list[dict],
                 # 템플릿 표시값은 마스터(Resources) 분류와 다를 수 있으므로 별도 저장
                 "display_major": major or None,
                 "display_minor": minor or None,
-                "display_model_name": name or None,
+                "display_model_name": display_name or None,
                 "display_maker_name": maker_name or None,
                 "display_unit": row_unit or None,
             }
@@ -578,7 +599,7 @@ def main():
             continue
 
         if missing:
-            print(f"⚠️ 매칭 실패 {len(missing)}건 (Parts에 없는 행).")
+            print(f"[warn] 매칭 실패 {len(missing)}건 (Parts에 없는 행).")
             for m in missing[:15]:
                 print(f"  - row {m['row']}: {m['maker_name']} | {m['Unit']} | {m['품목']} | {m['모델명/규격']} (qty={m['수량']}, price={m['단가']})")
             if len(missing) > 15:
@@ -615,9 +636,9 @@ def main():
         if 200 <= status < 300:
             try:
                 resp = json.loads(body)
-                print(f"✅ {action} 완료: {machine_name} (id={resp.get('id')}, resources={resp.get('resource_count')}, total_price={resp.get('total_price')})")
+                print(f"[ok] {action} 완료: {machine_name} (id={resp.get('id')}, resources={resp.get('resource_count')}, total_price={resp.get('total_price')})")
             except Exception:
-                print(f"✅ {action} 완료: {machine_name} (status={status})")
+                print(f"[ok] {action} 완료: {machine_name} (status={status})")
         else:
             preview = body[:300] + ("..." if len(body) > 300 else "")
             print(f"❌ {action} 실패: {machine_name} (status={status}) 응답={preview}")
