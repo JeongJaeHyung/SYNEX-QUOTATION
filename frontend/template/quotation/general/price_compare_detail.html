@@ -17,14 +17,16 @@
             <header>
                 <h2 id="pageTitle">내정가 견적가 비교</h2>
                 <div class="logo-placeholder">
-                    <img src="/assets/images/JLT_Logo.png" alt="JLT Logo">
+                    <img src="/static/assets/images/jlt-logo.svg" alt="JLT Logo">
                 </div>
             </header>
             
+            {# 로딩 인디케이터 #}
             <div id="loading" style="display: none; text-align: center; padding: 40px;">
                 <p>데이터를 불러오는 중...</p>
             </div>
             
+            {# 컨트롤 영역 #}
             <div class="controls-container" id="controlsContainer" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span style="font-weight: 600; color: #374151;">작성자: <span id="creatorName">-</span></span>
@@ -37,14 +39,17 @@
                 </div>
             </div>
             
+            {# 테이블 컨테이너 #}
             <div id="tableContainer">
                 <table class="comparison-table">
                     <thead>
                         <tr>
                             <th rowspan="2" class="col-category">항목</th>
+                            <th rowspan="2" class="col-machine">장비명</th>
                             <th rowspan="2" class="col-item">구분</th>
                             <th colspan="4" class="header-internal">내정가</th>
-                            <th colspan="5" class="header-estimate">견적가</th> <th rowspan="2" class="col-note">비고</th>
+                            <th colspan="5" class="header-estimate">견적가</th>
+                            <th rowspan="2" class="col-note">비고</th>
                         </tr>
                         <tr>
                             <th class="sub-header">수량</th>
@@ -54,20 +59,25 @@
                             <th class="sub-header">수량</th>
                             <th class="sub-header">단위</th>
                             <th class="sub-header">단가</th>
-                            <th class="sub-header">상승률</th> <th class="sub-header">금액</th>
+                            <th class="sub-header">상승률</th>
+                            <th class="sub-header">금액</th>
                         </tr>
                     </thead>
-                    <tbody id="comparisonTableBody"></tbody>
+                    <tbody id="comparisonTableBody">
+                        {# JavaScript로 동적 생성 #}
+                    </tbody>
                 </table>
             </div>
 
+            {# 특이사항 #}
             <div class="notes-section" id="notesSection" style="display: none;">
                 <div class="notes-header">특이사항</div>
                 <div class="notes-content" id="notesContent"></div>
             </div>
             
+            {# 액션 버튼 #}
             <div class="action-footer" id="actionFooter" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-                </div>
+            </div>
         </div>
     </div>
 </div>

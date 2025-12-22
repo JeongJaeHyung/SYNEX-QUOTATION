@@ -12,6 +12,8 @@ class QuotationResources(Base):
     quotation_id = Column(UUID(as_uuid=True), primary_key=True) 
     
     # PK
+    machine = Column(String(100), primary_key=True)
+    
     name = Column(String(100), primary_key=True)
     
     # Data Columns

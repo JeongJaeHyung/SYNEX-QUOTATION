@@ -41,6 +41,7 @@ async def price_compare_register_sub(
         "general_id": general_id
     })
 
+
 @handler.get("/price_compare/detail/{price_compare_id}", response_class=HTMLResponse)
 async def price_compare_detail_view(request: Request, price_compare_id: str):
     """
@@ -51,6 +52,21 @@ async def price_compare_detail_view(request: Request, price_compare_id: str):
         "request": request,
         "current_page": "quotation_default",
         "id": price_compare_id  # 템플릿에 ID 전달
+    })
+
+
+# ==================== [신규 추가] 견적서(을지) 관련 라우터 ====================
+
+@handler.get("/detailed/detail/{detailed_id}", response_class=HTMLResponse)
+async def detailed_view(request: Request, detailed_id: str):
+    """
+    견적서(을지) 상세 화면
+    URL 예시: /service/quotation/general/detailed/detail/UUID
+    """
+    return templates.TemplateResponse("template/quotation/general/quotation_detailed.html", {
+        "request": request,
+        "current_page": "quotation_default",
+        "id": detailed_id  # 템플릿에 ID 전달
     })
 
 

@@ -13,8 +13,8 @@ from .role import Role
 from .permission import Permission
 from .role_permission import role_permission 
 from .general import General
-from .quotation import Quotation
-from .quotation_resources import QuotationResources
+from .header import Quotation
+from .header_resources import QuotationResources
 from .detailed import Detailed
 from .detailed_resources import DetailedResources
 from .price_compare import PriceCompare

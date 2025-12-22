@@ -10,6 +10,9 @@ class DetailedResources(Base):
     
     # PK, FK to detailed
     detailed_id = Column(UUID(as_uuid=True), primary_key=True)
+    # machine_name은 FK가 아니라 "스냅샷" 용도로 저장하는 필드입니다.
+    # (예: 상세정보 생성 시점의 장비/머신명을 저장) 따라서 FK 제약을 걸지 않습니다.
+    machine_name = Column(String(100), primary_key=True, comment="snapshot: not a FK")
     
     # PK
     major = Column(String(30), primary_key=True)
@@ -24,7 +27,7 @@ class DetailedResources(Base):
     # Relationships
     detailed = relationship("Detailed", back_populates="detailed_resources")
     
-    # 복합 FK 제약 조건
+    # 복합 FK 제약 조건: detailed_id만 Detailed.id를 참조합니다 (machine_name은 참조하지 않음)
     __table_args__ = (
         ForeignKeyConstraint(
             ['detailed_id'],

@@ -36,3 +36,7 @@ pyinstaller==6.11.1
 # JLT Desktop UI 전용 (GUI 엔진)
 PyQt6
 PyQt6-WebEngine
+
+
+
+httpx

@@ -1,8 +1,8 @@
-"""initial_schema_with_5_pks
+"""edit_quotation2header
 
-Revision ID: be001ed40938
+Revision ID: c0e1b774e40c
 Revises: 
-Create Date: 2025-12-21 20:58:39.004824
+Create Date: 2025-12-22 11:22:09.955805
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'be001ed40938'
+revision: str = 'c0e1b774e40c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -117,7 +117,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['maker_id'], ['maker.id'], ),
-    sa.PrimaryKeyConstraint('id', 'maker_id', 'major', 'minor', 'name')
+    sa.PrimaryKeyConstraint('id', 'maker_id')
     )
     op.create_table('role_permission',
     sa.Column('role_id', sa.UUID(), nullable=False),
@@ -153,8 +153,8 @@ def upgrade() -> None:
     )
     op.create_table('machine_resources',
     sa.Column('machine_id', sa.UUID(), nullable=False),
-    sa.Column('maker_id', sa.String(length=4), nullable=False),
     sa.Column('resources_id', sa.String(length=6), nullable=False),
+    sa.Column('maker_id', sa.String(length=4), nullable=False),
     sa.Column('solo_price', sa.Integer(), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('order_index', sa.Integer(), nullable=False),
@@ -164,8 +164,8 @@ def upgrade() -> None:
     sa.Column('display_maker_name', sa.String(length=100), nullable=True),
     sa.Column('display_unit', sa.String(length=10), nullable=True),
     sa.ForeignKeyConstraint(['machine_id'], ['machine.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['maker_id', 'resources_id'], ['resources.maker_id', 'resources.id'], ),
-    sa.PrimaryKeyConstraint('machine_id', 'maker_id', 'resources_id')
+    sa.ForeignKeyConstraint(['resources_id', 'maker_id'], ['resources.id', 'resources.maker_id'], ),
+    sa.PrimaryKeyConstraint('machine_id', 'resources_id', 'maker_id')
     )
     op.create_table('price_compare_machine',
     sa.Column('price_compare_id', sa.UUID(), nullable=False),
@@ -195,6 +195,7 @@ def upgrade() -> None:
     )
     op.create_table('quotation_resources',
     sa.Column('quotation_id', sa.UUID(), nullable=False),
+    sa.Column('machine', sa.String(length=100), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('spac', sa.String(length=50), nullable=True),
     sa.Column('compare', sa.Integer(), nullable=False),
@@ -202,10 +203,11 @@ def upgrade() -> None:
     sa.Column('solo_price', sa.Integer(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['quotation_id'], ['quotation.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('quotation_id', 'name')
+    sa.PrimaryKeyConstraint('quotation_id', 'machine', 'name')
     )
     op.create_table('detailed_resources',
     sa.Column('detailed_id', sa.UUID(), nullable=False),
+    sa.Column('machine_name', sa.String(length=100), nullable=False, comment='snapshot: not a FK'),
     sa.Column('major', sa.String(length=30), nullable=False),
     sa.Column('minor', sa.String(length=50), nullable=False),
     sa.Column('unit', sa.String(length=10), nullable=False),
@@ -213,7 +215,7 @@ def upgrade() -> None:
     sa.Column('compare', sa.Integer(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['detailed_id'], ['detailed.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('detailed_id', 'major', 'minor')
+    sa.PrimaryKeyConstraint('detailed_id', 'machine_name', 'major', 'minor')
     )
     # ### end Alembic commands ###
 

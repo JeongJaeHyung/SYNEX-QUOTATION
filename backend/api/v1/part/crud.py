@@ -59,6 +59,20 @@ def get_next_parts_id(db: Session, maker_id: str) -> str:
         return "000001" # 오류 발생 시 기본값 반환
 
 
+def get_parts_by_fields(db: Session, major: str, minor: str, name: str) -> Optional[Resources]:
+    """
+    major, minor, name 조합으로 기존 부품이 존재하는지 조회합니다.
+    Returns the first matching Resources or None.
+    """
+    return db.query(Resources).filter(
+        and_(
+            Resources.major == major,
+            Resources.minor == minor,
+            Resources.name == name
+        )
+    ).first()
+
+
 # ============================================================
 # CRUD 함수
 # ============================================================

@@ -126,47 +126,43 @@ def create_parts(
     parts_data: schemas.PartsCreate, # 요청 바디는 PartsCreate 스키마를 따름
     db: Session = Depends(get_db) # DB 세션 의존성 주입
 ):
-    """
-    새로운 부품(Parts)을 등록하는 API 엔드포인트입니다.
-    - 제조사 존재 여부 확인 후, 부품 ID를 생성하고 부품 및 인증 정보를 저장합니다.
-    
-    Args:
-        parts_data (schemas.PartsCreate): 등록할 부품 정보를 담은 DTO.
-        db (Session): SQLAlchemy 데이터베이스 세션.
+    try:
+        # --- Maker 조회 ---
+        maker = crud.get_maker_by_name(db, parts_data.maker_name)
+        if not maker:
+            raise HTTPException(status_code=404, detail=f"제조사 '{parts_data.maker_name}'을(를) 찾을 수 없습니다.")
         
-    Returns:
-        dict: 생성된 부품 정보.
+        # --- 중복 검사: major, minor, name ---
+        existing = crud.get_parts_by_fields(db, parts_data.major_category, parts_data.minor_category, parts_data.name)
+        if existing:
+            item_code = f"{existing.maker_id}-{existing.id}"
+            raise HTTPException(status_code=409, detail=f"중복된 부품이 존재합니다. item_code={item_code}")
         
-    Raises:
-        HTTPException: 제조사를 찾을 수 없거나 이미 부품 ID가 존재할 경우 404, 409.
-    """
-    # --- Maker 조회 ---
-    maker = crud.get_maker_by_name(db, parts_data.maker_name)
-    if not maker:
-        raise HTTPException(status_code=404, detail=f"제조사 '{parts_data.maker_name}'을(를) 찾을 수 없습니다.")
-    
-    # --- Parts ID 생성 ---
-    # 해당 제조사의 다음 부품 ID를 가져옵니다.
-    parts_id = crud.get_next_parts_id(db, maker.id)
+        # --- Parts ID 생성 ---
+        parts_id = crud.get_next_parts_id(db, maker.id)
 
-    # --- Parts 생성 (CRUD 호출) ---
-    resource = crud.create_parts(
-        db=db,
-        parts_id=parts_id,
-        maker_id=maker.id, # 조회된 제조사의 실제 ID 사용
-        major=parts_data.major_category,
-        minor=parts_data.minor_category,
-        name=parts_data.name,
-        unit=parts_data.unit,
-        solo_price=parts_data.solo_price,
-        display_order=parts_data.display_order,
-        ul=parts_data.ul,
-        ce=parts_data.ce,
-        kc=parts_data.kc,
-        etc=parts_data.certification_etc
-    )
-    
-    return convert_to_parts_response(resource) # 생성된 자원 객체를 응답 DTO로 변환하여 반환
+        # --- Parts 생성 (CRUD 호출) ---
+        resource = crud.create_parts(
+            db=db,
+            parts_id=parts_id,
+            maker_id=maker.id, # 조회된 제조사의 실제 ID 사용
+            major=parts_data.major_category,
+            minor=parts_data.minor_category,
+            name=parts_data.name,
+            unit=parts_data.unit,
+            solo_price=parts_data.solo_price,
+            display_order=parts_data.display_order,
+            ul=parts_data.ul,
+            ce=parts_data.ce,
+            kc=parts_data.kc,
+            etc=parts_data.certification_etc
+        )
+        
+        return convert_to_parts_response(resource) # 생성된 자원 객체를 응답 DTO로 변환하여 반환
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DEBUG: create_parts error: {str(e)}")
 
 
 @handler.get("")
@@ -187,43 +183,38 @@ def get_parts_list(
     kc: Optional[bool] = Query(None, description="KC 인증 여부로 필터링"),
     db: Session = Depends(get_db) # DB 세션 의존성 주입
 ):
-    """
-    모든 부품(Parts) 목록을 조회하고 다양한 필터링 및 페이징을 지원하는 API 엔드포인트입니다.
-    
-    Args:
-        (위에 정의된 쿼리 파라미터들)
-        db (Session): SQLAlchemy 데이터베이스 세션.
+    try:
+        # 쿼리 파라미터를 기반으로 필터 객체를 생성합니다.
+        filters = schemas.PartsFilter(
+            id=id, maker_id=maker_id, name=name, unit=unit, min_price=min_price, max_price=max_price,
+            major=major, minor=minor, ul=ul, ce=ce, kc=kc
+        )
         
-    Returns:
-        dict: 부품 목록과 페이징 정보를 담은 딕셔너리. 스키마 포함 시 스키마 정의도 포함.
-    """
-    # 쿼리 파라미터를 기반으로 필터 객체를 생성합니다.
-    filters = schemas.PartsFilter(
-        id=id, maker_id=maker_id, name=name, unit=unit, min_price=min_price, max_price=max_price,
-        major=major, minor=minor, ul=ul, ce=ce, kc=kc
-    )
-    
-    parts_list, total = crud.get_parts_list(db, filters, skip=skip, limit=limit)
-    
-    # Resources 객체 리스트를 DTO 형식으로 변환합니다.
-    items = [convert_to_parts_response(part) for part in parts_list]
-    
-    # 스키마 포함 옵션에 따라 응답을 구성합니다.
-    if include_schema:
-        return {
-            "schema": get_parts_schema(),
-            "total": total,
-            "items": items,
-            "skip": skip,
-            "limit": limit
-        }
-    else:
-        return {
-            "total": total,
-            "items": items,
-            "skip": skip,
-            "limit": limit
-        }
+        parts_list, total = crud.get_parts_list(db, filters, skip=skip, limit=limit)
+        
+        # Resources 객체 리스트를 DTO 형식으로 변환합니다.
+        items = [convert_to_parts_response(part) for part in parts_list]
+        
+        # 스키마 포함 옵션에 따라 응답을 구성합니다.
+        if include_schema:
+            return {
+                "schema": get_parts_schema(),
+                "total": total,
+                "items": items,
+                "skip": skip,
+                "limit": limit
+            }
+        else:
+            return {
+                "total": total,
+                "items": items,
+                "skip": skip,
+                "limit": limit
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DEBUG: get_parts_list error: {str(e)}")
 
 
 @handler.get("/{parts_id}/{maker_id}")
@@ -233,37 +224,26 @@ def get_parts_detail(
     include_schema: bool = Query(False, description="응답에 스키마 정의를 포함할지 여부"),
     db: Session = Depends(get_db) # DB 세션 의존성 주입
 ):
-    """
-    특정 부품(Parts)의 상세 정보를 조회하는 API 엔드포인트입니다.
-    - 부품 ID와 제조사 ID를 사용하여 고유한 부품을 식별합니다.
-    
-    Args:
-        parts_id (str): 조회할 부품 ID.
-        maker_id (str): 조회할 제조사 ID.
-        include_schema (bool): 응답에 스키마 정의를 포함할지 여부.
-        db (Session): SQLAlchemy 데이터베이스 세션.
+    try:
+        parts = crud.get_parts_by_id(db, parts_id, maker_id) # CRUD 함수를 통해 부품 조회
         
-    Returns:
-        dict: 조회된 부품 상세 정보.
+        if not parts:
+            raise HTTPException(status_code=404, detail="부품을 찾을 수 없습니다.")
         
-    Raises:
-        HTTPException: 부품을 찾을 수 없는 경우 404 Not Found.
-    """
-    parts = crud.get_parts_by_id(db, parts_id, maker_id) # CRUD 함수를 통해 부품 조회
-    
-    if not parts:
-        raise HTTPException(status_code=404, detail="부품을 찾을 수 없습니다.")
-    
-    item = convert_to_parts_response(parts) # Resources 객체를 응답 DTO로 변환
-    
-    # 스키마 포함 옵션에 따라 응답을 구성합니다.
-    if include_schema:
-        return {
-            "schema": get_parts_schema(),
-            "item": item
-        }
-    else:
-        return item
+        item = convert_to_parts_response(parts) # Resources 객체를 응답 DTO로 변환
+        
+        # 스키마 포함 옵션에 따라 응답을 구성합니다.
+        if include_schema:
+            return {
+                "schema": get_parts_schema(),
+                "item": item
+            }
+        else:
+            return item
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DEBUG: get_parts_detail error: {str(e)}")
 
 
 @handler.post("/search")
@@ -271,44 +251,38 @@ def search_parts(
     search_request: schemas.PartsSearchRequest, # 요청 바디는 PartsSearchRequest 스키마를 따름
     db: Session = Depends(get_db) # DB 세션 의존성 주입
 ):
-    """
-    다양한 필드(이름, ID, 제조사명, 대분류, 중분류)를 사용하여 부품을 검색하는 API 엔드포인트입니다.
-    - 여러 검색 필드에 대해 OR 조건을 적용하여 검색을 수행합니다.
-    
-    Args:
-        search_request (schemas.PartsSearchRequest): 검색어, 검색 필드 목록 등을 담은 DTO.
-        db (Session): SQLAlchemy 데이터베이스 세션.
+    try:
+        total, parts_list = crud.search_parts(
+            db=db,
+            query=search_request.query,
+            search_fields=search_request.search_fields,
+            skip=search_request.skip,
+            limit=search_request.limit
+        )
         
-    Returns:
-        dict: 검색된 부품 목록과 페이징 정보를 담은 딕셔너리. 스키마 포함 옵션도 지원.
-    """
-    total, parts_list = crud.search_parts(
-        db=db,
-        query=search_request.query,
-        search_fields=search_request.search_fields,
-        skip=search_request.skip,
-        limit=search_request.limit
-    )
-    
-    # Resources 객체 리스트를 DTO 형식으로 변환합니다.
-    items = [convert_to_parts_response(part) for part in parts_list]
-    
-    # 스키마 포함 옵션에 따라 응답을 구성합니다.
-    if search_request.include_schema:
-        return {
-            "schema": get_parts_schema(),
-            "total": total,
-            "items": items,
-            "skip": search_request.skip,
-            "limit": search_request.limit
-        }
-    else:
-        return {
-            "total": total,
-            "items": items,
-            "skip": search_request.skip,
-            "limit": search_request.limit
-        }
+        # Resources 객체 리스트를 DTO 형식으로 변환합니다.
+        items = [convert_to_parts_response(part) for part in parts_list]
+        
+        # 스키마 포함 옵션에 따라 응답을 구성합니다.
+        if search_request.include_schema:
+            return {
+                "schema": get_parts_schema(),
+                "total": total,
+                "items": items,
+                "skip": search_request.skip,
+                "limit": search_request.limit
+            }
+        else:
+            return {
+                "total": total,
+                "items": items,
+                "skip": search_request.skip,
+                "limit": search_request.limit
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DEBUG: search_parts error: {str(e)}")
 
 
 @handler.put("/{parts_id}/{maker_id}")
@@ -318,41 +292,30 @@ def update_parts(
     parts_update: schemas.PartsUpdate, # 요청 바디는 PartsUpdate 스키마를 따름
     db: Session = Depends(get_db) # DB 세션 의존성 주입
 ):
-    """
-    특정 부품(Parts)의 정보를 업데이트하는 API 엔드포인트입니다.
-    - 부분 업데이트를 지원하며, 제공된 필드만 업데이트됩니다.
-    
-    Args:
-        parts_id (str): 업데이트할 부품 ID.
-        maker_id (str): 업데이트할 제조사 ID.
-        parts_update (schemas.PartsUpdate): 업데이트할 부품 정보를 담은 DTO.
-        db (Session): SQLAlchemy 데이터베이스 세션.
+    try:
+        updated_parts = crud.update_parts(
+            db=db,
+            parts_id=parts_id,
+            maker_id=maker_id,
+            major=parts_update.major_category,
+            minor=parts_update.minor_category,
+            name=parts_update.name,
+            unit=parts_update.unit,
+            solo_price=parts_update.solo_price,
+            ul=parts_update.ul,
+            ce=parts_update.ce,
+            kc=parts_update.kc,
+            etc=parts_update.certification_etc
+        )
         
-    Returns:
-        dict: 업데이트된 부품 정보.
+        if not updated_parts:
+            raise HTTPException(status_code=404, detail="부품을 찾을 수 없습니다.")
         
-    Raises:
-        HTTPException: 부품을 찾을 수 없는 경우 404 Not Found.
-    """
-    updated_parts = crud.update_parts(
-        db=db,
-        parts_id=parts_id,
-        maker_id=maker_id,
-        major=parts_update.major_category,
-        minor=parts_update.minor_category,
-        name=parts_update.name,
-        unit=parts_update.unit,
-        solo_price=parts_update.solo_price,
-        ul=parts_update.ul,
-        ce=parts_update.ce,
-        kc=parts_update.kc,
-        etc=parts_update.certification_etc
-    )
-    
-    if not updated_parts:
-        raise HTTPException(status_code=404, detail="부품을 찾을 수 없습니다.")
-    
-    return convert_to_parts_response(updated_parts) # 업데이트된 부품 객체를 응답 DTO로 변환하여 반환
+        return convert_to_parts_response(updated_parts) # 업데이트된 부품 객체를 응답 DTO로 변환하여 반환
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DEBUG: update_parts error: {str(e)}")
 
 
 @handler.delete("/{parts_id}/{maker_id}")
@@ -361,28 +324,18 @@ def delete_parts(
     maker_id: str, # 경로 파라미터: 제조사 ID
     db: Session = Depends(get_db) # DB 세션 의존성 주입
 ):
-    """
-    특정 부품(Parts) 및 관련 인증 정보를 데이터베이스에서 삭제하는 API 엔드포인트입니다.
-    - 외래 키 제약 조건으로 인해 삭제가 제한될 수 있으므로, Certification이 먼저 삭제되어야 합니다.
-    
-    Args:
-        parts_id (str): 삭제할 부품 ID.
-        maker_id (str): 삭제할 제조사 ID.
-        db (Session): SQLAlchemy 데이터베이스 세션.
+    try:
+        success = crud.delete_parts(db, parts_id, maker_id) # CRUD 함수를 통해 부품 삭제
         
-    Returns:
-        dict: 삭제 성공 메시지.
+        if not success:
+            raise HTTPException(status_code=404, detail="부품을 찾을 수 없습니다.")
         
-    Raises:
-        HTTPException: 부품을 찾을 수 없는 경우 404 Not Found.
-    """
-    success = crud.delete_parts(db, parts_id, maker_id) # CRUD 함수를 통해 부품 삭제
-    
-    if not success:
-        raise HTTPException(status_code=404, detail="부품을 찾을 수 없습니다.")
-    
-    item_code = f"{maker_id}-{parts_id}" # 삭제된 부품의 복합 품목 코드
-    return {
-        "message": "부품이 성공적으로 삭제되었습니다.",
-        "deleted_item_code": item_code
-    }
+        item_code = f"{maker_id}-{parts_id}" # 삭제된 부품의 복합 품목 코드
+        return {
+            "message": "부품이 성공적으로 삭제되었습니다.",
+            "deleted_item_code": item_code
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DEBUG: delete_parts error: {str(e)}")
