@@ -12,12 +12,21 @@
 
 {% block content %}
 <div class="quotation-comparison-page">
+    {# 우측 사이드 플로팅 메뉴 (image_ac2351 스타일 적용) #}
+    <div id="sideActionMenu" class="side-action-menu no-print" style="display: none;">
+        <button class="btn btn-secondary" onclick="createDetailedFromCompare()">📑 을지 만들기</button>
+        <button class="btn btn-primary" onclick="createHeaderFromCompare()">📄 갑지 만들기</button>
+        <hr>
+        <button id="btnToggleEditSide" class="btn btn-outline" onclick="toggleEditMode()">수정하기</button>
+        <button class="btn btn-outline" onclick="window.print()">인쇄하기</button>
+    </div>
+
     <div class="comparison-shell">
         <div class="comparison-inner">
             <header>
                 <h2 id="pageTitle">내정가 견적가 비교</h2>
                 <div class="logo-placeholder">
-                    <img src="/static/assets/images/jlt-logo.svg" alt="JLT Logo">
+                    <img src="/assets/images/Normal_Logo.png" alt="JLT Logo">
                 </div>
             </header>
             
@@ -33,13 +42,13 @@
                     <span style="font-weight: 600; color: #374151;">작성일: <span id="createdDate">-</span></span>
                 </div>
                 <div id="markupControl" style="display: flex; align-items: center;">
-                    <label for="markup-rate" style="margin-right: 8px; font-weight: bold;">견적가 상승률:</label>
+                    <label for="markup-rate" style="margin-right: 8px; font-weight: bold;">일괄 상승률:</label>
                     <input type="number" id="markup-rate" value="5" step="0.1" style="width: 60px; text-align: right; padding: 4px;">
                     <span style="margin-left: 4px;">%</span>
                 </div>
             </div>
             
-            {# 테이블 컨테이너 #}
+            {# 메인 테이블 #}
             <div id="tableContainer">
                 <table class="comparison-table">
                     <thead>
@@ -63,9 +72,7 @@
                             <th class="sub-header">금액</th>
                         </tr>
                     </thead>
-                    <tbody id="comparisonTableBody">
-                        {# JavaScript로 동적 생성 #}
-                    </tbody>
+                    <tbody id="comparisonTableBody"></tbody>
                 </table>
             </div>
 
@@ -75,7 +82,7 @@
                 <div class="notes-content" id="notesContent"></div>
             </div>
             
-            {# 액션 버튼 #}
+            {# 하단 액션 버튼 #}
             <div class="action-footer" id="actionFooter" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
             </div>
         </div>

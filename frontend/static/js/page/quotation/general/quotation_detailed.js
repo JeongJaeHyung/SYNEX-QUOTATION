@@ -1,18 +1,12 @@
 /**
- * 견적서(을지) 상세 - View/Edit 모드 및 실시간 편집 로직
- * API: /api/v1/quotation/detailed/{id}
+ * 견적서(을지) 상세 - 8개 컬럼 & 장비명 셀 병합 로직 통합
  */
 
 let detailedId = null;
 let originalData = null;
-let pageMode = 'view'; // 초기 모드: 'view' (조회)
-
-// ============================================================================
-// 페이지 초기화
-// ============================================================================
+let pageMode = 'view'; 
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. URL에서 ID 추출
     const pathParts = window.location.pathname.split('/');
     detailedId = pathParts[pathParts.length - 1];
     
@@ -20,17 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDetailedData(detailedId);
     }
 
-    // 2. 실시간 계산 이벤트 위임 (수정 모드일 때만 작동)
     const tbody = document.querySelector('#detailedTable tbody');
     if (tbody) {
         tbody.addEventListener('input', function(e) {
             if (pageMode !== 'edit') return;
-
             const row = e.target.closest('.data-row');
-            if (!row) return;
-
-            // 수량이나 단가가 변경될 때만 계산 실행
-            if (e.target.classList.contains('edit-qty') || e.target.classList.contains('edit-price')) {
+            if (row && (e.target.classList.contains('edit-qty') || e.target.classList.contains('edit-price'))) {
                 updateRowSubtotal(row);
                 calculateGrandTotal();
             }
@@ -38,19 +27,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ============================================================================
-// 데이터 로드 및 모드 관리
-// ============================================================================
-
 async function loadDetailedData(id) {
     try {
         const response = await fetch(`/api/v1/quotation/detailed/${id}`);
         if (!response.ok) throw new Error('데이터 로드 실패');
-        
         originalData = await response.json();
         
-        // 테이블 렌더링 후 초기 모드 설정
         renderDetailedTable(originalData.detailed_resources);
+        document.getElementById('quotationDescription').innerText = originalData.description || '';
         toggleEditMode('view');
         
         document.getElementById('loading').style.display = 'none';
@@ -61,78 +45,112 @@ async function loadDetailedData(id) {
     }
 }
 
-/**
- * View/Edit 모드 전환 함수
- * @param {string} mode - 'view' 또는 'edit'
- */
 function toggleEditMode(mode) {
     pageMode = mode;
     const table = document.getElementById('detailedTable');
     const title = document.getElementById('pageTitle');
     const viewActions = document.getElementById('viewActions');
     const editActions = document.getElementById('editActions');
+    const descriptionBox = document.getElementById('quotationDescription'); // 비고란 선택
 
-    // 1. 테이블 데이터 속성 변경 (CSS 바인딩용)
     table.dataset.mode = mode;
     
-    // 2. 모든 편집 가능 셀의 속성 일괄 변경
+    // 테이블 내 셀 편집 제어
     const editableCells = table.querySelectorAll('[contenteditable]');
     editableCells.forEach(cell => {
         cell.contentEditable = (mode === 'edit');
     });
 
-    // 3. 플로팅 사이드바 버튼 그룹 및 제목 토글
+    // [추가] 하단 비고란 편집 제어
+    descriptionBox.contentEditable = (mode === 'edit');
+
     if (mode === 'edit') {
-        title.textContent = '상세 견적서 (수정 중)';
         viewActions.style.display = 'none';
         editActions.style.display = 'flex';
     } else {
         title.textContent = '상세 견적서 (을지)';
         viewActions.style.display = 'flex';
         editActions.style.display = 'none';
-        
-        // 취소 시 혹은 초기화 시 원본 데이터로 복구가 필요하면 다시 렌더링
-        if (originalData) renderDetailedTable(originalData.detailed_resources);
+        if (originalData) {
+            renderDetailedTable(originalData.detailed_resources);
+            // [추가] 취소 시 비고란 데이터 원복
+            descriptionBox.innerText = originalData.description || '';
+        }
     }
 }
-
-// ============================================================================
-// 테이블 렌더링 및 계산 로직
-// ============================================================================
 
 function renderDetailedTable(resources) {
     const tbody = document.querySelector('#detailedTable tbody');
     tbody.innerHTML = '';
     
-    const groups = groupByMachineThenMajor(resources);
+    const majorOrder = ['자재비', '인건비', '출장 경비', '관리비'];
+    const groups = groupByMajorThenMachine(resources);
+    
     let html = '';
     let rowNo = 1;
 
-    Object.keys(groups).forEach(machine => {
-        Object.keys(groups[machine]).forEach(major => {
-            const items = groups[machine][major];
-            html += `<tr class="section-title"><td colspan="7">● ${machine} - ${major} 상세 내역</td></tr>`;
-            
-            items.forEach(item => {
+    const renderSection = (major) => {
+        const machines = groups[major];
+        let majorTotal = 0; // 해당 대분류의 합계를 저장할 변수
+        
+        // 1. 대분류 섹션 타이틀 행
+        html += `<tr class="section-title-row"><td colspan="8">${major} 상세 내역</td></tr>`;
+        
+        Object.keys(machines).forEach(machineName => {
+            const items = machines[machineName];
+            const rowCount = items.length;
+
+            items.forEach((item, idx) => {
+                const subtotal = item.subtotal || 0;
+                majorTotal += subtotal; // 합계 누적
+
                 html += `
                 <tr class="data-row" 
                     data-machine="${item.machine_name}" 
                     data-major="${item.major}" 
                     data-minor="${item.minor}">
-                    <td class="text-center">${rowNo++}</td>
+                    <td class="text-center">${rowNo++}</td>`;
+                
+                if (idx === 0) {
+                    html += `<td rowspan="${rowCount}" class="machine-name-cell text-center">${machineName}</td>`;
+                }
+
+                html += `
                     <td>${item.minor}</td>
-                    <td contenteditable="false" class="edit-unit text-center">${item.unit || '식'}</td>
                     <td contenteditable="false" class="edit-qty text-right">${item.compare}</td>
+                    <td contenteditable="false" class="edit-unit text-center">${item.unit || '식'}</td>
                     <td contenteditable="false" class="edit-price text-right">${formatNumber(item.solo_price)}</td>
-                    <td class="row-subtotal text-right">${formatNumber(item.subtotal)}</td>
+                    <td class="row-subtotal text-right">${formatNumber(subtotal)}</td>
                     <td contenteditable="false" class="edit-desc">${item.description || ''}</td>
                 </tr>`;
             });
         });
-    });
+
+        // 2. 대분류별 총 합계 행 추가
+        html += `
+        <tr class="major-subtotal-row">
+            <td colspan="6" class="text-center">${major} 총 합계</td>
+            <td class="text-right font-bold">${formatNumber(majorTotal)}</td>
+            <td></td>
+        </tr>`;
+    };
+
+    majorOrder.forEach(major => { if (groups[major]) renderSection(major); });
+    Object.keys(groups).forEach(major => { if (!majorOrder.includes(major)) renderSection(major); });
     
     tbody.innerHTML = html;
-    calculateGrandTotal();
+    calculateGrandTotal(); // 전체 총계 계산
+}
+
+function groupByMajorThenMachine(res) {
+    return res.reduce((acc, curr) => {
+        const major = curr.major || '기타';
+        const machine = curr.machine_name || '미분류';
+        if (!acc[major]) acc[major] = {};
+        if (!acc[major][machine]) acc[major][machine] = [];
+        acc[major][machine].push(curr);
+        return acc;
+    }, {});
 }
 
 function updateRowSubtotal(row) {
@@ -151,23 +169,19 @@ function calculateGrandTotal() {
     if (tfoot) {
         tfoot.innerHTML = `
             <tr class="total-row">
-                <td colspan="5" class="text-center">합 계 (VAT 별도)</td>
+                <td colspan="6" class="text-center">합 계 (VAT 별도)</td>
                 <td class="total-amount-cell">${formatNumber(total)}</td>
                 <td></td>
             </tr>`;
     }
 }
 
-// ============================================================================
-// 서버 데이터 저장 (PUT)
-// ============================================================================
-
 async function saveDetailedData() {
     const saveBtn = document.getElementById('saveBtn');
     const rows = document.querySelectorAll('.data-row');
+    const descriptionBox = document.getElementById('quotationDescription');
     const resources = [];
 
-    // 화면의 수정된 데이터를 객체 배열로 수집
     rows.forEach(row => {
         resources.push({
             machine_name: row.dataset.machine,
@@ -182,63 +196,31 @@ async function saveDetailedData() {
 
     const payload = {
         creator: originalData.creator,
-        description: originalData.description,
+        description: descriptionBox.innerText.trim(), // [수정] 수집된 비고란 텍스트 적용
         detailed_resources: resources
     };
 
     if (!confirm('변경사항을 저장하시겠습니까?')) return;
-
     saveBtn.disabled = true;
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = '저장 중...';
-
     try {
         const response = await fetch(`/api/v1/quotation/detailed/${detailedId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
         if (response.ok) {
-            const result = await response.json();
-            originalData = result; // 최신 데이터로 로컬 캐시 갱신
+            originalData = await response.json();
             alert('성공적으로 저장되었습니다.');
-            toggleEditMode('view'); // 저장 후 조회 모드로 복귀
-        } else {
-            const err = await response.json();
-            throw new Error(err.detail || '저장 실패');
+            toggleEditMode('view');
         }
-    } catch (e) {
-        console.error(e);
-        alert('저장 중 오류가 발생했습니다: ' + e.message);
     } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = originalText;
     }
 }
 
-// ============================================================================
-// 유틸리티 함수
-// ============================================================================
-
-function formatNumber(n) { 
-    return (n || 0).toLocaleString('ko-KR'); 
-}
-
+function formatNumber(n) { return (n || 0).toLocaleString('ko-KR'); }
 function parseNumber(s) { 
-    if (!s) return 0;
+    if (!s || s.trim() === '-' || s.trim() === '') return 0;
     return parseInt(s.toString().replace(/,/g, '')) || 0; 
 }
-
-function groupByMachineThenMajor(res) {
-    return res.reduce((acc, curr) => {
-        if (!acc[curr.machine_name]) acc[curr.machine_name] = {};
-        if (!acc[curr.machine_name][curr.major]) acc[curr.machine_name][curr.major] = [];
-        acc[curr.machine_name][curr.major].push(curr);
-        return acc;
-    }, {});
-}
-
-function goBack() { 
-    window.history.back(); 
-}
+function goBack() { window.history.back(); }

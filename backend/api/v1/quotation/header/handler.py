@@ -196,7 +196,7 @@ def update_header(
     if header_update.header_resources:
         resources_data = [r.dict() for r in header_update.header_resources]
     
-    # 수정
+    # 수정 ✅ header_resources로 파라미터명 수정!
     updated_quotation = crud.update_header(
         db=db,
         header_id=header_id,
@@ -207,7 +207,7 @@ def update_header(
         pic_position=header_update.pic_position,
         description_1=header_update.description_1,
         description_2=header_update.description_2,
-        quotation_resources=resources_data
+        header_resources=resources_data  # ✅ quotation_resources → header_resources
     )
     
     if not updated_quotation:

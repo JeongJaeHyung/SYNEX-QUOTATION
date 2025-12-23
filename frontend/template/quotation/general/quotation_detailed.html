@@ -1,7 +1,7 @@
 {% extends "template/base.html" %}
 {% import "element/button.html" as btn %}
 
-{% block title %}견적서(을지) 상세 - SYNEX+{% endblock %}
+{% block title %}상세 견적서 (을지) - SYNEX+{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/general/quotation_detailed.css') }}">
@@ -30,7 +30,7 @@
             <header>
                 <h2 id="pageTitle">상세 견적서 (을지)</h2>
                 <div class="logo-placeholder">
-                    <img src="/static/assets/images/jlt-logo.svg" alt="JLT Logo">
+                    <img src="/assets/images/Normal_Logo.png" alt="JLT Logo">
                 </div>
             </header>
             
@@ -38,21 +38,35 @@
                 <p>데이터를 불러오는 중...</p>
             </div>
             
-            <table style="display: none;" id="detailedTable" class="editable-table">
+            <table id="detailedTable" class="editable-table" data-mode="view">
                 <thead>
                     <tr>
                         <th class="col-number">No</th>
-                        <th>품명(중분류)</th>
-                        <th>단위</th>
-                        <th>수량</th>
-                        <th>단가</th>
-                        <th>공급가액</th>
+                        <th style="width: 14%;">장비명</th>
+                        <th>품명</th>
+                        <th class="edit-qty">수량</th>
+                        <th class="edit-unit">단위</th>
+                        <th class="edit-price">단가</th>
+                        <th class="row-subtotal">공급가액</th>
                         <th>비고</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
-                <tfoot></tfoot>
+                <tbody>
+                    </tbody>
+                <tfoot>
+                    </tfoot>
             </table>
+
+            <div class="quotation-note-container">
+                <div class="note-header">
+                    <h3>비고 (Note)</h3>
+                </div>
+                <div id="quotationDescription" class="description-box" contenteditable="false">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>

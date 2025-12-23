@@ -92,12 +92,11 @@ body {
     height: 70px; /* 최종 확정 */
 }
 
-.navbar-logo a {
-    font-size: 22px; /* 18px → 22px로 확대 */
-    font-weight: 700;
-    color: var(--primary-blue);
-    text-decoration: none;
-    letter-spacing: -0.5px;
+.navbar-logo img {
+    width: 80px; /* 로고 크기 조정 */
+    height: auto;
+    margin-right: var(--spacing-md);
+    margin-left: 50%;
 }
 
 .navbar-menu {
@@ -599,6 +598,10 @@ body {
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-sm);
+}
+.jlt-logo {
+    width: 70px;
+    height: auto;
 }
 
 /* ========================================

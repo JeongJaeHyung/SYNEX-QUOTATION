@@ -13,8 +13,8 @@ from .role import Role
 from .permission import Permission
 from .role_permission import role_permission 
 from .general import General
-from .header import Quotation
-from .header_resources import QuotationResources
+from .header import Header
+from .header_resources import HeaderResources
 from .detailed import Detailed
 from .detailed_resources import DetailedResources
 from .price_compare import PriceCompare
@@ -35,8 +35,8 @@ __all__ = [
     "Permission",
     "role_permission",
     "General",
-    "Quotation",
-    "QuotationResources",
+    "Header",
+    "HeaderResources",
     "Detailed",
     "DetailedResources",
     "PriceCompare",

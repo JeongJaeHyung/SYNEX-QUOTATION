@@ -1,3 +1,4 @@
+# backend/api/v1/quotation/general/crud.py
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from uuid import UUID
@@ -68,13 +69,12 @@ def update_general(
 def get_general_with_relations(db: Session, general_id: UUID) -> Optional[dict]:
     """
     General 상세 조회 (연관 테이블 포함)
-    PriceCompare, Quotation, Detailed 데이터를 통합하여 related_documents로 반환
+    PriceCompare, Header, Detailed 데이터를 통합하여 related_documents로 반환
     """
     general = get_general_by_id(db, general_id)
     if not general:
         return None
     
-    # 통합 목록 생성
     related_docs = []
     
     # 1. PriceCompare (비교 견적)
@@ -82,29 +82,30 @@ def get_general_with_relations(db: Session, general_id: UUID) -> Optional[dict]:
         for pc in general.price_compares:
             related_docs.append({
                 "id": pc.id,
-                "category": "비교 견적서",
-                "title": pc.description if pc.description else "내정가 비교", # 제목이 없으면 비고 사용
+                "category": "비교견적서(내정가, 견적가)",
+                "title": pc.description if pc.description else "내정가 비교",
                 "creator": pc.creator,
                 "updated_at": pc.updated_at
             })
     
-    # 2. Quotation (견적서 갑지) - 모델이 있다면
-    if hasattr(general, 'quotations') and general.quotations:
-        for q in general.quotations:
+    # 2. Header (견적서 갑지)
+    # 💡 general.quotations 대신 바뀐 속성인 general.headers 사용
+    if hasattr(general, 'headers') and general.headers:
+        for h in general.headers:
             related_docs.append({
-                "id": q.id,
-                "category": "견적서(갑)",
-                "title": q.title,
-                "creator": q.creator,
-                "updated_at": q.updated_at
+                "id": h.id,
+                "category": "견적서(갑지)",
+                "title": h.title,
+                "creator": h.creator,
+                "updated_at": h.updated_at
             })
 
-    # 3. Detailed (상세 견적) - 모델이 있다면
+    # 3. Detailed (상세 견적)
     if hasattr(general, 'detaileds') and general.detaileds:
         for d in general.detaileds:
             related_docs.append({
                 "id": d.id,
-                "category": "상세 견적서",
+                "category": "견적서(을지)",
                 "title": d.description if d.description else "상세 내역",
                 "creator": d.creator,
                 "updated_at": d.updated_at
@@ -113,7 +114,6 @@ def get_general_with_relations(db: Session, general_id: UUID) -> Optional[dict]:
     # 최신 수정순 정렬
     related_docs.sort(key=lambda x: x['updated_at'], reverse=True)
     
-    # Pydantic Schema(GeneralResponse) 구조에 맞게 Dict 리턴
     return {
         "id": general.id,
         "name": general.name,
@@ -122,7 +122,7 @@ def get_general_with_relations(db: Session, general_id: UUID) -> Optional[dict]:
         "description": general.description,
         "created_at": general.created_at,
         "updated_at": general.updated_at,
-        "related_documents": related_docs  # 💡 여기가 핵심
+        "related_documents": related_docs
     }
 
 def delete_general(db: Session, general_id: UUID) -> bool:

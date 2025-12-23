@@ -327,3 +327,36 @@
         display: none;
     }
 }
+/* 기본 레이아웃 */
+.quotation-comparison-page { background: #f9fafb; padding: 3.5rem 1rem 4rem; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+.comparison-shell { width: min(1900px, 98%); background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.comparison-inner { padding: 2rem; width: 100%; }
+
+/* 우측 사이드 플로팅 메뉴 */
+.side-action-menu {
+    position: fixed; right: 25px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px; z-index: 1000;
+    padding: 15px; background: #ffffff; border: 1px solid #e2e8f0;
+    border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+.side-action-menu .btn { width: 130px; height: 45px; font-size: 14px; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; }
+.side-action-menu hr { width: 100%; border: 0; border-top: 1px solid #e2e8f0; margin: 5px 0; }
+
+.btn-primary { background-color: #3b82f6; color: white; }
+.btn-secondary { background-color: #10b981; color: white; }
+.btn-outline { background-color: white; border: 1px solid #cbd5e1 !important; color: #334155; }
+
+/* 테이블 상세 스타일 */
+.comparison-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; border: 1px solid #cbd5e1; table-layout: fixed; }
+.comparison-table th, .comparison-table td { padding: 0.5rem; border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; }
+.header-internal { background: #fef9c3 !important; }
+.header-estimate { background: #dbeafe !important; }
+.category-cell { background: #f8fafc; font-weight: 700; color: #1e3a8a; }
+.machine-name-cell { background: #e0f2fe; font-weight: 700; }
+
+/* 편집 모드 스타일 */
+.editable-cell { background-color: #fffbe6 !important; outline: 1px dashed #eab308; }
+.final-total-row { background: #fef9c3; font-weight: 700; border-top: 3px solid #eab308; }
+
+/* 인쇄 설정 */
+@media print { .side-action-menu, .no-print, .action-footer { display: none !important; } .quotation-comparison-page { padding: 0; } }

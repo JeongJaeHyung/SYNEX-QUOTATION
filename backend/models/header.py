@@ -7,8 +7,8 @@ from sqlalchemy.orm import relationship
 import uuid
 from backend.database import Base
 
-class Quotation(Base):
-    __tablename__ = "quotation"
+class Header(Base):
+    __tablename__ = "header"
     
     # ID (Primary Key, UUID)만 사용, 중복 uuid 컬럼 제거
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -29,8 +29,8 @@ class Quotation(Base):
     description_2 = Column(Text, nullable=True)
     
     # Relationships
-    general = relationship("General", back_populates="quotations")
-    quotation_resources = relationship("QuotationResources", back_populates="quotation", cascade="all, delete-orphan")
+    general = relationship("General", back_populates="headers")
+    header_resources = relationship("HeaderResources", back_populates="header", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Quotation(id='{self.id}', title='{self.title}')>"
+        return f"<Header(id='{self.id}', title='{self.title}')>"

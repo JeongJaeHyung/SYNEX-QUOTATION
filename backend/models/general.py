@@ -20,7 +20,7 @@ class General(Base):
     description = Column(Text, nullable=True)
     
     # Relationships
-    quotations = relationship("Quotation", back_populates="general", cascade="all, delete-orphan")
+    headers = relationship("Header", back_populates="general", cascade="all, delete-orphan")
     detaileds = relationship("Detailed", back_populates="general", cascade="all, delete-orphan")
     price_compares = relationship("PriceCompare", back_populates="general", cascade="all, delete-orphan")
 
