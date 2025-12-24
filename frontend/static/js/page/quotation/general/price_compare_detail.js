@@ -97,6 +97,7 @@ function initUIByMode() {
             <button class="btn btn-secondary btn-lg" onclick="window.history.back()">목록으로</button>
             <button class="btn btn-warning btn-lg" onclick="toggleEditMode('edit')">수정하기</button>
             <button class="btn btn-outline btn-lg" onclick="exportToExcel()">Excel 저장</button>
+            <button class="btn btn-outline btn-lg" onclick="exportToPDF()">PDF 저장</button>
             <button class="btn btn-outline btn-lg" onclick="createDetailedFromCompare()">📑 을지 만들기</button>
             <button class="btn btn-primary btn-lg" onclick="createHeaderFromCompare()">📄 갑지 만들기</button>`;
     }
@@ -168,7 +169,7 @@ async function saveChanges() {
 }
 
 // ============================================================================
-// 4. [수정] 엑셀 다운로드 (하단 비고란 추가 완료)
+// 4. 엑셀 다운로드 (하단 비고란 추가 완료)
 // ============================================================================
 function exportToExcel() {
     if (!priceCompareData || !priceCompareData.price_compare_resources) return;
@@ -256,7 +257,42 @@ function exportToExcel() {
     XLSX.writeFile(wb, `내정가견적비교서_${priceCompareData.description?.substring(0,10) || priceCompareId}.xlsx`);
 }
 
-// 유틸리티
+// ============================================================================
+// 5. PDF 내보내기 (서버 API 사용)
+// ============================================================================
+function exportToPDF() {
+    const projectName = priceCompareData?.description || '비교견적';
+    const docType = '내정가_견적가_비교';
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const filename = `${projectName}_${docType}_${timestamp}.pdf`;
+
+    fetch('/api/save-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            url: window.location.href,
+            filename: filename,
+            projectName: projectName,
+            docType: docType
+        })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            alert('PDF가 저장되었습니다:\n' + result.path);
+        } else if (result.message !== '저장이 취소되었습니다.') {
+            alert('저장 실패: ' + result.message);
+        }
+    })
+    .catch(err => {
+        console.error('저장 오류:', err);
+        alert('PDF 저장 중 오류가 발생했습니다.');
+    });
+}
+
+// ============================================================================
+// 6. 유틸리티 함수
+// ============================================================================
 function setupCalculationEvents() {
     const tbody = document.getElementById('comparisonTableBody');
     if (!tbody) return;
@@ -274,6 +310,7 @@ function setupCalculationEvents() {
         calculateAllTotals();
     });
 }
+
 function calculateAllTotals() {
     let tCost = 0, tQuote = 0; const majorTotals = {};
     document.querySelectorAll('tr.category-row').forEach(row => {
@@ -295,8 +332,30 @@ function calculateAllTotals() {
     const mr = document.querySelector('.markup-row');
     if (mr && tQuote > 0) mr.querySelector('.margin-cell').textContent = (((tQuote - tCost) / tQuote) * 100).toFixed(1) + ' %';
 }
-function createDetailedFromCompare() { location.href = `/service/quotation/general/detailed/register?general_id=${priceCompareData.general_id}&compare_id=${priceCompareId}`; }
-function createHeaderFromCompare() { location.href = `/service/quotation/general/header/register?general_id=${priceCompareData.general_id}&compare_id=${priceCompareId}`; }
-function groupByMajorThenMachine(res) { const g = {}; res.forEach(i => { const maj = i.major || '기타', mach = i.machine_name || '미분류'; if (!g[maj]) g[maj] = {}; if (!g[maj][mach]) g[maj][mach] = []; g[maj][mach].push(i); }); return g; }
-function formatNumber(n) { return (n || 0).toLocaleString('ko-KR'); }
-function parseNumber(s) { return parseInt(s?.toString().replace(/[^0-9.-]/g, '')) || 0; }
+
+function createDetailedFromCompare() { 
+    location.href = `/service/quotation/general/detailed/register?general_id=${priceCompareData.general_id}&compare_id=${priceCompareId}`; 
+}
+
+function createHeaderFromCompare() { 
+    location.href = `/service/quotation/general/header/register?general_id=${priceCompareData.general_id}&compare_id=${priceCompareId}`; 
+}
+
+function groupByMajorThenMachine(res) { 
+    const g = {}; 
+    res.forEach(i => { 
+        const maj = i.major || '기타', mach = i.machine_name || '미분류'; 
+        if (!g[maj]) g[maj] = {}; 
+        if (!g[maj][mach]) g[maj][mach] = []; 
+        g[maj][mach].push(i); 
+    }); 
+    return g; 
+}
+
+function formatNumber(n) { 
+    return (n || 0).toLocaleString('ko-KR'); 
+}
+
+function parseNumber(s) { 
+    return parseInt(s?.toString().replace(/[^0-9.-]/g, '')) || 0; 
+}

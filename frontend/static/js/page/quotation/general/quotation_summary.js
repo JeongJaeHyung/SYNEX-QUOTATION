@@ -993,12 +993,39 @@ function numberToKorean(number) {
 }
 
 function exportPDF() {
-    alert('PDF 저장 기능은 추후 구현 예정입니다.\n현재는 브라우저의 인쇄 기능(Ctrl+P)을 사용해주세요.');
-    window.print();
+    const projectName = headerData?.title || document.getElementById('quotationTitle')?.textContent || '견적서';
+    const docType = '갑지';
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const filename = `${projectName}_${docType}_${timestamp}.pdf`;
+
+    fetch('/api/save-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            url: window.location.href,
+            filename: filename,
+            projectName: projectName,
+            docType: docType
+        })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            alert('PDF가 저장되었습니다:\n' + result.path);
+        } else if (result.message !== '저장이 취소되었습니다.') {
+            alert('저장 실패: ' + result.message);
+        }
+    })
+    .catch(err => {
+        console.error('저장 오류:', err);
+        // Fallback: 서버 API 실패 시 브라우저 인쇄 기능 사용
+        alert('서버 PDF 저장에 실패했습니다.\n브라우저 인쇄 기능을 사용해주세요.');
+        window.print();
+    });
 }
 
 function goBack() {
-    if (confirm('작성 중인 내용이 있습니다. 목록으로 돌아가시겠습니까?')) {
+    if (confirm('목록으로 돌아가시겠습니까?')) {
         window.history.back();
     }
 }

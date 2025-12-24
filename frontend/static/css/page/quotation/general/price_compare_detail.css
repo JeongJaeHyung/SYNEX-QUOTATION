@@ -313,20 +313,6 @@
     }
 }
 
-@media print {
-    .quotation-comparison-page {
-        background: #ffffff;
-        padding: 1rem;
-    }
-
-    .comparison-shell {
-        box-shadow: none;
-    }
-    
-    .action-footer {
-        display: none;
-    }
-}
 /* 기본 레이아웃 */
 .quotation-comparison-page { background: #f9fafb; padding: 3.5rem 1rem 4rem; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 .comparison-shell { width: min(1900px, 98%); background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
@@ -358,5 +344,166 @@
 .editable-cell { background-color: #fffbe6 !important; outline: 1px dashed #eab308; }
 .final-total-row { background: #fef9c3; font-weight: 700; border-top: 3px solid #eab308; }
 
-/* 인쇄 설정 */
-@media print { .side-action-menu, .no-print, .action-footer { display: none !important; } .quotation-comparison-page { padding: 0; } }
+/* ============================================================================
+   인쇄 전용 스타일 (A4 용지 최적화 - 너비 맞춤)
+   ============================================================================ */
+@media print {
+    /* A4 세로 방향, 여백 최소화 */
+    @page {
+        size: A4 portrait;
+        margin: 6mm;
+    }
+
+    /* 색상 정확하게 인쇄 */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 페이지 배경 및 패딩 제거 */
+    .quotation-comparison-page {
+        padding: 0 !important;
+        background: white !important;
+        min-height: auto !important;
+    }
+
+    /* 컨테이너 너비 100%로 맞춤 */
+    .comparison-shell {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+    }
+
+    .comparison-inner {
+        padding: 25px 8px 8px 8px !important; /* 상단 여백 더 확보 */
+        margin-top: 10px !important;
+    }
+
+    /* 헤더 스타일 조정 */
+    .comparison-inner header {
+        padding-bottom: 8px !important;
+        margin-bottom: 8px !important;
+        border-bottom: 2px solid #1e40af !important;
+    }
+
+    .comparison-inner header h2 {
+        font-size: 20pt !important;
+    }
+
+    .logo-placeholder img {
+        width: 150px !important;
+    }
+
+    /* 컨트롤 영역 숨기기 */
+    .controls-container,
+    #markupControl {
+        display: none !important;
+    }
+
+    /* 버튼 및 액션 요소 숨기기 */
+    .side-action-menu,
+    .no-print,
+    .action-footer {
+        display: none !important;
+    }
+
+    /* 테이블 너비 맞춤 - 핵심 */
+    .comparison-table {
+        width: 100% !important;
+        font-size: 8pt !important;
+        table-layout: auto !important;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 3px 4px !important;
+        height: auto !important;
+        border: 1px solid #333 !important;
+        word-break: break-word !important;
+    }
+
+    /* 헤더 스타일 */
+    .comparison-table thead tr:first-child th {
+        font-size: 9pt !important;
+        padding: 5px !important;
+    }
+
+    .comparison-table .header-internal {
+        background: #fef9c3 !important;
+    }
+
+    .comparison-table .header-estimate {
+        background: #dbeafe !important;
+    }
+
+    .comparison-table .sub-header {
+        font-size: 7pt !important;
+        padding: 3px !important;
+    }
+
+    /* 컬럼 너비 자동 조절 */
+    .comparison-table .col-category { width: 50px !important; min-width: 50px !important; }
+    .comparison-table .col-machine { width: auto !important; min-width: auto !important; }
+    .comparison-table .col-item { width: auto !important; min-width: auto !important; }
+    .comparison-table .col-note { width: 80px !important; min-width: 80px !important; }
+    .comparison-table .sub-header { width: auto !important; }
+
+    /* 장비명/항목 셀 */
+    .comparison-table .machine-name-cell,
+    .comparison-table .category-cell {
+        font-size: 8pt !important;
+    }
+
+    /* 소계/합계 행 */
+    .comparison-table .subtotal-row,
+    .comparison-table .total-row,
+    .comparison-table .final-total-row {
+        background: #fef9c3 !important;
+    }
+
+    .comparison-table .subtotal-cell,
+    .comparison-table .total-cell,
+    .comparison-table .final-total-cell {
+        font-size: 8pt !important;
+        background: #fef9c3 !important;
+    }
+
+    /* 특이사항 섹션 */
+    .notes-section {
+        margin-top: 10px !important;
+        page-break-inside: avoid;
+    }
+
+    .notes-header {
+        padding: 5px 8px !important;
+        font-size: 9pt !important;
+    }
+
+    .notes-content {
+        padding: 8px !important;
+        min-height: 40px !important;
+        font-size: 8pt !important;
+    }
+
+    /* 행 분리 방지 */
+    tr {
+        page-break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    /* 편집 셀 스타일 제거 */
+    .editable-cell {
+        background-color: transparent !important;
+        outline: none !important;
+    }
+}

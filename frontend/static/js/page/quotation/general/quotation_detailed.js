@@ -341,8 +341,39 @@ function exportDetailedToExcel() {
 }
 
 function formatNumber(n) { return (n || 0).toLocaleString('ko-KR'); }
-function parseNumber(s) { 
+function parseNumber(s) {
     if (!s || s.trim() === '-' || s.trim() === '') return 0;
-    return parseInt(s.toString().replace(/,/g, '')) || 0; 
+    return parseInt(s.toString().replace(/,/g, '')) || 0;
 }
 function goBack() { window.history.back(); }
+
+// PDF 내보내기
+function exportToPDF() {
+    const projectName = originalData?.title || '상세견적서';
+    const docType = '을지';
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const filename = `${projectName}_${timestamp}.pdf`;
+
+    fetch('/api/save-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            url: window.location.href,
+            filename: filename,
+            projectName: projectName,
+            docType: docType
+        })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            alert('PDF가 저장되었습니다:\n' + result.path);
+        } else if (result.message !== '저장이 취소되었습니다.') {
+            alert('저장 실패: ' + result.message);
+        }
+    })
+    .catch(err => {
+        console.error('저장 오류:', err);
+        alert('PDF 저장 중 오류가 발생했습니다.');
+    });
+}

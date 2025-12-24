@@ -331,10 +331,190 @@
 }
 
 @media print {
-    .summary-page-content { background-color: white; padding: 0; }
-    .summary-container { box-shadow: none; padding: 20px; width: 100%; max-width: 100%; }
-    .side-action-menu, .no-print, .action-footer, .mode-action-bar { display: none !important; }
-    
+    /* A4 세로 방향, 여백 최소화 */
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    /* 색상 정확하게 인쇄 */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 페이지 배경 및 패딩 제거 */
+    .summary-page-content {
+        background-color: white !important;
+        padding: 0 !important;
+        min-height: auto !important;
+    }
+
+    /* 컨테이너 너비 100%로 맞춤 */
+    .summary-container {
+        box-shadow: none !important;
+        padding: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+    }
+
+    /* 버튼 및 액션 요소 숨기기 */
+    .side-action-menu, .no-print, .action-footer, .mode-action-bar {
+        display: none !important;
+    }
+
+    /* 헤더 스타일 조정 */
+    .summary-header {
+        margin-bottom: 15px !important;
+        padding-bottom: 10px !important;
+    }
+
+    .summary-title {
+        font-size: 36pt !important;
+    }
+
+    .jlt-logo-large {
+        height: 40px !important;
+    }
+
+    /* 정보 섹션 조정 */
+    .summary-info-section {
+        margin-bottom: 15px !important;
+        gap: 15px !important;
+    }
+
+    .sender-info {
+        padding: 12px !important;
+    }
+
+    .info-table td {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+    }
+
+    /* 제목 섹션 */
+    .quotation-title-wrapper {
+        margin-bottom: 10px !important;
+        gap: 10px !important;
+    }
+
+    .quotation-title-section {
+        padding: 10px !important;
+    }
+
+    .title-content .total-amount {
+        font-size: 18px !important;
+    }
+
+    .document-title {
+        font-size: 14px !important;
+        margin: 15px 0 10px 0 !important;
+        padding: 10px !important;
+    }
+
+    /* 테이블 너비 맞춤 - 핵심 */
+    .quotation-table {
+        width: 100% !important;
+        font-size: 10px !important;
+        table-layout: auto !important;
+    }
+
+    .quotation-table th,
+    .quotation-table td {
+        padding: 5px 6px !important;
+        border: 1px solid #333 !important;
+    }
+
+    .quotation-table tbody td {
+        height: auto !important;
+    }
+
+    /* 컬럼 너비 자동 조절 */
+    .col-no { width: 25px !important; }
+    .col-machine { width: auto !important; }
+    .col-name { width: auto !important; }
+    .col-spec { width: auto !important; }
+    .col-quantity { width: 40px !important; }
+    .col-unit { width: 40px !important; }
+    .col-price { width: 70px !important; }
+    .col-unit-price { width: 80px !important; }
+    .col-remarks { width: auto !important; }
+
+    /* 합계 행 */
+    .summary-row {
+        background-color: #dbeafe !important;
+    }
+
+    .summary-label {
+        font-size: 12px !important;
+    }
+
+    .summary-amount {
+        font-size: 13px !important;
+    }
+
+    /* 하단 총계 */
+    .total-section {
+        margin-top: 10px !important;
+    }
+
+    .total-row {
+        background-color: #fef9c3 !important;
+    }
+
+    .total-label, .total-value {
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+    }
+
+    /* 비고란 */
+    .remarks-section {
+        margin-top: 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .remarks-title {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+    }
+
+    .remarks-content {
+        padding: 10px !important;
+        min-height: 60px !important;
+        font-size: 10px !important;
+    }
+
     /* 인쇄 시 편집 효과 제거 */
-    .edit-mode .editable, .edit-mode .editable-text { outline: none !important; background-color: transparent !important; }
+    .edit-mode .editable,
+    .edit-mode .editable-text {
+        outline: none !important;
+        background-color: transparent !important;
+    }
+
+    /* 행 분리 방지 */
+    tr {
+        page-break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    /* 직인 영역 */
+    .stamp-area {
+        right: 60px !important;
+    }
+
+    .stamp-area img {
+        width: 60px !important;
+        height: 60px !important;
+    }
 }
