@@ -1,22 +1,24 @@
 {% extends "template/base.html" %}
 
-{% block title %}견적 비교 - SYNEX+{% endblock %}
+{% block title %}내정가 견적가 비교 상세 - SYNEX+{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/general/price_compare_detail.css') }}">
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="{{ url_for('static', path='/js/page/quotation/general/price_compare_detail.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="quotation-comparison-page">
-    {# 우측 사이드 플로팅 메뉴 (image_ac2351 스타일 적용) #}
+    {# 우측 사이드 플로팅 메뉴 #}
     <div id="sideActionMenu" class="side-action-menu no-print" style="display: none;">
         <button class="btn btn-secondary" onclick="createDetailedFromCompare()">📑 을지 만들기</button>
         <button class="btn btn-primary" onclick="createHeaderFromCompare()">📄 갑지 만들기</button>
         <hr>
+        <button class="btn btn-success" onclick="exportToExcel()">Excel 저장</button>
         <button id="btnToggleEditSide" class="btn btn-outline" onclick="toggleEditMode()">수정하기</button>
         <button class="btn btn-outline" onclick="window.print()">인쇄하기</button>
     </div>
@@ -26,16 +28,14 @@
             <header>
                 <h2 id="pageTitle">내정가 견적가 비교</h2>
                 <div class="logo-placeholder">
-                    <img src="/assets/images/Normal_Logo.png" alt="JLT Logo">
+                    <img src="/static/images/Normal_Logo.png" alt="Logo">
                 </div>
             </header>
             
-            {# 로딩 인디케이터 #}
             <div id="loading" style="display: none; text-align: center; padding: 40px;">
                 <p>데이터를 불러오는 중...</p>
             </div>
             
-            {# 컨트롤 영역 #}
             <div class="controls-container" id="controlsContainer" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span style="font-weight: 600; color: #374151;">작성자: <span id="creatorName">-</span></span>
@@ -48,7 +48,6 @@
                 </div>
             </div>
             
-            {# 메인 테이블 #}
             <div id="tableContainer">
                 <table class="comparison-table">
                     <thead>
@@ -76,15 +75,12 @@
                 </table>
             </div>
 
-            {# 특이사항 #}
             <div class="notes-section" id="notesSection" style="display: none;">
                 <div class="notes-header">특이사항</div>
                 <div class="notes-content" id="notesContent"></div>
             </div>
             
-            {# 하단 액션 버튼 #}
-            <div class="action-footer" id="actionFooter" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-            </div>
+            <div class="action-footer" id="actionFooter" style="display: none; margin-top: 24px;"></div>
         </div>
     </div>
 </div>

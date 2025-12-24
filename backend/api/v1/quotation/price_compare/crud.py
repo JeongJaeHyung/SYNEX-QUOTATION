@@ -18,6 +18,9 @@ from . import schemas
 def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[dict]:
     """
     선택된 장비들의 BOM을 집계하고 출장경비 및 관리비를 추가합니다.
+    - 인건비: major는 유지하고, minor(구분)는 model_name을 가져옵니다.
+    - 자재비: major는 "자재비"로 고정하고, minor(구분)는 원본 대분류를 가져와 집계합니다.
+    - 견적 단가(quotation_solo_price): 내정가 합계에서 15% 증가된 금액으로 초기화합니다. 💡
     """
     
     # 1. 리소스 + 장비명 조회
@@ -49,28 +52,32 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
                 'display_unit': res.display_unit if res.display_unit else ("M/D" if is_labor else "ea")
             }
         
+        # 합계 금액 계산 (내정가 기준)
         aggregated[key]['price'] += (res.solo_price * res.quantity)
             
-    # 3. 결과 리스트 변환 (장비 리소스)
+    # 3. 결과 리스트 변환 (15% 할증 로직 적용) 💡
     initial_data = []
     for (m_id, m_name, major, minor), data in aggregated.items():
+        base_price = data['price']
+        # 💡 요구사항 반영: 견적 단가를 내정가보다 15% 증가된 금액으로 저장
+        increased_price = int(base_price * 1.15)
+        
         initial_data.append({
             "machine_id": m_id,
             "machine_name": m_name,
             "major": major,
             "minor": minor,
-            "cost_solo_price": data['price'],
+            "cost_solo_price": base_price,
             "cost_unit": data['display_unit'],
             "cost_compare": 1,
-            "quotation_solo_price": data['price'],
+            "quotation_solo_price": increased_price, # 💡 15% 증가 반영
             "quotation_unit": data['display_unit'],
             "quotation_compare": 1,
-            "upper": 15,
+            "upper": 15.0,
             "description": None
         })
     
     # 4. 가상 항목 추가 (출장경비 & 관리비)
-    # PK 유지를 위해 첫 번째 장비 ID를 참조용으로 사용
     first_machine_id = machine_ids[0] if machine_ids else None
     
     # 4-1. 출장경비 리스트
@@ -78,7 +85,7 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
     for item in business_trip_items:
         initial_data.append({
             "machine_id": first_machine_id,
-            "machine_name": item,  # 💡 요구사항: machine_name을 항목명과 동일하게 설정
+            "machine_name": item,
             "major": "출장경비",
             "minor": item,
             "cost_solo_price": 0,
@@ -87,7 +94,7 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
             "quotation_solo_price": 0,
             "quotation_unit": "원",
             "quotation_compare": 1,
-            "upper": 15,
+            "upper": 15.0,
             "description": ""
         })
 
@@ -96,7 +103,7 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
     for item in overhead_items:
         initial_data.append({
             "machine_id": first_machine_id,
-            "machine_name": item,  # 💡 요구사항: machine_name을 항목명과 동일하게 설정
+            "machine_name": item,
             "major": "관리비",
             "minor": item,
             "cost_solo_price": 0,
@@ -105,7 +112,7 @@ def calculate_initial_resources(db: Session, machine_ids: List[UUID]) -> List[di
             "quotation_solo_price": 0,
             "quotation_unit": "원",
             "quotation_compare": 1,
-            "upper": 15,
+            "upper": 15.0,
             "description": ""
         })
         

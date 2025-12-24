@@ -8,15 +8,18 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="{{ url_for('static', path='/js/page/quotation/general/quotation_detailed.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="quotation-cover-page">
     <div class="cover-shell">
+        {# 사이드 액션바 #}
         <div class="side-action-bar no-print" id="sideActionBar">
             <div class="action-group" id="viewActions">
                 {{ btn.button("수정하기", type="primary", onclick="toggleEditMode('edit')") }}
+                {{ btn.button("Excel 저장", type="success", onclick="exportDetailedToExcel()") }}
                 {{ btn.button("인쇄하기", type="default", onclick="window.print()") }}
                 {{ btn.button("목록으로", type="secondary", onclick="goBack()") }}
             </div>
@@ -38,7 +41,7 @@
                 <p>데이터를 불러오는 중...</p>
             </div>
             
-            <table id="detailedTable" class="editable-table" data-mode="view">
+            <table id="detailedTable" class="editable-table" data-mode="view" style="display: none;">
                 <thead>
                     <tr>
                         <th class="col-number">No</th>
@@ -52,9 +55,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    </tbody>
+                </tbody>
                 <tfoot>
-                    </tfoot>
+                </tfoot>
             </table>
 
             <div class="quotation-note-container">
@@ -62,11 +65,8 @@
                     <h3>비고 (Note)</h3>
                 </div>
                 <div id="quotationDescription" class="description-box" contenteditable="false">
-                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
         </div>
     </div>
 </div>

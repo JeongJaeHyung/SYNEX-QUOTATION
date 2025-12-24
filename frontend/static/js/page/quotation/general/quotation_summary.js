@@ -1,274 +1,1004 @@
 /**
- * 견적서 갑지 - 특정 컬럼 수정 방지 및 UI 통합 버전
+ * 견적서 갑지 페이지 - Excel 생성 기능 포함
+ * ExcelJS 4.3.0 및 FileSaver.js 2.0.5 필요
  */
+
 let headerId = null;
 let headerData = null;
-let pageMode = 'view';
+let isEditMode = false;
+
+// ============================================================================
+// 페이지 초기화
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    const pathParts = window.location.pathname.split('/').filter(p => p !== '');
+    console.log('[견적서 갑지] 페이지 로드 시작');
+    
+    const pathParts = window.location.pathname.split('/');
     headerId = pathParts[pathParts.length - 1];
+    
+    console.log('[견적서 갑지] Header ID:', headerId);
     
     if (headerId && headerId !== 'detail') {
         loadHeaderData(headerId);
+    } else {
+        console.error('[견적서 갑지] ID가 없습니다.');
+        alert('견적서 ID가 없습니다.');
     }
+    
     setupEventListeners();
 });
 
-// 데이터 로드
+// ============================================================================
+// API 데이터 로드
+// ============================================================================
+
 async function loadHeaderData(id) {
     const loading = document.getElementById('loading');
     const container = document.getElementById('summaryContainer');
-
+    const sideMenu = document.getElementById('sideActionMenu');
+    
+    console.log('[견적서 갑지] API 호출 시작:', `/api/v1/quotation/header/${id}`);
+    
     try {
         const response = await fetch(`/api/v1/quotation/header/${id}`);
-        if (!response.ok) throw new Error('로드 실패');
+        
+        if (!response.ok) {
+            throw new Error('데이터 로드 실패');
+        }
         
         headerData = await response.json();
-        renderHeaderPage(headerData);
-        toggleEditMode('view');
+        console.log('[견적서 갑지] API 응답:', headerData);
+        
+        renderHeaderData(headerData);
         
         if (loading) loading.style.display = 'none';
         if (container) container.style.display = 'block';
-    } catch (error) {
-        if (loading) loading.innerHTML = '<p style="color: red;">데이터 로딩 실패</p>';
-    }
-}
-
-function renderHeaderPage(data) {
-    const updateDate = data.updated_at ? new Date(data.updated_at) : new Date();
-    document.getElementById('quotationDate').textContent = formatDate(updateDate);
-    document.getElementById('senderCompany').textContent = data.client || '';
-
-    // 담당자 매핑
-    const picName = data.pic_name || '';
-    const picPos = data.pic_position || '';
-    document.getElementById('picInfoLabel').textContent = `${picName} ${picPos}님 귀하`.trim();
-
-    // 제목 연동 초기화
-    const docTitle = data.title || '';
-    document.getElementById('quotationTitle').textContent = docTitle;
-    document.getElementById('documentTitle').textContent = docTitle;
-
-    // 견적금액 & Best Nego Total 통합 (초기값 0 또는 서버값)
-    const initialPrice = data.price || 0;
-    document.getElementById('negoTotal').textContent = formatNumber(initialPrice);
-    document.getElementById('totalAmountVat').textContent = formatNumber(initialPrice);
-    document.getElementById('quotationAmountText').textContent = numberToKorean(initialPrice);
-
-    // 비고란
-    document.getElementById('remarksSpecial').innerText = (data.description_1 || '').trim();
-    document.getElementById('remarksGeneral').innerText = (data.description_2 || '').trim();
-
-    // 공급자 정보 고정 (사장님 성함)
-    document.getElementById('supplierName').value = "정현우";
-
-    renderTableWithMerge(data.header_resources || []);
-    updateTableTotalOnly(); 
-}
-
-/**
- * 장비명 기준 셀 병합 렌더링
- */
-function renderTableWithMerge(resources) {
-    const tbody = document.getElementById('quotationTableBody');
-    tbody.innerHTML = '';
-
-    const machineCounts = {};
-    resources.forEach(item => {
-        const m = item.machine || '기타';
-        machineCounts[m] = (machineCounts[m] || 0) + 1;
-    });
-
-    const renderedMachines = new Set();
-
-    resources.forEach((item, index) => {
-        const row = document.createElement('tr');
-        const machineName = item.machine || '기타';
+        if (sideMenu) sideMenu.style.display = 'flex';
         
-        let machineCellHtml = '';
-        if (!renderedMachines.has(machineName)) {
-            const count = machineCounts[machineName];
-            machineCellHtml = `<td class="col-machine col-center" rowspan="${count}">${machineName}</td>`;
-            renderedMachines.add(machineName);
-        }
-
-        row.innerHTML = `
-            <td class="col-no">${index + 1}</td>
-            ${machineCellHtml}
-            <td class="col-name">${item.name || ''}</td>
-            <td class="col-spec">${item.spac || ''}</td>
-            <td class="col-quantity col-center">${item.compare || 0}</td>
-            <td class="col-unit col-center">${item.unit || ''}</td>
-            <td class="col-price col-right">${formatNumber(item.solo_price)}</td>
-            <td class="col-unit-price col-right">${formatNumber(item.subtotal)}</td>
-            <td class="col-remarks col-left">${item.description || ''}</td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-// 모드 전환 및 우측 메뉴 제어
-function toggleEditMode(mode) {
-    pageMode = mode;
-    const container = document.getElementById('summaryContainer');
-    const editBtn = document.getElementById('btnToggleEdit');
-
-    container.classList.toggle('edit-mode', mode === 'edit');
-    
-    if (editBtn) {
-        editBtn.textContent = (mode === 'edit') ? '저장하기' : '수정하기';
-        editBtn.className = (mode === 'edit') ? 'btn btn-success' : 'btn btn-primary';
-        editBtn.onclick = (mode === 'edit') ? saveSummary : () => toggleEditMode('edit');
+    } catch (error) {
+        console.error('[견적서 갑지] Error:', error);
+        alert('데이터를 불러오는데 실패했습니다.');
+        if (loading) loading.innerHTML = '<p style="color: red;">데이터 로드 실패</p>';
     }
-
-    // [수정] 특정 컬럼 보호 로직
-    // 수정 가능한 요소들: 제목, 비고란, 규격, 수량, 단위, 단가, 비고(테이블), Nego금액
-    const editables = document.querySelectorAll(
-        '.editable-text, ' +
-        '#quotationTableBody td.col-spec, ' +
-        '#quotationTableBody td.col-quantity, ' +
-        '#quotationTableBody td.col-unit, ' +
-        '#quotationTableBody td.col-price, ' +
-        '#quotationTableBody td.col-remarks, ' +
-        '#negoTotal'
-    );
-    
-    editables.forEach(el => el.contentEditable = (mode === 'edit'));
-
-    if (mode === 'view' && headerData) renderHeaderPage(headerData);
 }
+
+// ============================================================================
+// 데이터 렌더링
+// ============================================================================
+
+function renderHeaderData(data) {
+    console.log('[견적서 갑지] 데이터 렌더링 시작');
+    
+    renderBasicInfo(data);
+    renderTable(data.header_resources);
+    updateCalculations();
+    
+    console.log('[견적서 갑지] 렌더링 완료');
+}
+
+function renderBasicInfo(data) {
+    const today = new Date();
+    document.getElementById('quotationDate').textContent = formatDate(today);
+    
+    if (data.client) {
+        document.getElementById('senderCompany').textContent = data.client;
+    }
+    
+    if (data.title) {
+        document.getElementById('documentTitle').textContent = data.title;
+        document.getElementById('quotationTitle').textContent = data.title;
+    }
+    
+    if (data.pic_name && data.pic_position) {
+        document.getElementById('picInfoLabel').textContent = 
+            `${data.pic_name} ${data.pic_position}님 귀하`;
+    }
+    
+    if (data.description_1) {
+        document.getElementById('remarksSpecial').textContent = data.description_1;
+    } else {
+        document.getElementById('remarksSpecial').textContent = '1. 2개라인 기준의 견적서 입니다.';
+    }
+    
+    if (data.description_2) {
+        document.getElementById('remarksGeneral').textContent = data.description_2;
+    } else {
+        document.getElementById('remarksGeneral').innerHTML = 
+            '- 납기 : 협의사항<br>- 지불조건 : 선급금 30%, 중도금 50%, 잔금 20%<br>- 기타 : 견적유효기간 10 일';
+    }
+}
+
+function renderTable(resources) {
+    const tbody = document.getElementById('quotationTableBody');
+    if (!tbody) return;
+    
+    const existingRows = tbody.querySelectorAll('tr:not(.empty-row)');
+    existingRows.forEach(row => row.remove());
+    
+    let html = '';
+    
+    resources.forEach((item, index) => {
+        const rowNumber = index + 1;
+        const quantity = item.compare || 1;
+        const unit = item.unit || '식';
+        const price = item.solo_price || 0;
+        const subtotal = item.subtotal || (price * quantity);
+        
+        html += `<tr>`;
+        html += `<td class="col-no col-center">${rowNumber}</td>`;
+        html += `<td class="col-machine col-center">${item.machine || ''}</td>`;
+        html += `<td class="col-name col-center">${item.name || ''}</td>`;
+        html += `<td class="col-spec col-center" contenteditable="true">${item.spac || ''}</td>`;
+        html += `<td class="col-quantity col-center" contenteditable="true">${quantity}</td>`;
+        html += `<td class="col-unit col-center" contenteditable="true">${unit}</td>`;
+        html += `<td class="col-price col-right" contenteditable="true">${formatNumber(price)}</td>`;
+        html += `<td class="col-unit-price col-right">${formatNumber(subtotal)}</td>`;
+        html += `<td class="col-remarks col-left" contenteditable="true">${item.description || ''}</td>`;
+        html += `</tr>`;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// ============================================================================
+// 편집 모드
+// ============================================================================
+
+function toggleEditMode(mode) {
+    const container = document.getElementById('summaryContainer');
+    const btn = document.getElementById('btnToggleEdit');
+    
+    if (mode === 'edit') {
+        if (isEditMode) {
+            saveSummary();
+        } else {
+            isEditMode = true;
+            container.classList.add('edit-mode');
+            btn.textContent = '저장하기';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+            
+            const editables = document.querySelectorAll('.editable-text');
+            editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+        }
+    } else if (mode === 'cancel') {
+        isEditMode = false;
+        container.classList.remove('edit-mode');
+        btn.textContent = '수정하기';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-primary');
+        
+        const editables = document.querySelectorAll('.editable-text');
+        editables.forEach(el => el.setAttribute('contenteditable', 'false'));
+        
+        loadHeaderData(headerId);
+    }
+}
+
+// ============================================================================
+// 이벤트 리스너
+// ============================================================================
 
 function setupEventListeners() {
-    const container = document.getElementById('summaryContainer');
+    const editableCells = document.querySelectorAll('[contenteditable="true"]');
+    editableCells.forEach(cell => {
+        cell.addEventListener('input', handleCellEdit);
+        cell.addEventListener('blur', updateCalculations);
+    });
+
+    editableCells.forEach((cell, index) => {
+        cell.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const nextCell = editableCells[index + 1];
+                if (nextCell) {
+                    nextCell.focus();
+                }
+            }
+        });
+    });
+
+    const negoTotal = document.getElementById('negoTotal');
+    if (negoTotal) {
+        negoTotal.addEventListener('blur', (e) => {
+            const val = parseInt(e.target.textContent.replace(/[^0-9]/g, '')) || 0;
+            if (val > 0) {
+                 e.target.textContent = formatNumber(val);
+            }
+            updateCalculations();
+        });
+    }
+}
+
+function handleCellEdit(e) {
+    const cell = e.target;
+    if (cell.classList.contains('col-right')) {
+        const value = cell.textContent.replace(/[^0-9]/g, '');
+        if (value) {
+            cell.textContent = formatNumber(parseInt(value));
+        }
+    }
+}
+
+// ============================================================================
+// 계산 함수
+// ============================================================================
+
+let isFirstCalculation = true;
+
+function updateCalculations() {
+    const tbody = document.getElementById('quotationTableBody');
+    const rows = tbody.querySelectorAll('tr:not(.empty-row)');
+    let total = 0;
+    let totalQty = 0;
+
+    rows.forEach((row) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 8) {
+            const priceText = cells[6].textContent.replace(/[^0-9]/g, '');
+            const quantityText = cells[4].textContent.replace(/[^0-9.-]/g, '');
+
+            const price = parseInt(priceText) || 0;
+            const quantity = parseFloat(quantityText) || 0;
+            const amount = price * quantity;
+
+            cells[7].textContent = formatNumber(amount);
+            total += amount;
+            totalQty += quantity;
+        }
+    });
+
+    document.getElementById('summaryAmount').textContent = formatNumber(total);
+    document.getElementById('totalAmount').textContent = formatNumber(total);
+    document.getElementById('totalQtySum').textContent = totalQty;
     
-    container.addEventListener('input', (e) => {
-        if (pageMode !== 'edit') return;
-        const target = e.target;
-
-        // 제목 실시간 연동
-        if (target.id === 'quotationTitle') {
-            document.getElementById('documentTitle').textContent = target.textContent;
+    const negoTotal = document.getElementById('negoTotal');
+    if (isFirstCalculation && negoTotal) {
+        negoTotal.textContent = formatNumber(total);
+    }
+    
+    let finalAmount = total;
+    if (negoTotal) {
+        const negoVal = parseInt(negoTotal.textContent.replace(/[^0-9]/g, '')) || 0;
+        if (negoVal > 0) {
+            finalAmount = negoVal;
         }
+    }
 
-        // 테이블 계산 (수량/단가 수정 시 공급가액 자동 계산)
-        if (target.classList.contains('col-quantity') || target.classList.contains('col-price')) {
-            const row = target.parentElement;
-            const qty = parseNumber(row.querySelector('.col-quantity').textContent);
-            const price = parseNumber(row.querySelector('.col-price').textContent);
-            row.querySelector('.col-unit-price').textContent = formatNumber(qty * price);
-            updateTableTotalOnly();
-        }
+    const totalAmountVat = document.getElementById('totalAmountVat');
+    const quotationAmountText = document.getElementById('quotationAmountText');
+    
+    if (totalAmountVat) {
+        totalAmountVat.textContent = formatNumber(finalAmount);
+    }
+    
+    if (quotationAmountText) {
+        quotationAmountText.textContent = numberToKorean(finalAmount);
+    }
 
-        // Best Nego Total 수정 시 상단 견적금액 동기화
-        if (target.id === 'negoTotal') {
-            const negoVal = parseNumber(target.textContent);
-            document.getElementById('totalAmountVat').textContent = formatNumber(negoVal);
-            document.getElementById('quotationAmountText').textContent = numberToKorean(negoVal);
-        }
-    });
-
-    // 엔터 키 이동
-    container.addEventListener('keydown', (e) => {
-        if (pageMode === 'edit' && e.key === 'Enter') {
-            e.preventDefault();
-            const editables = Array.from(document.querySelectorAll('[contenteditable="true"]'));
-            const idx = editables.indexOf(document.activeElement);
-            if (idx > -1 && idx < editables.length - 1) editables[idx + 1].focus();
-        }
-    });
-
-    // 포커스 아웃 시 콤마 처리
-    container.addEventListener('blur', (e) => {
-        if (e.target.classList.contains('col-price') || e.target.id === 'negoTotal') {
-            const val = parseNumber(e.target.textContent);
-            e.target.textContent = formatNumber(val);
-        }
-    }, true);
+    isFirstCalculation = false;
 }
 
-function updateTableTotalOnly() {
-    const rows = document.querySelectorAll('#quotationTableBody tr');
-    let tableSum = 0;
-    let qtySum = 0;
-    rows.forEach(row => {
-        const subCell = row.querySelector('.col-unit-price');
-        const qtyCell = row.querySelector('.col-quantity');
-        if (subCell && qtyCell) {
-            tableSum += parseNumber(subCell.textContent);
-            qtySum += parseNumber(qtyCell.textContent);
-        }
-    });
-    document.getElementById('totalQtySum').textContent = qtySum;
-    document.getElementById('summaryAmount').textContent = formatNumber(tableSum);
-    document.getElementById('totalAmount').textContent = formatNumber(tableSum);
-}
+// ============================================================================
+// 데이터 저장
+// ============================================================================
 
-// 저장 로직
 async function saveSummary() {
-    if (!headerId || !headerData) return;
+    if (!headerId || !headerData) {
+        alert('데이터가 없습니다.');
+        return;
+    }
+    
     try {
-        let currentMachine = "";
-        const resources = Array.from(document.querySelectorAll('#quotationTableBody tr')).map((row) => {
-            const machineCell = row.querySelector('.col-machine');
-            if (machineCell) currentMachine = machineCell.textContent.trim();
-            return {
-                machine: currentMachine,
-                name: row.querySelector('.col-name').textContent.trim(),
-                spac: row.querySelector('.col-spec').textContent.trim(),
-                compare: parseNumber(row.querySelector('.col-quantity').textContent),
-                unit: row.querySelector('.col-unit').textContent.trim(),
-                solo_price: parseNumber(row.querySelector('.col-price').textContent),
-                subtotal: parseNumber(row.querySelector('.col-unit-price').textContent),
-                description: row.querySelector('.col-remarks').textContent.trim()
+        const summaryData = collectSummaryData();
+        console.log('[견적서 갑지] 저장할 데이터:', summaryData);
+
+        const response = await fetch(`/api/v1/quotation/header/${headerId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(summaryData)
+        });
+
+        if (response.ok) {
+            alert('저장되었습니다.');
+            await loadHeaderData(headerId);
+            toggleEditMode('cancel');
+        } else {
+            throw new Error('저장 실패');
+        }
+
+    } catch (error) {
+        console.error('[견적서 갑지] 저장 오류:', error);
+        alert('저장 중 오류가 발생했습니다.');
+    }
+}
+
+function collectSummaryData() {
+    return {
+        title: document.getElementById('documentTitle').textContent,
+        client: document.getElementById('senderCompany').textContent,
+        description_1: document.getElementById('remarksSpecial').textContent,
+        description_2: document.getElementById('remarksGeneral').textContent || document.getElementById('remarksGeneral').innerHTML.replace(/<br>/g, '\n'),
+        header_resources: collectTableData()
+    };
+}
+
+function collectTableData() {
+    const tbody = document.getElementById('quotationTableBody');
+    const rows = tbody.querySelectorAll('tr:not(.empty-row)');
+    const items = [];
+
+    rows.forEach((row, index) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 9) {
+            const originalResource = headerData.header_resources[index];
+            
+            items.push({
+                machine: originalResource?.machine || '',
+                name: cells[2].textContent.trim(),
+                spac: cells[3].textContent.trim(),
+                compare: parseInt(cells[4].textContent.replace(/[^0-9]/g, '')) || 1,
+                unit: cells[5].textContent.trim(),
+                solo_price: parseInt(cells[6].textContent.replace(/[^0-9]/g, '')) || 0,
+                description: cells[8].textContent.trim()
+            });
+        }
+    });
+
+    return items;
+}
+
+// ============================================================================
+// Excel 생성 함수 (갑지_예시.xlsx 완전 동일 + 동적 확장)
+// ============================================================================
+
+async function exportHeaderToExcel() {
+    console.log('[Excel] 생성 시작');
+    
+    if (!headerData) {
+        alert('데이터가 없습니다.');
+        return;
+    }
+
+    try {
+        const ExcelJS = window.ExcelJS;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Sheet1');
+
+        // 컬럼 너비 설정
+        worksheet.columns = [
+            { width: 4.0 },      // A
+            { width: 22.5 },     // B
+            { width: 13.0 },     // C
+            { width: 6.0 },      // D
+            { width: 5.5 },      // E
+            { width: 13.0 },     // F
+            { width: 13.375 },   // G
+            { width: 12.375 },   // H
+            { width: 9.0 },      // I
+            { width: 19.5 },     // J
+            { width: 5.625 }     // K
+        ];
+
+        // ===== Row 1: 공백 =====
+        worksheet.getRow(1).height = 15;
+
+        // ===== Row 2: QUOTATION 타이틀 =====
+        worksheet.mergeCells('A2:K2');
+        const titleCell = worksheet.getCell('A2');
+        titleCell.value = 'QUOTATION';
+        titleCell.font = { name: '맑은 고딕', size: 33, bold: true };
+        titleCell.alignment = { horizontal: 'center', vertical: 'center' };
+        titleCell.border = {
+            top: { style: 'medium' },
+            left: { style: 'medium' },
+            right: { style: 'medium' }
+        };
+        
+        // QUOTATION 셀 전체에 medium 테두리 적용
+        for (let col = 1; col <= 11; col++) {
+            const cell = worksheet.getCell(2, col);
+            cell.border = {
+                top: { style: 'medium' },
+                left: col === 1 ? { style: 'medium' } : { style: 'thin' },
+                right: col === 11 ? { style: 'medium' } : { style: 'thin' }
+            };
+        }
+        
+        worksheet.getRow(2).height = 42.75;
+
+        // ===== Row 3: 날짜 및 공급자 정보 시작 =====
+        worksheet.mergeCells('B3:D3');
+        const dateCell = worksheet.getCell('B3');
+        const today = new Date();
+        dateCell.value = formatDate(today);
+        dateCell.font = { name: '맑은 고딕', size: 11 };
+        dateCell.alignment = { horizontal: 'left', vertical: 'center' };
+        dateCell.border = {
+            left: { style: 'medium' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.mergeCells('F3:F7');
+        const supplierLabel = worksheet.getCell('F3');
+        supplierLabel.value = '공 급 자';
+        supplierLabel.font = { name: '맑은 고딕', size: 11, bold: true };
+        supplierLabel.alignment = { horizontal: 'center', vertical: 'center' };
+        supplierLabel.border = {
+            top: { style: 'medium' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' }
+        };
+
+        worksheet.getCell('G3').value = '견적 번호';
+        worksheet.getCell('G3').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('G3').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('G3').border = { 
+            top: { style: 'medium' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.mergeCells('H3:J3');
+        worksheet.getCell('H3').value = '00-251126-01-01-01';
+        worksheet.getCell('H3').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('H3').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('H3').border = { 
+            top: { style: 'medium' }
+        };
+        worksheet.getCell('K3').border = {
+            top: { style: 'medium' },
+            right: { style: 'medium' }
+        };
+
+        // ===== Row 4: 고객사명 및 공급자 상호 =====
+        worksheet.mergeCells('B4:D5');
+        const clientCell = worksheet.getCell('B4');
+        clientCell.value = headerData.client || '㈜엠플러스';
+        clientCell.font = { name: '맑은 고딕', size: 15, bold: true };
+        clientCell.alignment = { horizontal: 'left', vertical: 'center' };
+        clientCell.border = {
+            left: { style: 'medium' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.getCell('G4').value = '상호(법인명)';
+        worksheet.getCell('G4').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('G4').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('G4').border = {
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.mergeCells('H4:I4');
+        worksheet.getCell('H4').value = '(주)시넥스플러스';
+        worksheet.getCell('H4').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('H4').font = { name: '맑은 고딕', size: 9 };
+
+        worksheet.getCell('J4').value = '성  명';
+        worksheet.getCell('J4').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('J4').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('K4').border = {
+            right: { style: 'medium' }
+        };
+
+        // ===== Row 5: 사업장주소 =====
+        worksheet.mergeCells('H5:J5');
+        worksheet.getCell('G5').value = '사업장주소';
+        worksheet.getCell('G5').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('G5').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('G5').border = {
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+        
+        worksheet.getCell('H5').value = '인천광역시 연수구 송도과학로';
+        worksheet.getCell('H5').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('H5').font = { name: '맑은 고딕', size: 9 };
+        
+        worksheet.getCell('K5').border = {
+            right: { style: 'medium' }
+        };
+
+        // ===== Row 6: 담당자 및 업태 =====
+        worksheet.mergeCells('B6:D6');
+        const picCell = worksheet.getCell('B6');
+        picCell.value = `${headerData.pic_name || '이중남'} ${headerData.pic_position || '차장'}님 귀하`;
+        picCell.font = { name: '맑은 고딕', size: 11 };
+        picCell.alignment = { horizontal: 'left', vertical: 'center' };
+        picCell.border = {
+            left: { style: 'medium' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.getCell('G6').value = '업    태';
+        worksheet.getCell('G6').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('G6').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('G6').border = {
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.mergeCells('H6:I6');
+        worksheet.getCell('H6').value = '서비스';
+        worksheet.getCell('H6').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('H6').font = { name: '맑은 고딕', size: 9 };
+
+        worksheet.getCell('J6').value = '사업자번호';
+        worksheet.getCell('J6').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('J6').font = { name: '맑은 고딕', size: 9 };
+        
+        worksheet.getCell('K6').border = {
+            right: { style: 'medium' }
+        };
+
+        // ===== Row 7: 인사말 및 연락처 =====
+        worksheet.mergeCells('B7:D7');
+        worksheet.getCell('B7').value = '아래와 같이 견적합니다.';
+        worksheet.getCell('B7').font = { name: '맑은 고딕', size: 11 };
+        worksheet.getCell('B7').alignment = { horizontal: 'left', vertical: 'center' };
+        worksheet.getCell('B7').border = {
+            left: { style: 'medium' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.getCell('G7').value = 'TEL';
+        worksheet.getCell('G7').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('G7').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('G7').border = { 
+            bottom: { style: 'medium' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        worksheet.mergeCells('H7:I7');
+        worksheet.getCell('H7').value = '010-1234-5678';
+        worksheet.getCell('H7').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('H7').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('H7').border = { bottom: { style: 'medium' } };
+
+        worksheet.getCell('J7').value = 'mail';
+        worksheet.getCell('J7').alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell('J7').font = { name: '맑은 고딕', size: 9 };
+        worksheet.getCell('J7').border = { bottom: { style: 'medium' } };
+        
+        worksheet.getCell('K7').border = { 
+            bottom: { style: 'medium' },
+            right: { style: 'medium' }
+        };
+
+        // ===== Row 8-9: 제목 및 견적금액 =====
+        worksheet.mergeCells('A8:A9');
+        worksheet.mergeCells('B8:D9');
+        const titleTextCell = worksheet.getCell('B8');
+        titleTextCell.value = `제목 : ${headerData.title || 'HMC 차세대 배터리 라인'}`;
+        titleTextCell.font = { name: '맑은 고딕', size: 12, bold: true };
+        titleTextCell.alignment = { horizontal: 'left', vertical: 'center', wrapText: true };
+
+        // ✅ 수정: 견적금액은 H8에만
+        const totalPrice = headerData.price || 0;
+        worksheet.getCell('H8').value = '견적금액 :';
+        worksheet.getCell('H8').font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell('H8').alignment = { horizontal: 'center', vertical: 'center' };
+
+        // ✅ 수정: 한글 금액 표시는 I8:J8 병합
+        worksheet.mergeCells('I8:J8');
+        worksheet.getCell('I8').value = numberToKorean(totalPrice);
+        worksheet.getCell('I8').font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell('I8').alignment = { horizontal: 'left', vertical: 'center' };
+
+        // Row 9: ₩ 금액 (VAT별도)
+        worksheet.mergeCells('I9:J9');
+        worksheet.getCell('I9').value = `₩${formatNumber(totalPrice)} (VAT별도)`;
+        worksheet.getCell('I9').font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell('I9').alignment = { horizontal: 'right', vertical: 'center' };
+
+        // ===== Row 10: 문서 타이틀 =====
+        worksheet.mergeCells('A10:K10');
+        const docTitleCell = worksheet.getCell('A10');
+        docTitleCell.value = headerData.title || 'HMC 차세대 배터리 라인 주액기_전장_견적서';
+        docTitleCell.font = { name: '맑은 고딕', size: 11, bold: true };
+        docTitleCell.alignment = { horizontal: 'center', vertical: 'center' };
+        docTitleCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD9EAF7' }
+        };
+        docTitleCell.border = {
+            top: { style: 'medium' },
+            bottom: { style: 'medium' },
+            left: { style: 'medium' },
+            right: { style: 'medium' }
+        };
+        worksheet.getRow(10).height = 17.25;
+
+        // ===== Row 11: 테이블 헤더 =====
+        const headers = ['No', '장비명', '품     명', '규 격', '수량', '단위', '단 가', '공급가액', '', '비 고', ''];
+        const headerRow = worksheet.getRow(11);
+        
+        // ✅ 수정: 공급가액(H:I), 비고(J:K) 병합
+        worksheet.mergeCells('H11:I11');
+        worksheet.mergeCells('J11:K11');
+        
+        headers.forEach((header, idx) => {
+            if (idx === 8 || idx === 10) return; // 병합된 셀 건너뛰기
+            
+            const cell = headerRow.getCell(idx + 1);
+            cell.value = header;
+            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'center' };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFFFE0' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
             };
         });
 
-        const payload = {
-            title: document.getElementById('quotationTitle').textContent.trim(),
-            client: document.getElementById('senderCompany').textContent.trim(),
-            price: parseNumber(document.getElementById('negoTotal').textContent),
-            creator: headerData.creator,
-            pic_name: headerData.pic_name,
-            pic_position: headerData.pic_position,
-            description_1: document.getElementById('remarksSpecial').innerText.trim(),
-            description_2: document.getElementById('remarksGeneral').innerText.trim(),
-            header_resources: resources
-        };
+        // ===== 동적 데이터 행 =====
+        let currentRow = 12;
+        const dataRowCount = headerData.header_resources.length;
+        
+        headerData.header_resources.forEach((item, index) => {
+            const row = worksheet.getRow(currentRow);
+            
+            row.getCell(1).value = index + 1;        // No
+            row.getCell(2).value = item.machine || '';  // 장비명
+            row.getCell(3).value = item.name || '';     // 품명
+            row.getCell(4).value = item.spac || '';     // 규격
+            row.getCell(5).value = item.compare || 1;   // 수량
+            row.getCell(6).value = item.unit || '원';   // 단위
+            row.getCell(7).value = item.solo_price || 0;  // 단가
+            
+            // ✅ 수정: 공급가액 H:I 병합
+            worksheet.mergeCells(`H${currentRow}:I${currentRow}`);
+            row.getCell(8).value = item.subtotal || 0;  // 공급가액
+            
+            // ✅ 수정: 비고 J:K 병합
+            worksheet.mergeCells(`J${currentRow}:K${currentRow}`);
+            row.getCell(10).value = item.description || '';  // 비고
 
-        const res = await fetch(`/api/v1/quotation/header/${headerId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            // 스타일 적용
+            for (let col = 1; col <= 11; col++) {
+                const cell = row.getCell(col);
+                cell.font = { name: '맑은 고딕', size: 10 };
+                cell.border = {
+                    top: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+                
+                // 정렬
+                if (col <= 6) {
+                    cell.alignment = { horizontal: 'center', vertical: 'center' };
+                } else if (col === 7) {
+                    cell.alignment = { horizontal: 'right', vertical: 'center' };
+                    cell.numFmt = '#,##0';
+                } else if (col === 8 || col === 9) {
+                    cell.alignment = { horizontal: 'right', vertical: 'center' };
+                    if (col === 8) cell.numFmt = '#,##0';
+                } else {
+                    cell.alignment = { horizontal: 'left', vertical: 'center' };
+                }
+            }
+            
+            currentRow++;
         });
 
-        if (res.ok) {
-            alert('저장되었습니다.');
-            headerData = await res.json();
-            toggleEditMode('view');
+        // ✅ 동적: 견적 총 합계 행 (데이터 바로 다음)
+        const summaryRow = currentRow;
+        worksheet.mergeCells(`A${summaryRow}:D${summaryRow}`);
+        worksheet.getCell(`A${summaryRow}`).value = '견적 총 합계';
+        worksheet.getCell(`A${summaryRow}`).font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell(`A${summaryRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell(`A${summaryRow}`).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD9EAF7' }
+        };
+
+        const totalQtySum = headerData.header_resources.reduce((sum, item) => sum + (item.compare || 1), 0);
+        worksheet.getCell(`E${summaryRow}`).value = totalQtySum;
+        worksheet.getCell(`E${summaryRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+        
+        worksheet.getCell(`F${summaryRow}`).value = 'Set';
+        worksheet.getCell(`F${summaryRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+
+        // ✅ 수정: 공급가액 H:I 병합
+        worksheet.mergeCells(`H${summaryRow}:I${summaryRow}`);
+        const totalAmount = headerData.price || 0;
+        worksheet.getCell(`H${summaryRow}`).value = totalAmount;
+        worksheet.getCell(`H${summaryRow}`).numFmt = '#,##0';
+        worksheet.getCell(`H${summaryRow}`).alignment = { horizontal: 'right', vertical: 'center' };
+        worksheet.getCell(`H${summaryRow}`).font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell(`H${summaryRow}`).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD9EAF7' }
+        };
+
+        worksheet.getRow(summaryRow).height = 17.25;
+
+        // ===== 비고 (특이사항) - 동적 위치 =====
+        currentRow = summaryRow + 1;
+        
+        worksheet.mergeCells(`A${currentRow}:K${currentRow}`);
+        worksheet.getCell(`A${currentRow}`).value = '비    고 ( 특이사항 )';
+        worksheet.getCell(`A${currentRow}`).font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell(`A${currentRow}`).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFE0' }
+        };
+
+        currentRow++;
+        worksheet.mergeCells(`A${currentRow}:K${currentRow}`);
+        // ✅ 수정: 화면의 description_1 참조
+        const specialRemarks = document.getElementById('remarksSpecial')?.textContent || headerData.description_1 || '1. 2개라인 기준의 견적서 입니다.';
+        worksheet.getCell(`A${currentRow}`).value = specialRemarks;
+        worksheet.getCell(`A${currentRow}`).font = { name: '맑은 고딕', size: 10 };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'left', vertical: 'center' };
+
+        // ===== 빈 행 (13개 고정) =====
+        currentRow++;
+        const emptyRowStart = currentRow;
+        for (let i = 0; i < 13; i++) {
+            worksheet.mergeCells(`A${currentRow}:K${currentRow}`);
+            currentRow++;
         }
-    } catch (e) { alert('통신 오류'); }
+
+        // ===== Total / Best nego Total =====
+        worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+        worksheet.getCell(`A${currentRow}`).value = 'Total';
+        worksheet.getCell(`A${currentRow}`).font = { name: '맑은 고딕', size: 12, bold: true };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell(`A${currentRow}`).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFE0' }
+        };
+        worksheet.getCell(`A${currentRow}`).border = {
+            top: { style: 'medium' },
+            left: { style: 'medium' },
+            bottom: { style: 'thin' }
+        };
+        
+        // Total 행 전체 테두리
+        for (let col = 2; col <= 9; col++) {
+            worksheet.getCell(currentRow, col).border = {
+                top: { style: 'medium' },
+                bottom: { style: 'thin' }
+            };
+        }
+
+        worksheet.mergeCells(`J${currentRow}:K${currentRow}`);
+        worksheet.getCell(`J${currentRow}`).value = totalAmount;
+        worksheet.getCell(`J${currentRow}`).numFmt = '#,##0';
+        worksheet.getCell(`J${currentRow}`).font = { name: '맑은 고딕', size: 12, bold: true };
+        worksheet.getCell(`J${currentRow}`).alignment = { horizontal: 'right', vertical: 'center' };
+        worksheet.getCell(`J${currentRow}`).border = {
+            top: { style: 'medium' },
+            bottom: { style: 'thin' }
+        };
+        worksheet.getCell(`K${currentRow}`).border = {
+            top: { style: 'medium' },
+            right: { style: 'medium' },
+            bottom: { style: 'thin' }
+        };
+
+        currentRow++;
+        worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+        worksheet.getCell(`A${currentRow}`).value = 'Best nego Total';
+        worksheet.getCell(`A${currentRow}`).font = { name: '맑은 고딕', size: 12, bold: true, color: { argb: 'FFFF0000' } };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell(`A${currentRow}`).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFC7CE' }
+        };
+        worksheet.getCell(`A${currentRow}`).border = {
+            top: { style: 'thin' },
+            left: { style: 'medium' }
+        };
+        
+        // Best nego Total 행 전체 테두리
+        for (let col = 2; col <= 9; col++) {
+            worksheet.getCell(currentRow, col).border = {
+                top: { style: 'thin' }
+            };
+        }
+
+        worksheet.mergeCells(`J${currentRow}:K${currentRow}`);
+        const negoTotalValue = parseInt(document.getElementById('negoTotal')?.textContent.replace(/[^0-9]/g, '')) || totalAmount;
+        worksheet.getCell(`J${currentRow}`).value = negoTotalValue;
+        worksheet.getCell(`J${currentRow}`).numFmt = '#,##0';
+        worksheet.getCell(`J${currentRow}`).font = { name: '맑은 고딕', size: 12, bold: true, color: { argb: 'FFFF0000' } };
+        worksheet.getCell(`J${currentRow}`).alignment = { horizontal: 'right', vertical: 'center' };
+        worksheet.getCell(`J${currentRow}`).border = {
+            top: { style: 'thin' }
+        };
+        worksheet.getCell(`K${currentRow}`).border = {
+            top: { style: 'thin' },
+            right: { style: 'medium' }
+        };
+        worksheet.getRow(currentRow).height = 17.25;
+
+        // ===== 비고 (납기/지불조건 등) =====
+        currentRow++;
+        const remarksStartRow = currentRow;
+        
+        worksheet.mergeCells(`A${currentRow}:B${currentRow + 4}`);
+        worksheet.getCell(`A${currentRow}`).value = '비 고';
+        worksheet.getCell(`A${currentRow}`).font = { name: '맑은 고딕', size: 11, bold: true };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'center' };
+        worksheet.getCell(`A${currentRow}`).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFE0' }
+        };
+        worksheet.getCell(`A${currentRow}`).border = {
+            top: { style: 'medium' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' }
+        };
+        worksheet.getCell(`B${currentRow}`).border = {
+            top: { style: 'medium' },
+            right: { style: 'medium' },
+            bottom: { style: 'medium' }
+        };
+        
+        // 비고 좌측 셀 세로 병합 테두리
+        for (let r = currentRow + 1; r <= currentRow + 4; r++) {
+            worksheet.getCell(`A${r}`).border = {
+                left: { style: 'medium' }
+            };
+            worksheet.getCell(`B${r}`).border = {
+                right: { style: 'medium' }
+            };
+        }
+        worksheet.getCell(`A${currentRow + 4}`).border = {
+            left: { style: 'medium' },
+            bottom: { style: 'medium' }
+        };
+        worksheet.getCell(`B${currentRow + 4}`).border = {
+            right: { style: 'medium' },
+            bottom: { style: 'medium' }
+        };
+
+        // ✅ 수정: 화면의 description_2 참조
+        const generalRemarksElement = document.getElementById('remarksGeneral');
+        let generalRemarksText = '';
+        
+        if (generalRemarksElement) {
+            generalRemarksText = generalRemarksElement.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = generalRemarksText;
+            generalRemarksText = tempDiv.textContent || tempDiv.innerText || '';
+        }
+        
+        if (!generalRemarksText) {
+            generalRemarksText = headerData.description_2 || '- 납기 : 협의사항\n- 지불조건 : 선급금 30%, 중도금 50%, 잔금 20%\n- 기타 : 견적유효기간 10 일';
+        }
+
+        const remarksLines = generalRemarksText.split('\n').slice(0, 5);
+        while (remarksLines.length < 5) remarksLines.push('');
+
+        for (let i = 0; i < 5; i++) {
+            worksheet.mergeCells(`C${currentRow}:K${currentRow}`);
+            worksheet.getCell(`C${currentRow}`).value = remarksLines[i];
+            worksheet.getCell(`C${currentRow}`).font = { name: '맑은 고딕', size: 10 };
+            worksheet.getCell(`C${currentRow}`).alignment = { horizontal: 'left', vertical: 'center' };
+            
+            // 비고 우측 테두리
+            worksheet.getCell(`C${currentRow}`).border = {
+                top: i === 0 ? { style: 'medium' } : undefined,
+                left: { style: 'medium' }
+            };
+            worksheet.getCell(`K${currentRow}`).border = {
+                top: i === 0 ? { style: 'medium' } : undefined,
+                right: { style: 'medium' },
+                bottom: i === 4 ? { style: 'medium' } : undefined
+            };
+            
+            // 중간 컬럼들 상하 테두리만
+            for (let col = 4; col <= 10; col++) {
+                worksheet.getCell(currentRow, col).border = {
+                    top: i === 0 ? { style: 'medium' } : undefined,
+                    bottom: i === 4 ? { style: 'medium' } : undefined
+                };
+            }
+            
+            currentRow++;
+        }
+
+        // Excel 파일 생성 및 다운로드
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        const filename = `견적서_갑지_${headerData.title || '제목없음'}_${formatDateForFilename(new Date())}.xlsx`;
+        saveAs(blob, filename);
+        
+        console.log('[Excel] 생성 완료:', filename);
+        console.log(`[Excel] 데이터 행 수: ${dataRowCount}, 총 행 수: ${currentRow}`);
+        
+    } catch (error) {
+        console.error('[Excel] 생성 오류:', error);
+        alert('Excel 파일 생성 중 오류가 발생했습니다.');
+    }
 }
 
-// 유틸리티
-function formatNumber(n) { return (n || 0).toLocaleString('ko-KR'); }
-function parseNumber(s) { return parseInt(s.toString().replace(/[^0-9]/g, '')) || 0; }
-function formatDate(d) { return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`; }
-function numberToKorean(n) {
-    if (n === 0) return '일금 영원 정';
-    const units = ['', '만', '억', '조'];
-    const nums = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
-    const pos = ['', '십', '백', '천'];
-    let res = '', s = n.toString();
-    for (let i = 0; i < s.length; i++) {
-        let d = parseInt(s[s.length - 1 - i]);
-        if (d !== 0) res = nums[d] + pos[i % 4] + res;
-        if (i % 4 === 3 || i === s.length - 1) {
-            const u = units[Math.floor(i / 4)];
-            if (res.match(/[일이삼사오육칠팔구]/) && !res.includes(u)) res = u + res;
-        }
-    }
-    return '일금 ' + res.replace(/^일십/, '십') + '원 정';
+// ============================================================================
+// 유틸리티 함수
+// ============================================================================
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}년 ${month}월 ${day}일`;
 }
-function exportPDF() { window.print(); }
-function goBack() { window.history.back(); }
+
+function formatDateForFilename(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+}
+
+function formatNumber(num) {
+    if (num === 0 || num === null || num === undefined) return '0';
+    return num.toLocaleString('ko-KR');
+}
+
+function numberToKorean(number) {
+    if (number == 0) return '일금 영원 정';
+    
+    const units = ['', '만', '억', '조', '경'];
+    const nums = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+    const decimals = ['', '십', '백', '천'];
+    
+    let str = String(number);
+    let result = '';
+    let unitIndex = 0;
+    
+    while (str.length > 0) {
+        const chunk = str.slice(-4);
+        str = str.slice(0, -4);
+        
+        let chunkResult = '';
+        for (let i = 0; i < chunk.length; i++) {
+            const digit = parseInt(chunk.charAt(chunk.length - 1 - i));
+            if (digit > 0) {
+                chunkResult = nums[digit] + decimals[i] + chunkResult;
+            }
+        }
+        
+        if (chunkResult.length > 0) {
+            result = chunkResult + units[unitIndex] + result;
+        }
+        unitIndex++;
+    }
+    
+    return '일금 ' + result + '원 정';
+}
+
+function exportPDF() {
+    alert('PDF 저장 기능은 추후 구현 예정입니다.\n현재는 브라우저의 인쇄 기능(Ctrl+P)을 사용해주세요.');
+    window.print();
+}
+
+function goBack() {
+    if (confirm('작성 중인 내용이 있습니다. 목록으로 돌아가시겠습니까?')) {
+        window.history.back();
+    }
+}

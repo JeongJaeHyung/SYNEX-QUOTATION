@@ -5,7 +5,7 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/page/quotation/general/quotation_summary.css') }}">
     <style>
-        /* 우측 사이드 플로팅 메뉴 스타일 (image_ac2351 반영) */
+        /* 우측 사이드 플로팅 메뉴 스타일 */
         .side-action-menu {
             position: fixed;
             right: 25px;
@@ -41,30 +41,21 @@
         .btn-secondary { background-color: #64748b; color: white; }
         .btn-outline { background-color: white; border: 1px solid #cbd5e1 !important; color: #334155; }
 
-        /* 편집 모드 시 시각적 효과 */
+        /* 편집 모드 효과 */
         .edit-mode [contenteditable="true"] {
             background-color: #fffbeb !important;
             outline: 1.5px dashed #f59e0b !important;
         }
 
-        /* 수정 불가 컬럼 강조 (장비명, 품명, 공급가액) */
-        .edit-mode .col-machine,
-        .edit-mode .col-name,
-        .edit-mode .col-unit-price {
-            background-color: #f1f5f9 !important; /* 연한 회색 배경 */
+        /* 수정 불가 컬럼 */
+        .edit-mode .col-machine, .edit-mode .col-name, .edit-mode .col-unit-price {
+            background-color: #f1f5f9 !important;
             cursor: not-allowed;
             outline: none !important;
         }
 
-        /* 장비명 병합 셀 정렬 */
-        .col-machine {
-            vertical-align: middle;
-            text-align: center;
-            background-color: #ffffff;
-        }
-
         @media print {
-            .side-action-menu, .no-print { display: none !important; }
+            .side-action-menu, .no-print, .action-footer { display: none !important; }
         }
     </style>
 {% endblock %}
@@ -77,8 +68,9 @@
     </div>
 
     {# 우측 사이드 플로팅 메뉴 #}
-    <div id="sideActionMenu" class="side-action-menu no-print">
+    <div id="sideActionMenu" class="side-action-menu no-print" style="display: none;">
         <button id="btnToggleEdit" class="btn btn-primary" onclick="toggleEditMode('edit')">수정하기</button>
+        <button class="btn btn-success" onclick="exportHeaderToExcel()">Excel 저장</button>
         <button class="btn btn-outline" onclick="exportPDF()">인쇄하기</button>
         <button class="btn btn-secondary" onclick="goBack()">목록으로</button>
     </div>
@@ -87,25 +79,17 @@
         <div class="summary-header">
             <h1 class="summary-title">QUOTATION</h1>
             <div class="summary-logo">
-                <img src="/assets/images/Normal_Logo.png" alt="JLT" class="jlt-logo-large">
+                <img src="/static/images/Normal_Logo.png" alt="Logo" class="jlt-logo-large">
             </div>
         </div>
 
         <div class="summary-info-section">
             <div class="sender-info">
-                <div class="info-row">
-                    <span class="info-date" id="quotationDate"></span>
-                </div>
+                <div class="info-row"><span class="info-date" id="quotationDate"></span></div>
                 <div class="info-box">
-                    <div class="info-row">
-                        <span class="company-name" id="senderCompany"></span>
-                    </div>
-                    <div class="info-row">
-                        <label id="picInfoLabel"></label>
-                    </div>
-                    <div class="info-row">
-                        <label>아래와 같이 견적합니다</label>
-                    </div>
+                    <div class="info-row"><span class="company-name" id="senderCompany"></span></div>
+                    <div class="info-row"><label id="picInfoLabel"></label></div>
+                    <div class="info-row"><label>아래와 같이 견적합니다</label></div>
                 </div>
             </div>
 
@@ -114,67 +98,45 @@
                     <tr>
                         <td class="label-cell" rowspan="5">공<br><br>급<br><br>자</td>
                         <td class="label-cell">견적 번호</td>
-                        <td class="value-cell" colspan="3">
-                            <input type="text" id="quotationNumber" class="input-field" value="00-251126-01" readonly>
-                        </td>
+                        <td class="value-cell" colspan="3"><input type="text" id="quotationNumber" class="input-field" value="00-251126-01" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">상호(법인명)</td>
-                        <td class="value-cell">
-                            <input type="text" id="supplierCompany" class="input-field" value="(주)제이엘티" readonly>
-                        </td>
+                        <td class="value-cell"><input type="text" id="supplierCompany" class="input-field" value="(주)시넥스플러스" readonly></td>
                         <td class="label-cell">성 명</td>
-                        <td class="value-cell">
-                            <input type="text" id="supplierName" class="input-field" value="정현우" readonly>
-                        </td>
+                        <td class="value-cell"><input type="text" id="supplierName" class="input-field" value="정현우" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">사업장주소</td>
-                        <td class="value-cell" colspan="3">
-                            <input type="text" id="businessAddress" class="input-field" value="인천광역시 연수구 벤처로 100번길 12" readonly>
-                        </td>
+                        <td class="value-cell" colspan="3"><input type="text" id="businessAddress" class="input-field" value="인천광역시 연수구 송도과학로" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">업 태</td>
-                        <td class="value-cell">
-                            <input type="text" id="businessType" class="input-field" value="제조, 도, 소매" readonly>
-                        </td>
+                        <td class="value-cell"><input type="text" id="businessType" class="input-field" value="서비스" readonly></td>
                         <td class="label-cell">사업자번호</td>
-                        <td class="value-cell">
-                            <input type="text" id="businessNumber" class="input-field" value="362-81-01342" readonly>
-                        </td>
+                        <td class="value-cell"><input type="text" id="businessNumber" class="input-field" value="123-45-67890" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">TEL</td>
-                        <td class="value-cell">
-                            <input type="text" id="contactTel" class="input-field" value="010-9187-9593" readonly>
-                        </td>
+                        <td class="value-cell"><input type="text" id="contactTel" class="input-field" value="010-1234-5678" readonly></td>
                         <td class="label-cell">mail</td>
-                        <td class="value-cell">
-                            <input type="text" id="contactEmail" class="input-field" value="hwjeong@jlta.co.kr" readonly>
-                        </td>
+                        <td class="value-cell"><input type="text" id="contactEmail" class="input-field" value="jlta@jlta.co.kr" readonly></td>
                     </tr>
                 </table>
-                <div class="stamp-area">
-                    <img src="/assets/images/stamp.png" alt="직인" class="stamp-image">
-                </div>
+                <div class="stamp-area"><img src="/static/images/stamp.png" alt="직인" class="stamp-image"></div>
             </div>
         </div>
 
         <div class="quotation-title-wrapper">
             <div class="quotation-title-section quotation-title-left">
-                <div class="title-label title-label-left">제목:</div>
-                <div class="title-content title-content-left">
-                    <div id="quotationTitle" class="editable-text"></div>
-                </div>
+                <div class="title-label">제목:</div>
+                <div class="title-content"><div id="quotationTitle" class="editable-text"></div></div>
             </div>
             <div class="quotation-title-section quotation-title-right">
-                <div class="title-label title-label-right">견적금액:</div>
-                <div class="title-content title-content-right">
+                <div class="title-label">견적금액:</div>
+                <div class="title-content">
                     <div id="quotationAmountText"></div>
-                    <div class="total-amount">
-                        ₩<span id="totalAmountVat"></span> (VAT별도)
-                    </div>
+                    <div class="total-amount">₩<span id="totalAmountVat"></span> (VAT별도)</div>
                 </div>
             </div>
         </div>
@@ -196,8 +158,7 @@
                         <th class="col-remarks">비 고</th>
                     </tr>
                 </thead>
-                <tbody id="quotationTableBody">
-                    </tbody>
+                <tbody id="quotationTableBody"></tbody>
                 <tfoot>
                     <tr class="summary-row">
                         <td colspan="4" class="col-center summary-label">견적 총 금액</td>
@@ -208,7 +169,7 @@
                 </tfoot>
             </table>
 
-            <div class="remarks-section" style="margin-bottom: 20px;">
+            <div class="remarks-section">
                 <div class="remarks-title">비 고(특이사항)</div>
                 <div id="remarksSpecial" class="remarks-content editable-text"></div>
             </div>
@@ -226,19 +187,17 @@
                 </div>
             </div>
 
-            <div class="remarks-section" style="margin-top: 20px;">
+            <div class="remarks-section">
                 <div class="remarks-title">비 고</div>
                 <div id="remarksGeneral" class="remarks-content editable-text"></div>
             </div>
-        </div>
-
-        <div class="action-footer no-print" style="margin-top: 30px; text-align: center;">
-            <p style="color: #64748b; font-size: 13px;">※ 상단 '인쇄하기' 버튼을 눌러 PDF 저장 및 출력이 가능합니다.</p>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="{{ url_for('static', path='/js/page/quotation/general/quotation_summary.js') }}"></script>
 {% endblock %}
