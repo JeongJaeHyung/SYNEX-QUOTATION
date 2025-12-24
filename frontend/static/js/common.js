@@ -59,7 +59,7 @@ function closeSettingsModal() {
 // 설정 로드
 async function loadSettings() {
   try {
-    const response = await fetch('/api/settings');
+    const response = await fetch('/api/v1/download/settings');
     if (response.ok) {
       appSettings = await response.json();
       const pathInput = document.getElementById('pdfSavePath');
@@ -81,7 +81,7 @@ async function saveSettings() {
   appSettings.askSaveLocation = askCheckbox ? askCheckbox.checked : false;
 
   try {
-    const response = await fetch('/api/settings', {
+    const response = await fetch('/api/v1/download/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appSettings)
@@ -102,7 +102,7 @@ async function saveSettings() {
 // 폴더 선택
 async function selectPdfFolder() {
   try {
-    const response = await fetch('/api/select-folder');
+    const response = await fetch('/api/v1/download/select-folder');
     const result = await response.json();
 
     if (result.success && result.path) {

@@ -266,7 +266,7 @@ function exportToPDF() {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
     const filename = `${projectName}_${docType}_${timestamp}.pdf`;
 
-    fetch('/api/save-pdf', {
+    fetch('/api/v1/download/save-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

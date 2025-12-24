@@ -5,6 +5,7 @@ from .part.handler import handler as part_handler
 from .account.handler import handler as account_handler
 from .auth.handler import handler as auth_handler
 from .quotation.router import router as quotation_router
+from .download.handler import handler as download_handler
 
 router = APIRouter()
 
@@ -17,3 +18,5 @@ router.include_router(auth_handler, prefix="/auth", tags=["Authenticator"])
 router.include_router(account_handler, prefix="/account", tags=["Account"])
 
 router.include_router(quotation_router, prefix="/quotation")
+
+router.include_router(download_handler, prefix="/download", tags=["Download"])
