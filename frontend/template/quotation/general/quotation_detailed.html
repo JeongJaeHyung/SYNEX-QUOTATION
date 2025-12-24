@@ -18,6 +18,7 @@
             <div class="action-group" id="viewActions">
                 {{ btn.button("수정하기", type="primary", onclick="toggleEditMode('edit')") }}
                 {{ btn.button("인쇄하기", type="default", onclick="window.print()") }}
+                {{ btn.button("PDF 저장", type="default", onclick="exportToPDF()") }}
                 {{ btn.button("목록으로", type="secondary", onclick="goBack()") }}
             </div>
             <div class="action-group" id="editActions" style="display: none;">

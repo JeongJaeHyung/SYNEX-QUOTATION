@@ -79,7 +79,8 @@
     {# 우측 사이드 플로팅 메뉴 #}
     <div id="sideActionMenu" class="side-action-menu no-print">
         <button id="btnToggleEdit" class="btn btn-primary" onclick="toggleEditMode('edit')">수정하기</button>
-        <button class="btn btn-outline" onclick="exportPDF()">인쇄하기</button>
+        <button class="btn btn-outline" onclick="window.print()">인쇄하기</button>
+        <button class="btn btn-outline" onclick="exportToPDF()">PDF 저장</button>
         <button class="btn btn-secondary" onclick="goBack()">목록으로</button>
     </div>
 

@@ -629,3 +629,196 @@ body {
 
 .w-full { width: 100%; }
 .h-full { height: 100%; }
+
+/* ========================================
+   ì¸ì‡„ ìŠ¤íƒ€ì¼ (ê³µí†µ)
+   ======================================== */
+
+@media print {
+    /* ê¸°ë³¸ ì¸ì‡„ ì„¤ì • */
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    /* ìƒ‰ìƒ ì •í™•í•˜ê²Œ ì¸ì‡„ */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* ë„¤ë¹„ê²Œì´ì…˜ í—¤ë” ìˆ¨ê¸°ê¸° */
+    .top-navbar {
+        display: none !important;
+    }
+
+    /* í‘¸í„° ìˆ¨ê¸°ê¸° */
+    .bottom-footer {
+        display: none !important;
+    }
+
+    /* ë©”ì¸ ì½˜í…ì¸  ì˜ì—­ íŒ¨ë”© ì œê±° */
+    .main-content {
+        padding: 0 !important;
+    }
+
+    .content-container {
+        background-color: white !important;
+        padding: 0 !important;
+        min-height: auto !important;
+        border-radius: 0 !important;
+    }
+
+    /* ì¸ì‡„ ì‹œ ìˆ¨ê¸¸ ìš”ì†Œë“¤ */
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background-color: white !important;
+    }
+}
+/* ========================================
+   ¼³Á¤ ¹öÆ° & ¸ğ´Ş
+   ======================================== */
+
+.navbar-settings {
+    margin-left: auto;
+}
+
+.settings-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--border-radius-md);
+    color: var(--gray-600);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-btn:hover {
+    background-color: var(--gray-100);
+    color: var(--primary-blue);
+}
+
+/* ¸ğ´Ş ¿À¹ö·¹ÀÌ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.settings-modal {
+    min-width: 450px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.modal-header h2 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--gray-500);
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--gray-700);
+}
+
+.modal-body {
+    padding: var(--spacing-xl);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-top: 1px solid var(--gray-200);
+    background-color: var(--gray-50);
+}
+
+/* ¼³Á¤ ±×·ì */
+.settings-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.settings-label {
+    display: block;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: var(--spacing-sm);
+}
+
+.settings-input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.settings-input {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-base);
+    background-color: var(--gray-50);
+}
+
+.settings-hint {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    margin-top: var(--spacing-xs);
+}
+
+/* ¼³Á¤ Ã¼Å©¹Ú½º */
+.settings-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.settings-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-blue);
+}
