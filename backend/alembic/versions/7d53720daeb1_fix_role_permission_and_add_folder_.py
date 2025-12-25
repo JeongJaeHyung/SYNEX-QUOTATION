@@ -1,8 +1,8 @@
-"""quotation_name_changed2header
+"""fix_role_permission_and_add_folder_hierarchy
 
-Revision ID: 89fbd4b9e09a
+Revision ID: 7d53720daeb1
 Revises: 
-Create Date: 2025-12-22 16:55:39.146604
+Create Date: 2025-12-26 02:22:26.235727
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '89fbd4b9e09a'
+revision: str = '7d53720daeb1'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -79,30 +79,12 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('e_mail')
     )
-    op.create_table('header',
+    op.create_table('folder',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('general_id', sa.UUID(), nullable=False),
-    sa.Column('creator', sa.String(length=25), nullable=False),
-    sa.Column('title', sa.String(length=100), nullable=False),
-    sa.Column('price', sa.Integer(), nullable=True),
-    sa.Column('client', sa.String(length=50), nullable=True),
-    sa.Column('pic_name', sa.String(length=50), nullable=True),
-    sa.Column('pic_position', sa.String(length=50), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('description_1', sa.Text(), nullable=True),
-    sa.Column('description_2', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['general_id'], ['general.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('price_compare',
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('general_id', sa.UUID(), nullable=False),
-    sa.Column('creator', sa.String(length=25), nullable=False),
-    sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['general_id'], ['general.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['general_id'], ['general.id'], name='fk_detailed_general_id', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('resources',
@@ -139,29 +121,21 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['resources_id', 'maker_id'], ['resources.id', 'resources.maker_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('detailed',
+    op.create_table('header',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('general_id', sa.UUID(), nullable=False),
-    sa.Column('price_compare_id', sa.UUID(), nullable=False),
+    sa.Column('folder_id', sa.UUID(), nullable=False),
     sa.Column('creator', sa.String(length=25), nullable=False),
+    sa.Column('title', sa.String(length=100), nullable=False),
+    sa.Column('price', sa.Integer(), nullable=True),
+    sa.Column('client', sa.String(length=50), nullable=True),
+    sa.Column('pic_name', sa.String(length=50), nullable=True),
+    sa.Column('pic_position', sa.String(length=50), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['general_id'], ['general.id'], name='fk_detailed_general_id', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['price_compare_id'], ['price_compare.id'], name='fk_detailed_price_compare_id', ondelete='CASCADE'),
+    sa.Column('description_1', sa.Text(), nullable=True),
+    sa.Column('description_2', sa.Text(), nullable=True),
+    sa.ForeignKeyConstraint(['folder_id'], ['folder.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('header_resources',
-    sa.Column('header_id', sa.UUID(), nullable=False),
-    sa.Column('machine', sa.String(length=100), nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('spac', sa.String(length=50), nullable=True),
-    sa.Column('compare', sa.Integer(), nullable=False),
-    sa.Column('unit', sa.String(length=10), nullable=False),
-    sa.Column('solo_price', sa.Integer(), nullable=False),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['header_id'], ['header.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('header_id', 'machine', 'name')
     )
     op.create_table('machine_resources',
     sa.Column('machine_id', sa.UUID(), nullable=False),
@@ -178,6 +152,42 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['machine_id'], ['machine.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['resources_id', 'maker_id'], ['resources.id', 'resources.maker_id'], ),
     sa.PrimaryKeyConstraint('machine_id', 'resources_id', 'maker_id')
+    )
+    op.create_table('price_compare',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('folder_id', sa.UUID(), nullable=False),
+    sa.Column('title', sa.String(length=100), nullable=False),
+    sa.Column('creator', sa.String(length=25), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.ForeignKeyConstraint(['folder_id'], ['folder.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('detailed',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('folder_id', sa.UUID(), nullable=False),
+    sa.Column('price_compare_id', sa.UUID(), nullable=False),
+    sa.Column('title', sa.String(length=100), nullable=False),
+    sa.Column('creator', sa.String(length=25), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.ForeignKeyConstraint(['folder_id'], ['folder.id'], name='fk_detailed_folder_id', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['price_compare_id'], ['price_compare.id'], name='fk_detailed_price_compare_id', ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('header_resources',
+    sa.Column('header_id', sa.UUID(), nullable=False),
+    sa.Column('machine', sa.String(length=100), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('spac', sa.String(length=50), nullable=True),
+    sa.Column('compare', sa.Integer(), nullable=False),
+    sa.Column('unit', sa.String(length=10), nullable=False),
+    sa.Column('solo_price', sa.Integer(), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.ForeignKeyConstraint(['header_id'], ['header.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('header_id', 'machine', 'name')
     )
     op.create_table('price_compare_machine',
     sa.Column('price_compare_id', sa.UUID(), nullable=False),
@@ -225,14 +235,15 @@ def downgrade() -> None:
     op.drop_table('detailed_resources')
     op.drop_table('price_compare_resources')
     op.drop_table('price_compare_machine')
-    op.drop_table('machine_resources')
     op.drop_table('header_resources')
     op.drop_table('detailed')
+    op.drop_table('price_compare')
+    op.drop_table('machine_resources')
+    op.drop_table('header')
     op.drop_table('certification')
     op.drop_table('role_permission')
     op.drop_table('resources')
-    op.drop_table('price_compare')
-    op.drop_table('header')
+    op.drop_table('folder')
     op.drop_table('account')
     op.drop_table('role')
     op.drop_table('permission')

@@ -1,9 +1,10 @@
+# backend/models/role_permission.py
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.dialects.postgresql import UUID
 from backend.database import Base
 
-# Association Table (클래스가 아닌 Table 객체로 정의)
-role_permission = Table(
+# 💡 변수명을 RolePermission으로 변경하여 ImportError 해결
+RolePermission = Table(
     'role_permission',
     Base.metadata,
     Column('role_id', UUID(as_uuid=True), ForeignKey('role.id', ondelete="CASCADE"), primary_key=True),

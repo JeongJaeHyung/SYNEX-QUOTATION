@@ -13,9 +13,9 @@ class Detailed(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # 2. Foreign Keys (SQLite 배치 모드 에러 방지를 위해 name 지정 필수)
-    general_id = Column(
+    folder_id = Column(
         UUID(as_uuid=True), 
-        ForeignKey("general.id", ondelete="CASCADE", name="fk_detailed_general_id"), 
+        ForeignKey("folder.id", ondelete="CASCADE", name="fk_detailed_folder_id"), 
         nullable=False
     )
     price_compare_id = Column(
@@ -25,6 +25,7 @@ class Detailed(Base):
     )
     
     # 3. Data Columns
+    title = Column(String(100), nullable=False)
     creator = Column(String(25), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
     updated_at = Column(
@@ -35,7 +36,7 @@ class Detailed(Base):
     description = Column(Text, nullable=True)
     
     # 4. Relationships
-    general = relationship("General", back_populates="detaileds")
+    folder = relationship("Folder", back_populates="detaileds")
     # detailed_resources와의 관계 (CASCADE 설정 포함)
     detailed_resources = relationship(
         "DetailedResources", 
@@ -44,4 +45,4 @@ class Detailed(Base):
     )
 
     def __repr__(self):
-        return f"<Detailed(id='{self.id}', general_id='{self.general_id}', pc_id='{self.price_compare_id}')>"
+        return f"<Detailed(id='{self.id}', folder_id='{self.folder_id}', pc_id='{self.price_compare_id}')>"

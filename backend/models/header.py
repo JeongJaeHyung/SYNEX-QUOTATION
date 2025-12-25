@@ -12,10 +12,10 @@ class Header(Base):
     
     # ID (Primary Key, UUID)만 사용, 중복 uuid 컬럼 제거
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    
-    # FK to general
-    general_id = Column(UUID(as_uuid=True), ForeignKey("general.id", ondelete="CASCADE"), nullable=False)
-    
+
+    # FK to folder
+    folder_id = Column(UUID(as_uuid=True), ForeignKey("folder.id", ondelete="CASCADE"), nullable=False)
+
     creator = Column(String(25), nullable=False)
     title = Column(String(100), nullable=False)
     price = Column(Integer, nullable=True)
@@ -29,7 +29,7 @@ class Header(Base):
     description_2 = Column(Text, nullable=True)
     
     # Relationships
-    general = relationship("General", back_populates="headers")
+    folder = relationship("Folder", back_populates="headers")
     header_resources = relationship("HeaderResources", back_populates="header", cascade="all, delete-orphan")
 
     def __repr__(self):

@@ -1,11 +1,11 @@
+# backend/models/role.py
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from backend.database import Base
-
-# 중계 테이블 import
-from .role_permission import role_permission
+# 💡 수정된 이름으로 임포트
+from .role_permission import RolePermission
 
 class Role(Base):
     __tablename__ = "role"
@@ -15,10 +15,9 @@ class Role(Base):
     description = Column(String(255), nullable=True)
     
     # Permission과의 다대다 관계 설정
-    # "Permission"을 문자열로 넣어서 순환 참조 방지
     permissions = relationship(
         "Permission",
-        secondary=role_permission,
+        secondary=RolePermission, # 💡 수정된 변수명 반영
         backref="roles"
     )
 
