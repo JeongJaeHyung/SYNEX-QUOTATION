@@ -81,7 +81,7 @@
         <div class="summary-header">
             <h1 class="summary-title">QUOTATION</h1>
             <div class="summary-logo">
-                <img src="/static/images/Normal_Logo.png" alt="Logo" class="jlt-logo-large">
+                <img src="/assets/images/Normal_Logo.png" alt="Logo" class="jlt-logo-large">
             </div>
         </div>
 
@@ -89,8 +89,11 @@
             <div class="sender-info">
                 <div class="info-row"><span class="info-date" id="quotationDate"></span></div>
                 <div class="info-box">
-                    <div class="info-row"><span class="company-name" id="senderCompany"></span></div>
-                    <div class="info-row"><label id="picInfoLabel"></label></div>
+                    <div class="info-row"><span class="company-name editable-text" id="senderCompany" contenteditable="false"></span></div>
+                    <div class="info-row">
+                        <span class="editable-text" id="picName" contenteditable="false"></span>
+                        <span class="editable-text" id="picPosition" contenteditable="false"></span>님 귀하
+                    </div>
                     <div class="info-row"><label>아래와 같이 견적합니다</label></div>
                 </div>
             </div>
@@ -100,32 +103,32 @@
                     <tr>
                         <td class="label-cell" rowspan="5">공<br><br>급<br><br>자</td>
                         <td class="label-cell">견적 번호</td>
-                        <td class="value-cell" colspan="3"><input type="text" id="quotationNumber" class="input-field" value="00-251126-01" readonly></td>
+                        <td class="value-cell" colspan="3"><input type="text" id="quotationNumber" class="input-field" value="" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">상호(법인명)</td>
-                        <td class="value-cell"><input type="text" id="supplierCompany" class="input-field" value="(주)시넥스플러스" readonly></td>
+                        <td class="value-cell"><input type="text" id="supplierCompany" class="input-field" value="(주)제이엘티" readonly></td>
                         <td class="label-cell">성 명</td>
                         <td class="value-cell"><input type="text" id="supplierName" class="input-field" value="정현우" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">사업장주소</td>
-                        <td class="value-cell" colspan="3"><input type="text" id="businessAddress" class="input-field" value="인천광역시 연수구 송도과학로" readonly></td>
+                        <td class="value-cell" colspan="3"><input type="text" id="businessAddress" class="input-field" value="인천광역시 연수구 벤처로 100번길 12" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">업 태</td>
-                        <td class="value-cell"><input type="text" id="businessType" class="input-field" value="서비스" readonly></td>
+                        <td class="value-cell"><input type="text" id="businessType" class="input-field" value="제조, 도, 소매" readonly></td>
                         <td class="label-cell">사업자번호</td>
-                        <td class="value-cell"><input type="text" id="businessNumber" class="input-field" value="123-45-67890" readonly></td>
+                        <td class="value-cell"><input type="text" id="businessNumber" class="input-field" value="362-81-01342" readonly></td>
                     </tr>
                     <tr>
                         <td class="label-cell">TEL</td>
-                        <td class="value-cell"><input type="text" id="contactTel" class="input-field" value="010-1234-5678" readonly></td>
+                        <td class="value-cell"><input type="text" id="contactTel" class="input-field" value="010-9187-9593" readonly></td>
                         <td class="label-cell">mail</td>
-                        <td class="value-cell"><input type="text" id="contactEmail" class="input-field" value="jlta@jlta.co.kr" readonly></td>
+                        <td class="value-cell"><input type="text" id="contactEmail" class="input-field" value="hwjeong@jltfa.co.kr" readonly></td>
                     </tr>
                 </table>
-                <div class="stamp-area"><img src="/static/images/stamp.png" alt="직인" class="stamp-image"></div>
+                <div class="stamp-area"><img src="/assets/images/stamp.png" alt="직인" class="stamp-image"></div>
             </div>
         </div>
 
@@ -184,7 +187,7 @@
                     </div>
                     <div class="total-row nego">
                         <span class="total-label">Best nego Total</span>
-                        <span class="total-value nego-value editable-text" id="negoTotal">0</span>
+                        <span class="total-value nego-value editable-text" id="negoTotal" contenteditable="false">0</span>
                     </div>
                 </div>
             </div>

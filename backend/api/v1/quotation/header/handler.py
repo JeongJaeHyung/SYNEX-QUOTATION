@@ -1,8 +1,11 @@
 # api/v1/quotation/header/handler.py
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from uuid import UUID
+
 from backend.database import get_db
+
 from . import crud, schemas
 
 handler = APIRouter()
@@ -11,50 +14,23 @@ handler = APIRouter()
 # Schema 생성 함수
 # ============================================================
 
+
 def get_header_resources_schema() -> dict:
     """HeaderResources 스키마 정의"""
     return {
-        "machine": {
-            "title": "장비명",
-            "type": "string",
-            "ratio": 2
-        },
-        "name": {
-            "title": "품명",
-            "type": "string",
-            "ratio": 2
-        },
-        "spac": {
-            "title": "규격",
-            "type": "string",
-            "ratio": 2
-        },
-        "compare": {
-            "title": "수량",
-            "type": "integer",
-            "ratio": 2
-        },
-        "unit": {
-            "title": "단위",
-            "type": "string",
-            "ratio": 1
-        },
-        "solo_price": {
-            "title": "단가",
-            "type": "integer",
-            "ratio": 1
-        },
+        "machine": {"title": "장비명", "type": "string", "ratio": 2},
+        "name": {"title": "품명", "type": "string", "ratio": 2},
+        "spac": {"title": "규격", "type": "string", "ratio": 2},
+        "compare": {"title": "수량", "type": "integer", "ratio": 2},
+        "unit": {"title": "단위", "type": "string", "ratio": 1},
+        "solo_price": {"title": "단가", "type": "integer", "ratio": 1},
         "subtotal": {
             "title": "공급가액",
             "type": "integer",
             "format": "currency",
-            "ratio": 2
+            "ratio": 2,
         },
-        "description": {
-            "title": "비고",
-            "type": "string",
-            "ratio": 2
-        }
+        "description": {"title": "비고", "type": "string", "ratio": 2},
     }
 
 
@@ -62,22 +38,21 @@ def get_header_resources_schema() -> dict:
 # Header Endpoints
 # ============================================================
 
+
 @handler.post("", status_code=201)
-def create_header(
-    header_data: schemas.HeaderCreate,
-    db: Session = Depends(get_db)
-):
+def create_header(header_data: schemas.HeaderCreate, db: Session = Depends(get_db)):
     """
     Header(갑지) 등록
-    
-    - general_id: 견적서(일반) ID (필수)
+
+    - folder_id: 폴더 ID (필수)
     - detailed_id: 을지 ID (필수)
     - title: 갑지 제목 (필수)
     - creator: 작성자 (필수)
     - client: 고객사 (필수)
+    - manufacturer: 장비사 (선택)
     - pic_name: 고객사 담당자명 (필수)
     - pic_position: 고객사 담당자 직급 (필수)
-    
+
     자동 생성:
     1. DetailedResources 조회 → machine + major 그룹화
     2. 각 machine별로 자재비/인건비/경비 3개 항목 생성
@@ -88,31 +63,33 @@ def create_header(
         # Header 생성
         quotation = crud.create_header(
             db=db,
-            general_id=header_data.general_id,
+            folder_id=header_data.folder_id,
             detailed_id=header_data.detailed_id,
             title=header_data.title,
             creator=header_data.creator,
             client=header_data.client,
+            manufacturer=header_data.manufacturer,
             pic_name=header_data.pic_name,
-            pic_position=header_data.pic_position
+            pic_position=header_data.pic_position,
         )
-        
+
         # HeaderResources 조회
         resources = crud.get_header_resources(db, quotation.id)
-        
+
         return {
-            "quotation_id": quotation.id,
+            "id": quotation.id,
             "title": quotation.title,
             "price": quotation.price,
             "creator": quotation.creator,
             "client": quotation.client,
+            "manufacturer": quotation.manufacturer,
             "pic_name": quotation.pic_name,
             "pic_position": quotation.pic_position,
             "description_1": quotation.description_1,
             "description_2": quotation.description_2,
             "updated_at": quotation.updated_at,
             "resource_count": len(resources),
-            "header_resources": resources
+            "header_resources": resources,
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -122,28 +99,29 @@ def create_header(
 def get_header(
     header_id: UUID,
     include_schema: bool = Query(False, description="스키마 포함 여부"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Header(갑지) 조회
-    
+
     - header_id: Header ID (UUID)
     - include_schema: true면 resources 스키마 포함
     """
     quotation = crud.get_header_by_id(db, header_id)
     if not quotation:
         raise HTTPException(status_code=404, detail="Header not found")
-    
+
     # HeaderResources 조회
     resources = crud.get_header_resources(db, header_id)
-    
+
     if include_schema:
         return {
-            "quotation_id": quotation.id,
+            "id": quotation.id,
             "title": quotation.title,
             "price": quotation.price,
             "creator": quotation.creator,
             "client": quotation.client,
+            "manufacturer": quotation.manufacturer,
             "pic_name": quotation.pic_name,
             "pic_position": quotation.pic_position,
             "description_1": quotation.description_1,
@@ -152,35 +130,34 @@ def get_header(
             "resource_count": len(resources),
             "resources": {
                 "schema": get_header_resources_schema(),
-                "items": resources
-            }
+                "header_resources": resources,
+            },
         }
-    
+
     return {
-        "quotation_id": quotation.id,
+        "id": quotation.id,
         "title": quotation.title,
         "price": quotation.price,
         "creator": quotation.creator,
         "client": quotation.client,
+        "manufacturer": quotation.manufacturer,
         "pic_name": quotation.pic_name,
         "pic_position": quotation.pic_position,
         "description_1": quotation.description_1,
         "description_2": quotation.description_2,
         "updated_at": quotation.updated_at,
         "resource_count": len(resources),
-        "header_resources": resources
+        "header_resources": resources,
     }
 
 
 @handler.put("/{header_id}")
 def update_header(
-    header_id: UUID,
-    header_update: schemas.HeaderUpdate,
-    db: Session = Depends(get_db)
+    header_id: UUID, header_update: schemas.HeaderUpdate, db: Session = Depends(get_db)
 ):
     """
     Header(갑지) 수정
-    
+
     - header_id: Header ID (UUID)
     - title: 갑지 제목 (선택)
     - creator: 작성자 (선택)
@@ -195,7 +172,7 @@ def update_header(
     resources_data = None
     if header_update.header_resources:
         resources_data = [r.dict() for r in header_update.header_resources]
-    
+
     # 수정 ✅ header_resources로 파라미터명 수정!
     updated_quotation = crud.update_header(
         db=db,
@@ -203,51 +180,47 @@ def update_header(
         title=header_update.title,
         creator=header_update.creator,
         client=header_update.client,
+        manufacturer=header_update.manufacturer,
         pic_name=header_update.pic_name,
         pic_position=header_update.pic_position,
         description_1=header_update.description_1,
         description_2=header_update.description_2,
-        header_resources=resources_data  # ✅ quotation_resources → header_resources
+        header_resources=resources_data,  # ✅ quotation_resources → header_resources
     )
-    
+
     if not updated_quotation:
         raise HTTPException(status_code=404, detail="Header not found")
-    
+
     # HeaderResources 조회
     resources = crud.get_header_resources(db, header_id)
-    
+
     return {
-        "quotation_id": updated_quotation.id,
+        "id": updated_quotation.id,
         "title": updated_quotation.title,
         "price": updated_quotation.price,
         "creator": updated_quotation.creator,
         "client": updated_quotation.client,
+        "manufacturer": updated_quotation.manufacturer,
         "pic_name": updated_quotation.pic_name,
         "pic_position": updated_quotation.pic_position,
         "description_1": updated_quotation.description_1,
         "description_2": updated_quotation.description_2,
         "updated_at": updated_quotation.updated_at,
         "resource_count": len(resources),
-        "header_resources": resources
+        "header_resources": resources,
     }
 
 
 @handler.delete("/{header_id}")
-def delete_header(
-    header_id: UUID,
-    db: Session = Depends(get_db)
-):
+def delete_header(header_id: UUID, db: Session = Depends(get_db)):
     """
     Header(갑지) 삭제
-    
+
     - header_id: Header ID (UUID)
     - CASCADE로 HeaderResources도 자동 삭제
     """
     success = crud.delete_header(db, header_id)
     if not success:
         raise HTTPException(status_code=404, detail="Header not found")
-    
-    return {
-        "message": "Header deleted successfully",
-        "deleted_id": str(header_id)
-    }
+
+    return {"message": "Header deleted successfully", "deleted_id": str(header_id)}

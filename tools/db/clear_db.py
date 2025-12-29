@@ -1,8 +1,9 @@
-import sqlite3
 import os
+import sqlite3
 
 # 로그에 찍힌 경로 사용
-DB_PATH = 'database/jlt_quotation.db'
+DB_PATH = "database/jlt_quotation.db"
+
 
 def clear_resources():
     if not os.path.exists(DB_PATH):
@@ -18,11 +19,19 @@ def clear_resources():
 
         # 참조하는 테이블들부터 데이터 삭제
         tables_to_clear = [
-            'machine_resources', 
-            'quotation_resources', 
-            'detailed_resources', 
-            'price_compare_resources',
-            'resources'
+            "machine_resources",
+            "header_resources",
+            "detailed_resources",
+            "price_compare_resources",
+            "resources",
+            "price_compare_machine",
+            "price_compare",
+            "maker",
+            "machine",
+            "header",
+            "general",
+            "detailed",
+            "certification",
         ]
 
         for table in tables_to_clear:
@@ -38,6 +47,7 @@ def clear_resources():
     finally:
         cur.execute("PRAGMA foreign_keys = ON;")
         conn.close()
+
 
 if __name__ == "__main__":
     clear_resources()

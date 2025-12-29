@@ -1,26 +1,29 @@
 # backend/api/v1/download/crud.py
-import os
-import sys
-import json
 import ctypes
-import subprocess
+import json
+import os
 import re
-from pathlib import Path
+import subprocess
+import sys
 from ctypes import wintypes
-from playwright.async_api import async_playwright
+from pathlib import Path
+from typing import Any, Optional
 
+from playwright.async_api import async_playwright
 
 # =======================================================================================================================================
 # 경로 설정
 # =======================================================================================================================================
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     APP_DIR = Path(sys.executable).parent
-    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(APP_DIR / 'browsers')
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(APP_DIR / "browsers")
 else:
-    APP_DIR = Path(__file__).parent.parent.parent.parent.parent  # backend -> s-q
+    APP_DIR = (
+        Path(__file__).parent.parent.parent.parent.parent
+    )  # backend -> s-q
 
-SETTINGS_FILE = APP_DIR / 'settings.json'
+SETTINGS_FILE = APP_DIR / "settings.json"
 
 
 # =======================================================================================================================================
@@ -30,8 +33,6 @@ SETTINGS_FILE = APP_DIR / 'settings.json'
 OFN_OVERWRITEPROMPT = 0x00000002
 OFN_NOCHANGEDIR = 0x00000008
 OFN_EXPLORER = 0x00080000
-BIF_RETURNONLYFSDIRS = 0x00000001
-BIF_NEWDIALOGSTYLE = 0x00000040
 
 
 class OPENFILENAME(ctypes.Structure):
@@ -66,6 +67,7 @@ class OPENFILENAME(ctypes.Structure):
 # Windows 대화상자 함수
 # =======================================================================================================================================
 
+
 def get_save_file_path(default_filename: str, initial_dir: str = None) -> str:
     """Windows 파일 저장 대화상자"""
     comdlg32 = ctypes.windll.comdlg32
@@ -87,7 +89,7 @@ def get_save_file_path(default_filename: str, initial_dir: str = None) -> str:
     return None
 
 
-def get_folder_path() -> str:
+def get_folder_path() -> Optional[str]:
     """Windows 폴더 선택 대화상자"""
     shell32 = ctypes.windll.shell32
     ole32 = ctypes.windll.ole32
@@ -95,13 +97,15 @@ def get_folder_path() -> str:
     ole32.CoInitialize(None)
 
     try:
-        pidl = shell32.SHBrowseForFolderW(ctypes.byref(
-            ctypes.create_string_buffer(
-                b'\x00' * 64 +
-                "PDF 저장 폴더 선택".encode('utf-16-le') +
-                b'\x00' * 200
+        pidl = shell32.SHBrowseForFolderW(
+            ctypes.byref(
+                ctypes.create_string_buffer(
+                    b"\x00" * 64
+                    + "PDF 저장 폴더 선택".encode("utf-16-le")
+                    + b"\x00" * 200
+                )
             )
-        ))
+        )
 
         if pidl:
             path_buffer = ctypes.create_unicode_buffer(260)
@@ -118,22 +122,20 @@ def get_folder_path() -> str:
 # 설정 관리
 # =======================================================================================================================================
 
+
 def get_default_save_path() -> str:
     """현재 사용자의 기본 저장 경로"""
     return str(Path.home() / "Documents" / "JLT_견적서")
 
 
-def load_settings() -> dict:
+def load_settings() -> dict[str, Any]:
     """설정 파일 로드"""
     default_path = get_default_save_path()
-    default_settings = {
-        "pdfSavePath": default_path,
-        "askSaveLocation": False
-    }
+    default_settings = {"pdfSavePath": default_path, "askSaveLocation": False}
 
     if SETTINGS_FILE.exists():
         try:
-            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            with open(SETTINGS_FILE, encoding="utf-8") as f:
                 settings = {**default_settings, **json.load(f)}
 
             # 저장 경로가 유효하지 않으면 현재 사용자의 기본 경로로 대체
@@ -143,8 +145,8 @@ def load_settings() -> dict:
                 save_settings_to_file(settings)
 
             return settings
-        except:
-            pass
+        except Exception as exc:  # explicit exception for linting
+            print("Failed to load settings:", exc, file=sys.stderr)
 
     save_settings_to_file(default_settings)
     return default_settings
@@ -152,13 +154,14 @@ def load_settings() -> dict:
 
 def save_settings_to_file(settings: dict):
     """설정 파일 저장"""
-    with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
 
 
 # =======================================================================================================================================
 # PDF 생성
 # =======================================================================================================================================
+
 
 async def generate_pdf(url: str, file_path: str) -> None:
     """Playwright로 PDF 생성"""
@@ -172,13 +175,31 @@ async def generate_pdf(url: str, file_path: str) -> None:
             path=file_path,
             format="A4",
             print_background=True,
-            margin={"top": "10mm", "bottom": "10mm", "left": "10mm", "right": "10mm"}
+            margin={"top": "10mm", "bottom": "10mm", "left": "10mm", "right": "10mm"},
         )
 
         await browser.close()
 
 
-def open_file_in_explorer(file_path: str):
+async def generate_pdf_bytes(url: str) -> bytes:
+    """Playwright로 PDF 생성하여 바이트로 반환 (폴더 통합용)"""
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+
+        await page.goto(url, wait_until="networkidle")
+
+        pdf_bytes = await page.pdf(
+            format="A4",
+            print_background=True,
+            margin={"top": "10mm", "bottom": "10mm", "left": "10mm", "right": "10mm"},
+        )
+
+        await browser.close()
+        return pdf_bytes
+
+
+def open_file_in_explorer(file_path: str) -> None:
     """탐색기에서 파일 선택하여 열기"""
     subprocess.Popen(f'explorer /select,"{file_path}"', shell=True)
 
@@ -187,4 +208,4 @@ def sanitize_filename(text: str, default: str = "") -> str:
     """파일명에서 특수문자 제거"""
     if not text:
         return default
-    return re.sub(r'[\/*?:"<>|]', '_', text)
+    return re.sub(r'[\/*?:"<>|]', "_", text)

@@ -22,6 +22,7 @@
                 {{ btn.button("Excel 저장", type="success", onclick="exportDetailedToExcel()") }}
                 {{ btn.button("인쇄하기", type="default", onclick="window.print()") }}
                 {{ btn.button("PDF 저장", type="default", onclick="exportToPDF()") }}
+                {{ btn.button("📄 갑지 만들기", type="primary", onclick="openHeaderCreateModal()") }}
                 {{ btn.button("목록으로", type="secondary", onclick="goBack()") }}
             </div>
             <div class="action-group" id="editActions" style="display: none;">
@@ -32,7 +33,7 @@
 
         <div class="cover-inner">
             <header>
-                <h2 id="pageTitle">상세 견적서 (을지)</h2>
+                <h2 id="pageTitle" contenteditable="false" style="outline: none; cursor: text; padding: 8px; border-radius: 4px; transition: background 0.2s;">상세 견적서 (을지)</h2>
                 <div class="logo-placeholder">
                     <img src="/assets/images/Normal_Logo.png" alt="JLT Logo">
                 </div>
@@ -67,6 +68,48 @@
                 </div>
                 <div id="quotationDescription" class="description-box" contenteditable="false">
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 갑지 생성 Modal -->
+    <div id="headerCreateModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>갑지 생성</h3>
+                <button class="close-btn" onclick="closeHeaderCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="headerCreateForm">
+                    <div class="form-group">
+                        <label for="headerTitle">제목 <span style="color: red;">*</span></label>
+                        <input type="text" id="headerTitle" class="form-control" required placeholder="갑지 제목을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="headerCreator">작성자 <span style="color: red;">*</span></label>
+                        <input type="text" id="headerCreator" class="form-control" required placeholder="작성자명을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="headerClient">고객사 <span style="color: red;">*</span></label>
+                        <input type="text" id="headerClient" class="form-control" required placeholder="고객사명을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="headerManufacturer">장비사</label>
+                        <input type="text" id="headerManufacturer" class="form-control" placeholder="장비사명을 입력하세요 (선택사항)">
+                    </div>
+                    <div class="form-group">
+                        <label for="headerPicName">담당자명 <span style="color: red;">*</span></label>
+                        <input type="text" id="headerPicName" class="form-control" required placeholder="고객사 담당자명을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="headerPicPosition">담당자 직급 <span style="color: red;">*</span></label>
+                        <input type="text" id="headerPicPosition" class="form-control" required placeholder="고객사 담당자 직급을 입력하세요">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeHeaderCreateModal()">취소</button>
+                <button class="btn btn-primary" onclick="createHeaderFromModal()">생성</button>
             </div>
         </div>
     </div>

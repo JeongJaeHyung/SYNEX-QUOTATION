@@ -1,21 +1,23 @@
 # app/models/price_compare_resources.py
-from sqlalchemy import Column, String, Integer, Text, ForeignKeyConstraint, Float
+from sqlalchemy import Column, Float, ForeignKeyConstraint, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+
 from backend.database import Base
+
 
 class PriceCompareResources(Base):
     __tablename__ = "price_compare_resources"
-    
+
     # 1. PK: 어떤 견적 비교서인지
-    price_compare_id = Column(UUID(as_uuid=True), primary_key=True) 
-    
+    price_compare_id = Column(UUID(as_uuid=True), primary_key=True)
+
     # 2. PK [추가]: 어떤 장비의 자원인지 (이게 있어야 장비별 구분이 됨) 💡
     machine_id = Column(UUID(as_uuid=True), primary_key=True)
     machine_name = Column(String(100), primary_key=True)
     major = Column(String(30), primary_key=True)
     minor = Column(String(50), primary_key=True)
-    
+
     # Data Columns
     cost_solo_price = Column(Integer, nullable=False)
     cost_unit = Column(String(10), nullable=False)
@@ -25,17 +27,17 @@ class PriceCompareResources(Base):
     quotation_compare = Column(Integer, nullable=False)
     upper = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
-    
+
     # Relationships
-    price_compare = relationship("PriceCompare", back_populates="price_compare_resources")
-    
+    price_compare = relationship(
+        "PriceCompare", back_populates="price_compare_resources"
+    )
+
     # 복합 FK 제약 조건
     __table_args__ = (
         # Price Compare 연결
         ForeignKeyConstraint(
-            ['price_compare_id'],
-            ['price_compare.id'],
-            ondelete='CASCADE'
+            ["price_compare_id"], ["price_compare.id"], ondelete="CASCADE"
         ),
     )
 

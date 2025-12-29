@@ -1,9 +1,10 @@
 # backend/core/database.py
 import os
 from pathlib import Path
+
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 # 1. 절대 경로로 프로젝트 루트 찾기
 # 현재 파일: .../backend/core/database.py -> .parent(core) -> .parent(backend) -> .parent(root)
@@ -22,9 +23,9 @@ SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 print(f"[*] 연결된 실제 DB 경로: {DB_PATH}")
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
+
 
 # SQLite 외래키 활성화
 @event.listens_for(Engine, "connect")
@@ -33,8 +34,10 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()

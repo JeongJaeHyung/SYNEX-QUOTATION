@@ -1,21 +1,35 @@
 let selectedPriceCompareId = null;
-const currentGeneralId = document.getElementById('hiddenGeneralId').value;
+const currentFolderId = document.getElementById('hiddenFolderId').value;
+let generalCreator = ''; // General의 작성자 저장
+let folderTitle = ''; // Folder 제목 저장
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadGeneralInfo();
-    await loadPriceCompares(); 
+    await loadPriceCompares();
 });
 
 async function loadGeneralInfo() {
     try {
-        const res = await fetch(`/api/v1/quotation/general/${currentGeneralId}`);
-        if (res.ok) {
-            const data = await res.json();
-            const info = data.general || data;
-            document.getElementById('displayGeneralName').textContent = info.name;
-            document.getElementById('regCreator').value = info.creator || '';
+        // Folder 정보 가져오기
+        const folderRes = await fetch(`/api/v1/quotation/folder/${currentFolderId}`);
+        if (folderRes.ok) {
+            const folderData = await folderRes.json();
+            folderTitle = folderData.title || '알 수 없음';
+            document.getElementById('displayGeneralName').textContent = folderTitle;
+
+            // General 정보 가져오기 (작성자 획득)
+            if (folderData.general_id) {
+                const generalRes = await fetch(`/api/v1/quotation/general/${folderData.general_id}`);
+                if (generalRes.ok) {
+                    const generalData = await generalRes.json();
+                    generalCreator = generalData.creator || '';
+                }
+            }
         }
-    } catch (e) { console.error('프로젝트 정보 로드 에러:', e); }
+    } catch (e) {
+        console.error('Folder Info Load Error:', e);
+        document.getElementById('displayGeneralName').textContent = '정보 로드 실패';
+    }
 }
 
 /**
@@ -29,24 +43,18 @@ async function loadPriceCompares() {
     container.innerHTML = '';
 
     try {
-        const res = await fetch(`/api/v1/quotation/general/${currentGeneralId}?include_relations=true`);
+        const res = await fetch(`/api/v1/quotation/folder/${currentFolderId}?include_resources=true`);
         if (!res.ok) throw new Error('연관 목록 로드 실패');
-        
+
         const data = await res.json();
-        // API 응답의 related_documents에서 데이터 추출
-        const allItems = data.related_documents || [];
-        
+        // API 응답의 resources 배열에서 price_compare 추출
+        const resources = data.resources || [];
+        const allItems = resources.filter(r => r.table_name === '내정가 비교');
+
         console.log("받은 데이터:", allItems);
 
-        // [수정 포인트] category 명칭에 '비교견적서' 또는 '내정가'가 포함되면 필터링 통과
-        const items = allItems.filter(item => {
-            const category = item.category || "";
-            const tableName = item.table_name || "";
-            
-            return category.includes("비교견적서") || 
-                   category.includes("내정가") || 
-                   tableName === "PriceCompare";
-        });
+        // folder의 price_compare를 items로 사용
+        const items = allItems;
 
         if (items.length === 0) {
             container.innerHTML = `
@@ -112,6 +120,11 @@ function selectCompare(id) {
 
 function openCreateModal() {
     if (!selectedPriceCompareId) return alert('내정가 비교서를 선택해주세요.');
+
+    // 기본값 채우기: 제목과 작성자
+    document.getElementById('regTitle').value = folderTitle ? `${folderTitle} - 상세 견적서 (을지)` : '상세 견적서 (을지)';
+    document.getElementById('regCreator').value = generalCreator;
+
     document.getElementById('createModal').style.display = 'flex';
 }
 
@@ -130,7 +143,7 @@ async function submitDetailed() {
     if (!title || !creator) return alert('제목과 작성자를 입력해주세요.');
 
     const payload = {
-        general_id: currentGeneralId,
+        folder_id: currentFolderId,
         price_compare_id: selectedPriceCompareId,
         title: title,
         creator: creator,
@@ -149,8 +162,14 @@ async function submitDetailed() {
         });
 
         if (res.ok) {
+            const result = await res.json();
             alert('상세 견적서(을지)가 생성되었습니다.');
-            window.location.href = `/service/quotation/general/form?mode=view&id=${currentGeneralId}`;
+            // folder에서 general_id를 가져와서 리다이렉트
+            const folderRes = await fetch(`/api/v1/quotation/folder/${currentFolderId}`);
+            if (folderRes.ok) {
+                const folderData = await folderRes.json();
+                window.location.href = `/service/quotation/general/form?mode=view&id=${folderData.general_id}`;
+            }
         } else {
             const err = await res.json();
             alert('생성 실패: ' + (err.detail || '오류 발생'));

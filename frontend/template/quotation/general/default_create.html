@@ -30,6 +30,10 @@
                     <input type="text" id="creator" class="form-input" placeholder="작성자명을 입력하세요" required>
                 </div>
                 <div class="form-group">
+                    <label for="manufacturer">장비사 <span class="required">*</span></label>
+                    <input type="text" id="manufacturer" class="form-input" placeholder="장비사를 입력하세요" required>
+                </div>
+                <div class="form-group">
                     <label for="description">비고</label>
                     <input type="text" id="description" class="form-input" placeholder="비고를 입력하세요">
                 </div>
@@ -47,21 +51,17 @@
         </div>
     </div>
 
-    {# 1. 연관 견적서 전체 목록 #}
-    <div id="relationsSection" style="display: none;">
+    {# 1. 폴더 시스템 #}
+    <div id="folderSection" style="display: none;">
         <hr class="divider">
         <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
-                <h3>연관 견적서 목록</h3>
-                <p class="section-description">이 견적서(일반)에 연결된 전체 문서(갑지, 을지, 비교서) 목록입니다.</p>
+                <h3>폴더 및 견적서 관리</h3>
+                <p class="section-description">폴더별로 내정가 비교서, 을지, 갑지를 관리합니다 (각 폴더당 최대 3개)</p>
             </div>
-            <div id="derivativeStatusGroup" class="status-group">
-                <span class="status-item">갑지: <b id="statHeader" class="status-text">-</b></span>
-                <span class="status-item">을지: <b id="statDetailed" class="status-text">-</b></span>
-                <span class="status-item">내정가 비교: <b id="statPriceCompare" class="status-text">-</b></span>
-            </div>
+            <button class="btn btn-primary" onclick="openCreateFolderModal()" style="height: 36px;">+ 폴더 생성</button>
         </div>
-        <div id="relationsTableContainer"></div>
+        <div id="foldersContainer" class="folders-container"></div>
     </div>
 
     {# 2. 사용된 장비 견적서 목록 (신규 고도화 섹션) #}
@@ -76,14 +76,31 @@
 
     {# 액션 버튼 #}
     <div class="action-footer">
-        <div id="derivativeBtnGroup" class="derivative-group" style="display: none;">
-            <button class="btn btn-secondary" onclick="createHeader()">📄 갑지 만들기</button>
-            <button class="btn btn-secondary" onclick="createDetailed()">📑 을지 만들기</button>
-            <button class="btn btn-primary" onclick="createPriceCompare()">💰 내정가 견적비교서 만들기</button>
-        </div>
         <div class="right-group">
             <button class="btn btn-secondary btn-lg" onclick="goToList()">목록으로</button>
+            <button class="btn btn-warning btn-lg" onclick="toggleEditMode()" id="editBtn" style="display: none;">수정하기</button>
             <button class="btn btn-success btn-lg" onclick="submitGeneral()" id="submitBtn">등록완료</button>
+            <button class="btn btn-secondary btn-lg" onclick="cancelEdit()" id="cancelBtn" style="display: none;">취소</button>
+        </div>
+    </div>
+</div>
+
+{# 폴더 생성 모달 #}
+<div id="createFolderModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>폴더 생성</h3>
+            <button class="close-btn" onclick="closeFolderModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="folderTitle">폴더 제목 <span class="required">*</span></label>
+                <input type="text" id="folderTitle" class="form-input" placeholder="폴더 제목을 입력하세요" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeFolderModal()">취소</button>
+            <button class="btn btn-primary" onclick="submitCreateFolder()">생성</button>
         </div>
     </div>
 </div>

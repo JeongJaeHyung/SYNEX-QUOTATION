@@ -2,7 +2,10 @@
  * 견적서(갑지) 생성 - 을지 선택 및 요약 데이터 매칭
  */
 let selectedDetailedId = null;
-const currentGeneralId = document.getElementById('hiddenGeneralId').value;
+const currentFolderId = document.getElementById('hiddenFolderId').value;
+let generalCreator = ''; // General의 작성자 저장
+let generalClient = ''; // General의 고객사명 저장
+let folderTitle = ''; // Folder 제목 저장
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadGeneralInfo();
@@ -11,22 +14,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadGeneralInfo() {
     try {
-        const res = await fetch(`/api/v1/quotation/general/${currentGeneralId}`);
-        if (res.ok) {
-            const data = await res.json();
-            const info = data.general || data;
-            
-            // [안전장치] 요소가 존재할 때만 텍스트 및 값 설정
+        // Folder 정보 가져오기
+        const folderRes = await fetch(`/api/v1/quotation/folder/${currentFolderId}`);
+        if (folderRes.ok) {
+            const folderData = await folderRes.json();
+            folderTitle = folderData.title || '알 수 없음';
+
             const nameEl = document.getElementById('displayGeneralName');
-            if (nameEl) nameEl.textContent = info.name;
-            
-            const clientEl = document.getElementById('regClient');
-            if (clientEl) clientEl.value = info.client || '';
-            
-            const creatorEl = document.getElementById('regCreator');
-            if (creatorEl) creatorEl.value = info.creator || '';
+            if (nameEl) nameEl.textContent = folderTitle;
+
+            // General 정보 가져오기 (작성자 및 고객사명 획득)
+            if (folderData.general_id) {
+                const generalRes = await fetch(`/api/v1/quotation/general/${folderData.general_id}`);
+                if (generalRes.ok) {
+                    const generalData = await generalRes.json();
+                    generalCreator = generalData.creator || '';
+                    generalClient = generalData.client || '';
+                }
+            }
         }
-    } catch (e) { console.error("프로젝트 정보 로드 중 오류:", e); }
+    } catch (e) {
+        console.error('Folder Info Load Error:', e);
+        const nameEl = document.getElementById('displayGeneralName');
+        if (nameEl) nameEl.textContent = '정보 로드 실패';
+    }
 }
 
 async function loadDetailedQuotations() {
@@ -35,10 +46,12 @@ async function loadDetailedQuotations() {
     if (loading) loading.style.display = 'block';
 
     try {
-        const res = await fetch(`/api/v1/quotation/general/${currentGeneralId}?include_relations=true`);
+        const res = await fetch(`/api/v1/quotation/folder/${currentFolderId}?include_resources=true`);
         const data = await res.json();
-        const allItems = data.related_documents || [];
-        const items = allItems.filter(item => (item.category || "").includes("을지"));
+        // API 응답의 resources 배열에서 detailed 추출
+        const resources = data.resources || [];
+        const allItems = resources.filter(r => r.table_name === '견적서(을지)');
+        const items = allItems;
 
         if (items.length === 0) {
             container.innerHTML = '<div class="empty-state">선택할 수 있는 상세 견적서(을지)가 없습니다.</div>';
@@ -76,7 +89,12 @@ function openCreateModal() {
         alert('요약할 을지(상세 견적서)를 먼저 선택해주세요.');
         return;
     }
-    
+
+    // 기본값 채우기: 제목, 고객사명, 작성자
+    document.getElementById('regTitle').value = folderTitle ? `${folderTitle} - 견적서 (갑지)` : '견적서 (갑지)';
+    document.getElementById('regClient').value = generalClient;
+    document.getElementById('regCreator').value = generalCreator;
+
     const modal = document.getElementById('createModal');
     if (modal) {
         modal.style.display = 'flex';
@@ -105,7 +123,7 @@ async function submitHeader() {
     }
 
     const payload = {
-        general_id: currentGeneralId,
+        folder_id: currentFolderId,
         detailed_id: selectedDetailedId,
         title: title,
         client: client,
@@ -122,7 +140,12 @@ async function submitHeader() {
         });
         if (res.ok) {
             alert('갑지가 생성되었습니다.');
-            window.location.href = `/service/quotation/general/form?mode=view&id=${currentGeneralId}`;
+            // folder에서 general_id를 가져와서 리다이렉트
+            const folderRes = await fetch(`/api/v1/quotation/folder/${currentFolderId}`);
+            if (folderRes.ok) {
+                const folderData = await folderRes.json();
+                window.location.href = `/service/quotation/general/form?mode=view&id=${folderData.general_id}`;
+            }
         } else {
             const err = await res.json();
             alert('생성 실패: ' + (err.detail || '오류 발생'));

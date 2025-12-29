@@ -1,13 +1,15 @@
-import sys
 import os
+import sys
 
 # [핵심 수정] 현재 파일(init_data.py)의 부모의 부모 경로(/app)를 시스템 경로에 추가
 # 이렇게 해야 'database'와 'models'를 찾을 수 있습니다.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from models import Permission, Role
 from sqlalchemy.orm import Session
+
 from database import SessionLocal
-from models import Role, Permission 
+
 
 def init_db():
     db = SessionLocal()
@@ -19,11 +21,11 @@ def init_db():
         # ---------------------------------------------------------
         resources = ["parts", "maker", "machine", "general", "account"]
         actions = ["create", "read", "update", "delete"]
-        
+
         # 특수 권한 추가
         special_perms = [
-            {"resource": "general", "action": "confirm"}, # 견적 확정
-            {"resource": "machine", "action": "export"}   # 엑셀 다운로드
+            {"resource": "general", "action": "confirm"},  # 견적 확정
+            {"resource": "machine", "action": "export"},  # 엑셀 다운로드
         ]
 
         all_permissions = []
@@ -33,17 +35,27 @@ def init_db():
             for act in actions:
                 perm = db.query(Permission).filter_by(resource=res, action=act).first()
                 if not perm:
-                    perm = Permission(resource=res, action=act, description=f"{res} {act}")
+                    perm = Permission(
+                        resource=res, action=act, description=f"{res} {act}"
+                    )
                     db.add(perm)
                     db.commit()
                     db.refresh(perm)
                 all_permissions.append(perm)
-        
+
         # 특수 권한
         for p in special_perms:
-            perm = db.query(Permission).filter_by(resource=p["resource"], action=p["action"]).first()
+            perm = (
+                db.query(Permission)
+                .filter_by(resource=p["resource"], action=p["action"])
+                .first()
+            )
             if not perm:
-                perm = Permission(resource=p["resource"], action=p["action"], description="Special Permission")
+                perm = Permission(
+                    resource=p["resource"],
+                    action=p["action"],
+                    description="Special Permission",
+                )
                 db.add(perm)
                 db.commit()
                 db.refresh(perm)
@@ -65,7 +77,7 @@ def init_db():
                 db.commit()
                 db.refresh(role)
             roles_map[r_name] = role
-        
+
         print("✅ Role (ADMIN, USER) 확인 완료.")
 
         # ---------------------------------------------------------
@@ -93,6 +105,7 @@ def init_db():
         db.rollback()
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     init_db()

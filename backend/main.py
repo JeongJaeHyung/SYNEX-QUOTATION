@@ -1,15 +1,14 @@
 # SYNEX+QUOTATION/Server/app/main.py
 from pathlib import Path
+
+from api.router import router as api_router
+from core.config import BASE_DIR, templates
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
-from core.config import templates, BASE_DIR
-
 from service.router import router as service_router
-from api.router import router as api_router
 
 app = FastAPI()
 
@@ -24,18 +23,23 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "frontend" / "static")), name="static")
-app.mount("/assets", StaticFiles(directory=str(BASE_DIR / "frontend" / "assets")), name="assets")
+app.mount(
+    "/static",
+    StaticFiles(directory=str(BASE_DIR / "frontend" / "static")),
+    name="static",
+)
+app.mount(
+    "/assets",
+    StaticFiles(directory=str(BASE_DIR / "frontend" / "assets")),
+    name="assets",
+)
 templates = Jinja2Templates(directory=str(BASE_DIR / "frontend"))
-
 
 
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse(
-        "template/home.html", 
-        {"request": request}
-    )
+    return templates.TemplateResponse("template/home.html", {"request": request})
+
 
 '''
 @app.get("/login", response_class=HTMLResponse)
@@ -56,21 +60,22 @@ async def register_page(request: Request):
 
 '''
 
+
 @app.get("/quotation_detailed", response_class=HTMLResponse)
 async def register_page(request: Request):
     """을지"""
     return templates.TemplateResponse(
-        "template/quotation/general/quotation_detailed.html",
-        {"request": request}
+        "template/quotation/general/quotation_detailed.html", {"request": request}
     )
+
 
 @app.get("/quotation_summary", response_class=HTMLResponse)
 async def register_page(request: Request):
     """을지"""
     return templates.TemplateResponse(
-        "template/quotation/general/quotation_summary.html",
-        {"request": request}
+        "template/quotation/general/quotation_summary.html", {"request": request}
     )
+
 
 app.include_router(api_router, prefix="/api")
 

@@ -2,9 +2,11 @@
 
 let machineList = [];
 let selectedMachineIds = new Set();
+let generalCreator = ''; // General의 작성자 저장
+let folderTitle = ''; // Folder 제목 저장
 
-// HTML의 히든 필드에서 General ID 가져오기
-const currentGeneralId = document.getElementById('hiddenGeneralId').value;
+// HTML의 히든 필드에서 Folder ID 가져오기
+const currentFolderId = document.getElementById('hiddenFolderId').value;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. 현재 General 프로젝트 이름 조회
@@ -14,24 +16,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * General 정보 로드 (이름 표시용)
+ * Folder 정보 로드 및 General 정보 조회 (작성자 가져오기)
  */
 async function loadGeneralInfo() {
     try {
-        const res = await fetch(`/api/v1/quotation/general/${currentGeneralId}`);
-        if (res.ok) {
-            const data = await res.json();
-            // API 응답 구조 유연하게 처리
-            const name = data.name || (data.general ? data.general.name : '알 수 없음');
-            document.getElementById('displayGeneralName').textContent = name;
-            
-            // 작성자 자동 채우기
-            if (data.creator) {
-                document.getElementById('regCreator').value = data.creator;
+        // Folder 정보 가져오기
+        const folderRes = await fetch(`/api/v1/quotation/folder/${currentFolderId}`);
+        if (folderRes.ok) {
+            const folderData = await folderRes.json();
+            folderTitle = folderData.title || '알 수 없음';
+            document.getElementById('displayGeneralName').textContent = folderTitle;
+
+            // General 정보 가져오기 (작성자 획득)
+            if (folderData.general_id) {
+                const generalRes = await fetch(`/api/v1/quotation/general/${folderData.general_id}`);
+                if (generalRes.ok) {
+                    const generalData = await generalRes.json();
+                    generalCreator = generalData.creator || '';
+                }
             }
         }
     } catch (e) {
-        console.error('General Info Load Error:', e);
+        console.error('Folder Info Load Error:', e);
         document.getElementById('displayGeneralName').textContent = '정보 로드 실패';
     }
 }
@@ -147,14 +153,18 @@ function updateActionButtons() {
  */
 function openCreateModal() {
     if (selectedMachineIds.size === 0) return alert('선택된 장비가 없습니다.');
-    
+
     const modal = document.getElementById('createModal');
     const list = document.getElementById('modalSelectedList');
-    
+
+    // 기본값 채우기: 제목과 작성자
+    document.getElementById('regTitle').value = folderTitle ? `${folderTitle} - 내정가 견적 비교` : '내정가 견적 비교';
+    document.getElementById('regCreator').value = generalCreator;
+
     // 선택된 장비 목록을 모달에 표시
     list.innerHTML = '';
     let count = 0;
-    
+
     machineList.forEach(m => {
         if (selectedMachineIds.has(m.id)) {
             const li = document.createElement('li');
@@ -163,7 +173,7 @@ function openCreateModal() {
             count++;
         }
     });
-    
+
     document.getElementById('modalSelectedCount').textContent = count;
     modal.style.display = 'flex';
 }
@@ -176,16 +186,20 @@ function closeCreateModal() {
  * [핵심] 내정가 견적비교서 생성 요청 (API 호출)
  */
 async function submitPriceCompare() {
+    const title = document.getElementById('regTitle').value;
     const creator = document.getElementById('regCreator').value;
     const description = document.getElementById('regDescription').value;
-    
+
+    if (!title) return alert('제목을 입력해주세요.');
     if (!creator) return alert('작성자를 입력해주세요.');
-    
+
     const payload = {
-        general_id: currentGeneralId,        // 고정된 General ID 사용
+        folder_id: currentFolderId,
+        title: title,
         creator: creator,
         description: description,
-        machine_ids: Array.from(selectedMachineIds) // 선택된 장비 ID 목록
+        machine_count: selectedMachineIds.size,
+        machine_ids: Array.from(selectedMachineIds)
     };
     
     const btn = document.querySelector('#createModal .btn-primary');
@@ -202,9 +216,16 @@ async function submitPriceCompare() {
         if (res.ok) {
             const data = await res.json();
             alert('내정가 견적 비교서가 성공적으로 생성되었습니다.');
-            
-            // 성공 시, 다시 General 조회 화면으로 돌아갑니다.
-            goBackToGeneral();
+
+            // 성공 시, folder에서 general_id를 가져와서 General 조회 화면으로 돌아갑니다.
+            const folderRes = await fetch(`/api/v1/quotation/folder/${currentFolderId}`);
+            if (folderRes.ok) {
+                const folderData = await folderRes.json();
+                window.location.href = `/service/quotation/general/form?mode=view&id=${folderData.general_id}`;
+            } else {
+                // Folder 조회 실패 시 뒤로가기
+                goBackToGeneral();
+            }
         } else {
             const err = await res.json();
             alert('생성 실패: ' + (err.detail || '알 수 없는 오류'));
@@ -219,10 +240,10 @@ async function submitPriceCompare() {
 }
 
 /**
- * 뒤로가기 (General 조회 화면으로 이동)
+ * 뒤로가기 (이전 페이지로)
  */
 function goBackToGeneral() {
-    window.location.href = `/service/quotation/general/form?mode=view&id=${currentGeneralId}`;
+    window.history.back();
 }
 
 // 엔터키 검색 지원

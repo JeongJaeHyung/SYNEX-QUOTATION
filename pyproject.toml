@@ -7,4 +7,62 @@ requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.28.1",
     "openpyxl>=3.1.5",
+    "ruff>=0.14.10",
 ]
+[tool.yamlfix]
+allow_duplicate_keys = false
+line_length = false
+none_representation = 'null'
+preserve_quotes = true
+quote_basic_values = false
+
+[tool.ruff]
+line-length = 88 # for lint
+indent-width = 4
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.pyc",
+    ".pytest_cache",
+    "node_modules",
+    "database/*.db",
+]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 88 # for format
+
+[tool.ruff.lint]
+# line-length = 88 # don't use in tool.ruff.lint
+# - E: pycodestyle errors (PEP 8 style errors)
+# - F: Pyflakes (logical errors, unused imports, etc.)
+# - I: isort (import sorting)
+# - UP: pyupgrade (suggests syntax upgrades for newer Python versions)
+# - B: flake8-bugbear (likely bugs and design problems)
+# - W: pycodestyle warnings
+# - C90: mccabe complexity
+select = ["E", "F", "I", "UP", "B", "W", "C90"]
+ignore = [
+  # "E501", # Ignore line length errors if desired
+  "B008",   # Do not perform function call in argument defaults
+  "F401",   # Ignore unused imports
+  "E402",   # Module level import not at top of file
+  "C901",   # Function too complex (complexity check)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend", "frontend"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+quote-style = "double"
+# quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+line-ending = "auto"

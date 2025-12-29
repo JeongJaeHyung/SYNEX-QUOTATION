@@ -22,7 +22,7 @@
 .col-right { text-align: right !important; }
 
 .col-no { width: 40px; }
-.col-machine { width: 120px; }
+.col-machine { width: 280px; }  /* 120px에서 280px로 확장 (2.3배) */
 .col-name { width: 200px; }
 .col-spec { width: 150px; }
 .col-quantity { width: 60px; }

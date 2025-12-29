@@ -1,18 +1,19 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
-from alembic import context
 import os
 import sys
+from logging.config import fileConfig
 from pathlib import Path
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # 1. 경로 설정: 프로젝트 루트를 sys.path에 추가하여 'backend' 패키지를 인식하게 함
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 # 2. 모델 import: 모든 모델이 등록된 __init__.py를 가져옵니다.
-from backend.database import Base
 # 모든 모델을 임포트해야 Alembic이 테이블 변화를 감지합니다.
-import backend.models 
+import backend.models
+from backend.database import Base
 
 # 3. Alembic 설정 객체
 config = context.config
@@ -23,6 +24,7 @@ if config.config_file_name is not None:
 
 # 5. 메타데이터 설정
 target_metadata = Base.metadata
+
 
 def run_migrations_offline() -> None:
     """Offline 모드에서 마이그레이션 실행"""
@@ -36,6 +38,7 @@ def run_migrations_offline() -> None:
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 def run_migrations_online() -> None:
     """Online 모드에서 마이그레이션 실행"""
@@ -55,6 +58,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

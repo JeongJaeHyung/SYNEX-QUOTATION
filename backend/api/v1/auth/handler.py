@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+from backend.core import security
 from backend.database import get_db
 from backend.models.account import Account
-from backend.core import security
+
 from .schemas import LoginRequest, Token
 
 # [중요] 로그인은 보안 검사를 받으면 안 되므로 일반 APIRouter 사용
 handler = APIRouter()
+
 
 @handler.post("/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
@@ -27,7 +30,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
     # 3. 토큰 발급
     access_token = security.create_access_token(subject=user.id)
-    
+
     # 4. Role 이름 가져오기 (없으면 GUEST)
     role_name = user.role.name if user.role else "GUEST"
 
@@ -35,5 +38,5 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "user_name": user.name,
-        "role": role_name
+        "role": role_name,
     }

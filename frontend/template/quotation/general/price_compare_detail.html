@@ -15,21 +15,20 @@
 <div class="quotation-comparison-page">
     {# 우측 사이드 플로팅 메뉴 #}
     <div id="sideActionMenu" class="side-action-menu no-print" style="display: none;">
-        <button class="btn btn-secondary" onclick="createDetailedFromCompare()">📑 을지 만들기</button>
-        <button class="btn btn-primary" onclick="createHeaderFromCompare()">📄 갑지 만들기</button>
-        <hr>
+        <button class="btn btn-secondary" onclick="window.history.back()">목록으로</button>
+        <button class="btn btn-warning" onclick="toggleEditMode('edit')">수정하기</button>
+        <button class="btn btn-danger" onclick="deletePriceCompare()">삭제</button>
         <button class="btn btn-success" onclick="exportToExcel()">Excel 저장</button>
-        <button id="btnToggleEditSide" class="btn btn-outline" onclick="toggleEditMode()">수정하기</button>
-        <button class="btn btn-outline" onclick="window.print()">인쇄하기</button>
         <button class="btn btn-outline" onclick="exportToPDF()">PDF 저장</button>
+        <button class="btn btn-outline" onclick="openDetailedCreateModal()">📑 을지 만들기</button>
     </div>
 
     <div class="comparison-shell">
         <div class="comparison-inner">
             <header>
-                <h2 id="pageTitle">내정가 견적가 비교</h2>
+                <h2 id="pageTitle" contenteditable="false" style="outline: none; cursor: text; padding: 8px; border-radius: 4px; transition: background 0.2s;">내정가 견적가 비교</h2>
                 <div class="logo-placeholder">
-                    <img src="/static/images/Normal_Logo.png" alt="Logo">
+                    <img src="/assets/images/Normal_Logo.png" alt="Logo">
                 </div>
             </header>
             
@@ -82,6 +81,36 @@
             </div>
             
             <div class="action-footer" id="actionFooter" style="display: none; margin-top: 24px;"></div>
+        </div>
+    </div>
+
+    <!-- 을지 생성 Modal -->
+    <div id="detailedCreateModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>을지 생성</h3>
+                <button class="close-btn" onclick="closeDetailedCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="detailedCreateForm">
+                    <div class="form-group">
+                        <label for="detailedTitle">제목 <span style="color: red;">*</span></label>
+                        <input type="text" id="detailedTitle" class="form-control" required placeholder="을지 제목을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="detailedCreator">작성자 <span style="color: red;">*</span></label>
+                        <input type="text" id="detailedCreator" class="form-control" required placeholder="작성자명을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="detailedDescription">설명</label>
+                        <textarea id="detailedDescription" class="form-control" rows="3" placeholder="설명을 입력하세요 (선택사항)"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDetailedCreateModal()">취소</button>
+                <button class="btn btn-primary" onclick="createDetailedFromModal()">생성</button>
+            </div>
         </div>
     </div>
 </div>

@@ -17,8 +17,8 @@
         </p>
     </div>
 
-    {# [핵심] Handler에서 받은 general_id를 JS로 넘기기 위한 히든 필드 #}
-    <input type="hidden" id="hiddenGeneralId" value="{{ general_id }}">
+    {# [핵심] Handler에서 받은 folder_id를 JS로 넘기기 위한 히든 필드 #}
+    <input type="hidden" id="hiddenFolderId" value="{{ folder_id }}">
 
     {# 상단 액션 바 #}
     <div class="action-bar">
@@ -57,6 +57,10 @@
             <button class="close-btn" onclick="closeCreateModal()">×</button>
         </div>
         <div class="modal-body">
+            <div class="form-group">
+                <label>제목 <span class="required">*</span></label>
+                <input type="text" id="regTitle" class="form-input" placeholder="비교서 제목 입력">
+            </div>
             <div class="form-group">
                 <label>작성자 <span class="required">*</span></label>
                 <input type="text" id="regCreator" class="form-input" placeholder="작성자명 입력">

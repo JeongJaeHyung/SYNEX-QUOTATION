@@ -23,6 +23,9 @@
             <button class="btn btn-primary" onclick="createQuotation()">
                 <span>+</span> 견적서 생성
             </button>
+            <button class="btn btn-danger" onclick="deleteSelected()">
+                선택 삭제
+            </button>
         </div>
     </div>
 
@@ -33,7 +36,7 @@
 
     {# 테이블 컨테이너 #}
     <div id="tableContainer"></div>
-    
+
     {# 페이지네이션 #}
     <div id="pagination" class="pagination" style="display: none;">
         <span class="pagination-info" id="pageInfo"></span>
