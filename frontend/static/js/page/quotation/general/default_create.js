@@ -1,8 +1,10 @@
 /**
  * 견적서(일반) 폼 스크립트 - 내정가 비교서 기반 장비 리스트 및 이동 경로 최적화 버전
  */
-let pageMode = 'create'; 
+let pageMode = 'create';
 let generalId = null;
+let generalName = '';  // 전역 변수로 general name 저장
+let foldersData = [];  // 전역 변수로 folders 데이터 저장
 
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -297,7 +299,8 @@ async function loadGeneralData(id) {
         const res = await fetch(`/api/v1/quotation/general/${id}`);
         const data = await res.json();
         const info = data.general || data;
-        document.getElementById('generalName').value = info.name || '';
+        generalName = info.name || '';  // 전역 변수에 저장
+        document.getElementById('generalName').value = generalName;
         document.getElementById('client').value = info.client || '';
         document.getElementById('creator').value = info.creator || '';
         document.getElementById('manufacturer').value = info.manufacturer || '';
@@ -342,6 +345,7 @@ async function loadFolders(generalId) {
 
 function renderFolders(folders) {
     const container = document.getElementById('foldersContainer');
+    foldersData = folders;  // 전역 변수에 저장
     let html = '';
 
     folders.forEach(folder => {
@@ -366,9 +370,9 @@ function renderFolders(folders) {
                 </div>
                 <div class="folder-body">
                     <div class="resource-list">
-                        ${renderResourceItem('price_compare', '내정가 비교서', priceCompare, folder.id)}
-                        ${renderResourceItem('detailed', '을지', detailed, folder.id)}
-                        ${renderResourceItem('header', '갑지', header, folder.id)}
+                        ${renderResourceItem('price_compare', '내정가 비교서', priceCompare, folder.id, folder.title)}
+                        ${renderResourceItem('detailed', '을지', detailed, folder.id, folder.title)}
+                        ${renderResourceItem('header', '갑지', header, folder.id, folder.title)}
                     </div>
                 </div>
             </div>
@@ -378,7 +382,7 @@ function renderFolders(folders) {
     container.innerHTML = html;
 }
 
-function renderResourceItem(type, typeName, resource, folderId) {
+function renderResourceItem(type, typeName, resource, folderId, folderTitle) {
     if (resource) {
         // 리소스가 있는 경우
         return `
@@ -387,8 +391,8 @@ function renderResourceItem(type, typeName, resource, folderId) {
                 <div class="resource-status">
                     <span class="status-badge created">생성됨</span>
                     <div class="resource-actions-btn">
-                        <button class="btn-icon" onclick="downloadResourceExcel('${type}', '${resource.id}')" title="Excel 다운로드">📊</button>
-                        <button class="btn-icon" onclick="downloadResourcePDF('${type}', '${resource.id}')" title="PDF 다운로드">📄</button>
+                        <button class="btn-icon" onclick="downloadResourceExcel('${type}', '${resource.id}', '${folderTitle}')" title="Excel 다운로드">📊</button>
+                        <button class="btn-icon" onclick="downloadResourcePDF('${type}', '${resource.id}', '${folderTitle}')" title="PDF 다운로드">📄</button>
                         <button class="btn-icon" onclick="deleteResource('${type}', '${resource.id}', '${folderId}')" title="삭제">🗑️</button>
                     </div>
                 </div>
@@ -553,8 +557,8 @@ async function deleteResource(type, resourceId, folderId) {
  * Excel/PDF 다운로드 함수들
  */
 
-// 개별 리소스 Excel 다운로드
-async function downloadResourceExcel(type, resourceId) {
+// 개별 리소스 Excel 저장
+async function downloadResourceExcel(type, resourceId, folderTitle) {
     let apiPath = '';
     let docType = '';
 
@@ -575,36 +579,28 @@ async function downloadResourceExcel(type, resourceId) {
 
     try {
         const response = await fetch(apiPath, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            }
+            method: 'GET'
         });
 
         if (!response.ok) {
             throw new Error(`Excel 생성 실패: ${response.status}`);
         }
 
-        const blob = await response.blob();
-        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const filename = `${docType}_${timestamp}.xlsx`;
+        const result = await response.json();
 
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        if (result.success) {
+            alert('Excel 파일이 저장되었습니다:\n' + result.path);
+        } else {
+            alert('저장 실패: ' + (result.message || '알 수 없는 오류'));
+        }
     } catch (error) {
-        console.error('Excel 다운로드 오류:', error);
-        alert('Excel 파일 다운로드 중 오류가 발생했습니다.');
+        console.error('Excel 저장 오류:', error);
+        alert('Excel 파일 저장 중 오류가 발생했습니다.');
     }
 }
 
 // 개별 리소스 PDF 다운로드
-async function downloadResourcePDF(type, resourceId) {
+async function downloadResourcePDF(type, resourceId, folderTitle) {
     let detailUrl = '';
     let docType = '';
 
@@ -634,7 +630,9 @@ async function downloadResourcePDF(type, resourceId) {
                 url: window.location.origin + detailUrl,
                 filename: filename,
                 projectName: docType,
-                docType: docType
+                docType: docType,
+                generalName: generalName,  // 전역 변수 사용
+                folderTitle: folderTitle   // 파라미터로 받은 폴더명
             })
         });
 
@@ -650,35 +648,27 @@ async function downloadResourcePDF(type, resourceId) {
     }
 }
 
-// 폴더 전체 Excel 다운로드 (갑지, 을지, 내정가비교서 순서로 시트 생성)
+// 폴더 전체 Excel 저장 (갑지, 을지, 내정가비교서 순서로 시트 생성)
 async function downloadFolderExcel(folderId) {
     try {
         const response = await fetch(`/api/v1/export/excel/folder/${folderId}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            }
+            method: 'GET'
         });
 
         if (!response.ok) {
             throw new Error(`Excel 생성 실패: ${response.status}`);
         }
 
-        const blob = await response.blob();
-        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const filename = `폴더통합견적서_${timestamp}.xlsx`;
+        const result = await response.json();
 
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        if (result.success) {
+            alert('Excel 파일이 저장되었습니다:\n' + result.path);
+        } else {
+            alert('저장 실패: ' + (result.message || '알 수 없는 오류'));
+        }
     } catch (error) {
-        console.error('Excel 다운로드 오류:', error);
-        alert('Excel 파일 다운로드 중 오류가 발생했습니다.');
+        console.error('Excel 저장 오류:', error);
+        alert('Excel 파일 저장 중 오류가 발생했습니다.');
     }
 }
 

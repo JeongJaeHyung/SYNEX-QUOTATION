@@ -47,14 +47,17 @@ def create_detailed(
     db.add(detailed)
     db.flush()  # detailed.id 생성
 
-    # 2. PriceCompareResources 조회
+    # 2. PriceCompareResources 조회 (관리비 제외, 출장경비 포함)
     price_compare_resources = (
         db.query(PriceCompareResources)
-        .filter(PriceCompareResources.price_compare_id == price_compare_id)
+        .filter(
+            PriceCompareResources.price_compare_id == price_compare_id,
+            PriceCompareResources.major != "관리비"  # 관리비 제외
+        )
         .all()
     )
 
-    # 3. DetailedResources 자동 생성
+    # 3. DetailedResources 자동 생성 (자재비, 인건비, 출장경비만 포함)
     for resource in price_compare_resources:
         # solo_price는 quotation_solo_price를 그대로 사용 (upper 연산 제거)
         detailed_resource = DetailedResources(

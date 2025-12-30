@@ -85,6 +85,12 @@ function renderBasicInfo(data) {
         document.getElementById('senderCompany').textContent = data.client;
     }
 
+    // 견적번호 설정
+    const quotationNumber = document.getElementById('quotationNumber');
+    if (quotationNumber) {
+        quotationNumber.value = data.quotation_number || '';
+    }
+
     if (data.title) {
         const docTitle = document.getElementById('documentTitle');
         const quotTitle = document.getElementById('quotationTitle');
@@ -110,11 +116,32 @@ function renderBasicInfo(data) {
     if (picName) picName.textContent = data.pic_name || '';
     if (picPosition) picPosition.textContent = data.pic_position || '';
 
-    // Best nego Total 로드
+    // Best nego Total과 견적금액은 동일한 값
+    // best_nego_total이 있으면 사용, 없으면 price 사용
+    const quotationPrice = data.best_nego_total || data.price || 0;
+
     const negoTotal = document.getElementById('negoTotal');
-    if (negoTotal && data.best_nego_total) {
-        negoTotal.textContent = formatNumber(data.best_nego_total);
-        isFirstCalculation = false; // 저장된 값이 있으면 자동 계산 방지
+    const totalAmountVat = document.getElementById('totalAmountVat');
+    const quotationAmountText = document.getElementById('quotationAmountText');
+
+    // Best nego Total 설정
+    if (negoTotal) {
+        if (quotationPrice > 0) {
+            negoTotal.textContent = formatNumber(quotationPrice);
+        } else {
+            negoTotal.textContent = '';
+        }
+    }
+
+    // 견적금액도 동일한 값으로 설정
+    if (totalAmountVat && quotationAmountText) {
+        if (quotationPrice > 0) {
+            totalAmountVat.textContent = formatNumber(quotationPrice);
+            quotationAmountText.textContent = numberToKorean(quotationPrice);
+        } else {
+            totalAmountVat.textContent = '0';
+            quotationAmountText.textContent = numberToKorean(0);
+        }
     }
 
     if (data.description_1) {
@@ -147,6 +174,7 @@ function renderTable(resources) {
     }
 
     // 1. 경비와 안전관리비 및 기업이윤을 하단으로 이동하기 위해 정렬
+    // 그리고 각 장비 내에서 재료비를 인건비보다 앞에 배치
     const sortedResources = [...resources].sort((a, b) => {
         const aIsBottom = a.name === '경비' || a.name === '안전관리비 및 기업이윤';
         const bIsBottom = b.name === '경비' || b.name === '안전관리비 및 기업이윤';
@@ -158,6 +186,12 @@ function renderTable(resources) {
         if (aIsBottom && bIsBottom) {
             if (a.name === '경비') return -1;
             if (b.name === '경비') return 1;
+        }
+
+        // 같은 장비명일 경우 재료비를 인건비보다 앞에 배치
+        if (!aIsBottom && !bIsBottom && a.machine === b.machine) {
+            if (a.name === '재료비' && b.name === '인건비') return -1;
+            if (a.name === '인건비' && b.name === '재료비') return 1;
         }
 
         return 0; // 원래 순서 유지
@@ -182,17 +216,26 @@ function renderTable(resources) {
         const price = item.solo_price || 0;
         const subtotal = item.subtotal || (price * quantity);
 
-        html += `<tr data-machine="${machine}" data-item-name="${item.name || ''}">`;
+        // 행 배경색 패턴 (흰색/회색 반복)
+        const rowStyle = rowNumber % 2 === 0 ? 'background-color: #f9fafb;' : '';
+        html += `<tr data-machine="${machine}" data-item-name="${item.name || ''}" style="${rowStyle}">`;
         html += `<td class="col-no col-center">${rowNumber}</td>`;
 
-        // 장비명 셀 - 같은 장비명의 첫 번째 행에만 표시하고 rowspan 적용
-        const isFirstInGroup = index === 0 || sortedResources[index - 1].machine !== machine;
-        if (isFirstInGroup) {
-            const groupSize = machineGroups[machine].length;
-            html += `<td class="col-machine col-center" rowspan="${groupSize}" style="vertical-align: middle;">${machine}</td>`;
-        }
+        // 경비 or 안전관리비 및 기업이윤인 경우 장비명과 품명 병합
+        const isSpecialItem = item.name === '경비' || item.name === '안전관리비 및 기업이윤';
 
-        html += `<td class="col-name col-center" data-original-name="${item.name || ''}">${item.name || ''}</td>`;
+        if (isSpecialItem) {
+            // 장비명과 품명을 병합하여 표시
+            html += `<td class="col-machine col-center" colspan="2" style="vertical-align: middle;">${item.name}</td>`;
+        } else {
+            // 일반 항목: 장비명 셀 - 같은 장비명의 첫 번째 행에만 표시하고 rowspan 적용
+            const isFirstInGroup = index === 0 || sortedResources[index - 1].machine !== machine;
+            if (isFirstInGroup) {
+                const groupSize = machineGroups[machine].length;
+                html += `<td class="col-machine col-center" rowspan="${groupSize}" style="vertical-align: middle;">${machine}</td>`;
+            }
+            html += `<td class="col-name col-center" data-original-name="${item.name || ''}">${item.name || ''}</td>`;
+        }
         html += `<td class="col-spec col-center" contenteditable="true">${item.spac || ''}</td>`;
         html += `<td class="col-quantity col-center" contenteditable="true">${quantity}</td>`;
         html += `<td class="col-unit col-center" contenteditable="true">${unit}</td>`;
@@ -224,9 +267,15 @@ function toggleEditMode(mode) {
             btn.textContent = '저장하기';
             btn.classList.remove('btn-primary');
             btn.classList.add('btn-success');
-            
+
             const editables = document.querySelectorAll('.editable-text');
             editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+
+            // 견적번호 입력 필드도 편집 가능하게
+            const quotationNumber = document.getElementById('quotationNumber');
+            if (quotationNumber) {
+                quotationNumber.removeAttribute('readonly');
+            }
         }
     } else if (mode === 'cancel') {
         isEditMode = false;
@@ -234,10 +283,16 @@ function toggleEditMode(mode) {
         btn.textContent = '수정하기';
         btn.classList.remove('btn-success');
         btn.classList.add('btn-primary');
-        
+
         const editables = document.querySelectorAll('.editable-text');
         editables.forEach(el => el.setAttribute('contenteditable', 'false'));
-        
+
+        // 견적번호 입력 필드도 다시 읽기 전용으로
+        const quotationNumber = document.getElementById('quotationNumber');
+        if (quotationNumber) {
+            quotationNumber.setAttribute('readonly', 'readonly');
+        }
+
         loadHeaderData(headerId);
     }
 }
@@ -306,8 +361,6 @@ function handleCellEdit(e) {
 // 계산 함수
 // ============================================================================
 
-let isFirstCalculation = true;
-
 function updateCalculations() {
     const tbody = document.getElementById('quotationTableBody');
     const rows = tbody.querySelectorAll('tr:not(.empty-row)');
@@ -316,50 +369,60 @@ function updateCalculations() {
 
     rows.forEach((row) => {
         const cells = row.querySelectorAll('td');
-        if (cells.length >= 8) {
-            const priceText = cells[6].textContent.replace(/[^0-9]/g, '');
-            const quantityText = cells[4].textContent.replace(/[^0-9.-]/g, '');
+        if (cells.length >= 7) {
+            const itemName = row.getAttribute('data-item-name') || '';
+            const isSpecialItem = itemName === '경비' || itemName === '안전관리비 및 기업이윤';
+
+            let quantityIndex, priceIndex, subtotalIndex;
+
+            if (isSpecialItem) {
+                // 경비/안전관리비: colspan으로 병합되어 있음
+                quantityIndex = 3;
+                priceIndex = 5;
+                subtotalIndex = 6;
+            } else {
+                // 일반 항목: 장비명 셀이 있는지 확인
+                const hasMachineCell = cells[1]?.classList.contains('col-machine');
+                quantityIndex = hasMachineCell ? 4 : 3;
+                priceIndex = hasMachineCell ? 6 : 5;
+                subtotalIndex = hasMachineCell ? 7 : 6;
+            }
+
+            const priceText = cells[priceIndex].textContent.replace(/[^0-9]/g, '');
+            const quantityText = cells[quantityIndex].textContent.replace(/[^0-9.-]/g, '');
 
             const price = parseInt(priceText) || 0;
             const quantity = parseFloat(quantityText) || 0;
             const amount = price * quantity;
 
-            cells[7].textContent = formatNumber(amount);
+            cells[subtotalIndex].textContent = formatNumber(amount);
             total += amount;
             totalQty += quantity;
         }
     });
 
+    // Total은 UI 전용 계산 (price와 무관)
     document.getElementById('summaryAmount').textContent = formatNumber(total);
     document.getElementById('totalAmount').textContent = formatNumber(total);
     document.getElementById('totalQtySum').textContent = totalQty;
 
-    // Best nego Total 로직 복원
+    // Best nego Total과 견적금액은 항상 동일 (price 값)
+    // Best nego Total이 수정되면 견적금액도 함께 업데이트
     const negoTotal = document.getElementById('negoTotal');
-    if (isFirstCalculation && negoTotal) {
-        negoTotal.textContent = formatNumber(total);
-    }
-
-    let finalAmount = total;
-    if (negoTotal) {
-        const negoVal = parseInt(negoTotal.textContent.replace(/[^0-9]/g, '')) || 0;
-        if (negoVal > 0) {
-            finalAmount = negoVal;
-        }
-    }
-
     const totalAmountVat = document.getElementById('totalAmountVat');
     const quotationAmountText = document.getElementById('quotationAmountText');
 
-    if (totalAmountVat) {
-        totalAmountVat.textContent = formatNumber(finalAmount);
-    }
+    if (negoTotal && totalAmountVat && quotationAmountText) {
+        const negoVal = parseInt(negoTotal.textContent.replace(/[^0-9]/g, '')) || 0;
 
-    if (quotationAmountText) {
-        quotationAmountText.textContent = numberToKorean(finalAmount);
+        // Best nego Total 값이 변경되었을 때만 견적금액 업데이트
+        // (초기 로드 시에는 renderBasicInfo에서 이미 설정됨)
+        if (negoVal > 0) {
+            totalAmountVat.textContent = formatNumber(negoVal);
+            quotationAmountText.textContent = numberToKorean(negoVal);
+        }
+        // negoVal이 0이거나 비어있으면 견적금액은 그대로 유지 (Total과 연동하지 않음)
     }
-
-    isFirstCalculation = false;
 }
 
 // 한글 금액 변환 (화면 표시용)
@@ -432,16 +495,18 @@ async function saveSummary() {
 function collectSummaryData() {
     const title = document.getElementById('documentTitle').textContent || document.getElementById('quotationTitle').textContent;
     const negoTotal = document.getElementById('negoTotal');
-    const bestNegoTotal = negoTotal ? parseInt(negoTotal.textContent.replace(/[^0-9]/g, '')) || 0 : 0;
+    const priceValue = negoTotal ? parseInt(negoTotal.textContent.replace(/[^0-9]/g, '')) || 0 : 0;
+    const quotationNumber = document.getElementById('quotationNumber');
 
     return {
         title: title,
+        quotation_number: quotationNumber ? quotationNumber.value.trim() : null,
         client: document.getElementById('senderCompany').textContent,
         pic_name: document.getElementById('picName').textContent.trim(),
         pic_position: document.getElementById('picPosition').textContent.trim(),
         description_1: document.getElementById('remarksSpecial').textContent,
         description_2: document.getElementById('remarksGeneral').textContent || document.getElementById('remarksGeneral').innerHTML.replace(/<br>/g, '\n'),
-        best_nego_total: bestNegoTotal,
+        price: priceValue,
         header_resources: collectTableData()
     };
 }
@@ -453,22 +518,39 @@ function collectTableData() {
 
     rows.forEach((row, index) => {
         const cells = row.querySelectorAll('td');
-        if (cells.length >= 8) {  // 장비명이 rowspan이라 셀 개수가 다를 수 있음
+        if (cells.length >= 7) {  // 최소 7개 셀 (경비/안전관리비는 셀이 더 적음)
             // data-machine 속성에서 장비명 가져오기
             const machine = row.getAttribute('data-machine') || '';
+            const itemName = row.getAttribute('data-item-name') || '';
 
-            // 셀 인덱스 조정 - 장비명 셀이 있는지 확인
-            const hasMachineCell = cells[1]?.classList.contains('col-machine');
-            const nameIndex = hasMachineCell ? 2 : 1;
-            const specIndex = hasMachineCell ? 3 : 2;
-            const quantityIndex = hasMachineCell ? 4 : 3;
-            const unitIndex = hasMachineCell ? 5 : 4;
-            const priceIndex = hasMachineCell ? 6 : 5;
-            const remarksIndex = hasMachineCell ? 8 : 7;
+            // 경비/안전관리비는 장비명과 품명이 병합되어 있음 (colspan=2)
+            const isSpecialItem = itemName === '경비' || itemName === '안전관리비 및 기업이윤';
+
+            let name, specIndex, quantityIndex, unitIndex, priceIndex, remarksIndex;
+
+            if (isSpecialItem) {
+                // 경비/안전관리비: 장비명과 품명이 병합되어 있으므로 셀 인덱스가 다름
+                name = cells[1].textContent.trim();  // colspan=2인 셀
+                specIndex = 2;
+                quantityIndex = 3;
+                unitIndex = 4;
+                priceIndex = 5;
+                remarksIndex = 7;
+            } else {
+                // 일반 항목: 장비명 셀이 있는지 확인
+                const hasMachineCell = cells[1]?.classList.contains('col-machine');
+                const nameIndex = hasMachineCell ? 2 : 1;
+                specIndex = hasMachineCell ? 3 : 2;
+                quantityIndex = hasMachineCell ? 4 : 3;
+                unitIndex = hasMachineCell ? 5 : 4;
+                priceIndex = hasMachineCell ? 6 : 5;
+                remarksIndex = hasMachineCell ? 8 : 7;
+                name = cells[nameIndex].textContent.trim();
+            }
 
             items.push({
                 machine: machine,
-                name: cells[nameIndex].textContent.trim(),
+                name: name,
                 spac: cells[specIndex].textContent.trim(),
                 compare: parseInt(cells[quantityIndex].textContent.replace(/[^0-9]/g, '')) || 1,
                 unit: cells[unitIndex].textContent.trim(),

@@ -256,6 +256,8 @@ class PDFSaveRequest(BaseModel):
     filename: str
     projectName: str = ""
     docType: str = ""
+    generalName: str = ""
+    folderTitle: str = ""
 
 
 @app.post("/api/save-pdf")
@@ -273,13 +275,14 @@ async def save_pdf_endpoint(request: PDFSaveRequest):
         ask_location = settings.get("askSaveLocation", False)
 
         # 파일명에서 특수문자 제거
-        (
-            re.sub(r'[\\/*?:"<>|]', "_", request.projectName)
-            if request.projectName
-            else "기타"
-        )
         safe_doctype = (
             re.sub(r'[\\/*?:"<>|]', "_", request.docType) if request.docType else "문서"
+        )
+        safe_folder_title = (
+            re.sub(r'[\\/*?:"<>|]', "_", request.folderTitle) if request.folderTitle else ""
+        )
+        safe_general_name = (
+            re.sub(r'[\\/*?:"<>|]', "_", request.generalName) if request.generalName else ""
         )
         safe_filename = re.sub(r'[\\/*?:"<>|]', "_", request.filename)
 
@@ -295,8 +298,17 @@ async def save_pdf_endpoint(request: PDFSaveRequest):
                     {"success": False, "message": "저장이 취소되었습니다."}
                 )
         else:
-            # 자동 저장: 폴더 구조 생성 (docType 폴더만)
-            save_dir = Path(base_path) / safe_doctype
+            # 자동 저장: 개별 PDF export는 항상 /{general.name}/{folder.title}/PDF/
+            if safe_general_name and safe_folder_title:
+                # 개별 저장: /{general.name}/{folder.title}/PDF/
+                save_dir = Path(base_path) / safe_general_name / safe_folder_title / "PDF"
+            elif safe_general_name:
+                # Fallback: 폴더명 없는 경우 /{general.name}/PDF/
+                save_dir = Path(base_path) / safe_general_name / "PDF"
+            else:
+                # Fallback: general.name도 없는 경우
+                save_dir = Path(base_path) / "PDF"
+
             save_dir.mkdir(parents=True, exist_ok=True)
             file_path = str(save_dir / safe_filename)
 

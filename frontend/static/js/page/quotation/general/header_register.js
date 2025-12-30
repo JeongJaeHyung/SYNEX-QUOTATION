@@ -112,6 +112,7 @@ function closeCreateModal() {
 
 async function submitHeader() {
     const title = document.getElementById('regTitle').value.trim();
+    const quotationNumber = document.getElementById('regQuotationNumber').value.trim();
     const client = document.getElementById('regClient').value.trim();
     const picName = document.getElementById('regPicName').value.trim();
     const picPosition = document.getElementById('regPicPosition').value.trim();
@@ -126,6 +127,7 @@ async function submitHeader() {
         folder_id: currentFolderId,
         detailed_id: selectedDetailedId,
         title: title,
+        quotation_number: quotationNumber || null,
         client: client,
         pic_name: picName,
         pic_position: picPosition,

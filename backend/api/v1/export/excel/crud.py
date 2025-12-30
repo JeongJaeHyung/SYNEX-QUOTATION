@@ -74,7 +74,9 @@ def get_header_data(db: Session, header_id: UUID) -> dict[str, Any]:
 
     return {
         "id": str(header.id),
+        "folder_id": str(header.folder_id),
         "title": header.title,
+        "quotation_number": header.quotation_number or "",
         "price": header.price,
         "creator": header.creator,
         "client": header.client or "",
@@ -146,6 +148,7 @@ def get_detailed_data(db: Session, detailed_id: UUID) -> dict[str, Any]:
 
     return {
         "id": str(detailed.id),
+        "folder_id": str(detailed.folder_id),
         "creator": detailed.creator,
         "description": detailed.description or "",
         "created_at": detailed.created_at,
@@ -222,6 +225,7 @@ def get_price_compare_data(db: Session, price_compare_id: UUID) -> dict[str, Any
 
     return {
         "id": str(price_compare.id),
+        "folder_id": str(price_compare.folder_id),
         "creator": price_compare.creator,
         "description": price_compare.description or "",
         "created_at": price_compare.created_at,

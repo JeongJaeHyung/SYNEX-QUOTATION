@@ -176,7 +176,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     groups = group_by_major_then_machine(resources)
 
     # major 순서 정의
-    major_order = ["자재비", "인건비", "경비", "관리비"]
+    major_order = ["자재비", "인건비", "출장경비", "관리비"]
 
     # major 정렬 (major_order 순서, 나머지는 뒤로)
     sorted_majors = sorted(
@@ -303,16 +303,22 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
                 ws.merge_cells(f"B{start_machine_row}:B{curr_row - 1}")
 
         # major 소계 행
-        ws.merge_cells(f"A{curr_row}:C{curr_row}")
+        ws.merge_cells(f"A{curr_row}:F{curr_row}")
         subtotal_cell = ws.cell(curr_row, 1)
         subtotal_cell.value = f"{major} 소계"
         subtotal_cell.font = font_bold
         subtotal_cell.alignment = align_center
         subtotal_cell.fill = fill_subtotal
-        subtotal_cell.border = border_subtotal
+        subtotal_cell.border = Border(top=thick, bottom=thick, left=thin, right=thin)
 
-        # 빈 셀들 (D-F, H-K)
-        for col in [2, 3, 4, 5, 6, 8, 9, 10, 11]:
+        # A:F 병합된 셀의 테두리 적용
+        for col in [2, 3, 4, 5, 6]:
+            cell = ws.cell(curr_row, col)
+            cell.fill = fill_subtotal
+            cell.border = Border(top=thick, bottom=thick, left=thin, right=thin)
+
+        # 빈 셀들 (H-K)
+        for col in [8, 9, 10, 11]:
             cell = ws.cell(curr_row, col)
             cell.fill = fill_subtotal
             cell.border = border_subtotal
@@ -341,19 +347,22 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
         cell.border = border_subtotal
         cell.number_format = "#,##0"
 
-        # 항목 셀 병합 (세로)
+        # 항목 셀 병합 (세로) 및 가운데 맞춤
         ws.merge_cells(f"A{start_major_row}:A{curr_row}")
+        # 병합된 셀의 첫 번째 셀에 가운데 맞춤 적용
+        major_cell = ws.cell(start_major_row, 1)
+        major_cell.alignment = align_center
 
         grand_cost_total += major_cost
         grand_quote_total += major_quote
         curr_row += 1
 
     # ========================================================================
-    # GRAND TOTAL 행
+    # TOTAL 행
     # ========================================================================
     ws.merge_cells(f"A{curr_row}:F{curr_row}")
     total_cell = ws.cell(curr_row, 1)
-    total_cell.value = "GRAND TOTAL"
+    total_cell.value = "TOTAL"
     total_cell.font = font_bold
     total_cell.alignment = align_center
     total_cell.fill = fill_total

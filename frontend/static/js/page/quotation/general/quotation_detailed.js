@@ -219,7 +219,7 @@ function toggleEditMode(mode) {
 function renderDetailedTable(resources) {
     const tbody = document.querySelector('#detailedTable tbody');
     tbody.innerHTML = '';
-    const majorOrder = ['자재비', '인건비', '출장 경비', '관리비'];
+    const majorOrder = ['자재비', '인건비', '출장경비', '관리비'];
     const groups = groupByMajorThenMachine(resources);
     let html = '';
     let rowNo = 1;
@@ -227,8 +227,8 @@ function renderDetailedTable(resources) {
     const renderSection = (major) => {
         const machines = groups[major];
         let majorTotal = 0;
-        // 표시용 major명 (경비 -> 출장 경비, 관리비는 그대로)
-        const displayMajor = major === '경비' ? '출장 경비' : major;
+        // 표시용 major명 (출장경비 -> 출장 경비로 공백 추가)
+        const displayMajor = major === '출장경비' ? '출장 경비' : major;
         html += `<tr class="section-title-row"><td colspan="8">■ ${displayMajor} 상세 내역</td></tr>`;
         Object.keys(machines).forEach(machineName => {
             const items = machines[machineName];
@@ -251,10 +251,9 @@ function renderDetailedTable(resources) {
         html += `<tr class="major-subtotal-row"><td colspan="6" class="text-center">${displayMajor} 총 합계</td><td class="text-right font-bold">${formatNumber(majorTotal)}</td><td></td></tr>`;
     };
 
-    // "경비"를 "출장 경비"로 매핑하여 처리
+    // majorOrder 순서대로 렌더링
     majorOrder.forEach(major => {
-        const actualMajor = major === '출장 경비' ? '경비' : major;
-        if (groups[actualMajor]) renderSection(actualMajor);
+        if (groups[major]) renderSection(major);
     });
     tbody.innerHTML = html;
     calculateGrandTotal();

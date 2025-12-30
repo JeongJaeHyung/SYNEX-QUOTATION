@@ -22,6 +22,7 @@ class Header(Base):
     )
 
     title = Column(String(100), nullable=False)
+    quotation_number = Column(String(50), nullable=True)  # 견적번호
     creator = Column(String(25), nullable=False)
     price = Column(Integer, nullable=True)
     best_nego_total = Column(Integer, nullable=True)

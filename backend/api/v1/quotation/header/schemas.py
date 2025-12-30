@@ -46,6 +46,7 @@ class HeaderCreate(BaseModel):
     folder_id: UUID = Field(..., description="폴더 id")
     detailed_id: UUID = Field(..., description="을지 ID")
     title: str = Field(..., max_length=100, description="갑지 제목")
+    quotation_number: str | None = Field(None, max_length=50, description="견적번호")
     creator: str = Field(..., max_length=25, description="작성자")
     client: str = Field(..., max_length=50, description="고객사")
     manufacturer: str | None = Field(None, max_length=50, description="장비사")
@@ -57,6 +58,7 @@ class HeaderUpdate(BaseModel):
     """Header 수정 요청 (선택적)"""
 
     title: str | None = Field(None, max_length=100, description="갑지 제목")
+    quotation_number: str | None = Field(None, max_length=50, description="견적번호")
     creator: str | None = Field(None, max_length=25, description="작성자")
     client: str | None = Field(None, max_length=50, description="고객사")
     manufacturer: str | None = Field(None, max_length=50, description="장비사")
@@ -66,6 +68,8 @@ class HeaderUpdate(BaseModel):
     )
     description_1: str | None = Field(None, description="설명1")
     description_2: str | None = Field(None, description="설명2")
+    best_nego_total: int | None = Field(None, ge=0, description="Best nego Total (견적금액)")
+    price: int | None = Field(None, ge=0, description="갑지 총가격")
     header_resources: list[HeaderResourceItem] | None = Field(
         None, description="HeaderResources 전체 교체"
     )
@@ -76,7 +80,9 @@ class HeaderResponse(BaseModel):
 
     id: UUID
     title: str
+    quotation_number: str | None
     price: int | None
+    best_nego_total: int | None
     creator: str
     client: str | None
     manufacturer: str | None
@@ -95,7 +101,9 @@ class HeaderCreateResponse(BaseModel):
 
     id: UUID
     title: str
+    quotation_number: str | None
     price: int | None
+    best_nego_total: int | None
     creator: str
     client: str | None
     manufacturer: str | None
@@ -113,7 +121,9 @@ class HeaderDetailResponse(BaseModel):
 
     id: UUID
     title: str
+    quotation_number: str | None
     price: int | None
+    best_nego_total: int | None
     creator: str
     client: str | None
     manufacturer: str | None
@@ -133,7 +143,9 @@ class HeaderDetailWithSchemaResponse(BaseModel):
 
     id: UUID
     title: str
+    quotation_number: str | None
     price: int | None
+    best_nego_total: int | None
     creator: str
     client: str | None
     manufacturer: str | None

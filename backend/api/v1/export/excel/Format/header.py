@@ -103,7 +103,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     fill_yellow = PatternFill(
         start_color="FFFFE0", end_color="FFFFE0", fill_type="solid"
     )
-    fill_pink = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+    PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
 
     # ========================================================================
     # 1. 컬럼 너비 설정 (JS와 동일)
@@ -147,7 +147,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     ws["B3"].number_format = "YYYY-MM-DD"  # 날짜 포맷
     ws["B3"].font = font_default
     ws["B3"].alignment = align_center
-    ws["B3"].border = Border(left=medium, right=thin)
+    ws["B3"].border = Border(left=medium, right=medium)
 
     ws.merge_cells("F3:F7")
     ws["F3"] = "공 급 자"
@@ -161,12 +161,12 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     ws["G3"].border = Border(top=medium, left=thin, right=thin)
 
     ws.merge_cells("H3:J3")
-    ws["H3"] = "00-251126-01-01-01"
+    ws["H3"] = data.get("quotation_number", "")
     ws["H3"].font = font_9
     ws["H3"].alignment = align_center
     ws["H3"].border = Border(top=medium)
 
-    ws["K3"].border = Border(top=medium, right=medium)
+    ws["K3"].border = Border(right=medium)
 
     # ========================================================================
     # Row 4-5: 고객사명 및 공급자 상호
@@ -175,7 +175,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     ws["B4"] = data.get("client")
     ws["B4"].font = font_client
     ws["B4"].alignment = align_center
-    ws["B4"].border = Border(left=medium, right=thin)
+    ws["B4"].border = Border(left=medium, right=medium)
 
     ws["G4"] = "상호(법인명)"
     ws["G4"].font = font_9
@@ -292,14 +292,14 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     ws["H8"].font = font_bold_11
     ws["H8"].alignment = align_center
 
-    # I8:J8 병합 - 한글 금액
-    ws.merge_cells("I8:J8")
+    # I8:K8 병합 - 한글 금액
+    ws.merge_cells("I8:K8")
     ws["I8"] = number_to_korean(total_price)
     ws["I8"].font = font_bold_11
     ws["I8"].alignment = align_left
 
-    # I9:J9 병합 - ₩ 금액
-    ws.merge_cells("I9:J9")
+    # I9:K9 병합 - ₩ 금액
+    ws.merge_cells("I9:K9")
     ws["I9"] = f"₩{total_price:,} (VAT별도)"
     ws["I9"].font = font_bold_11
     ws["I9"].alignment = align_right
@@ -318,8 +318,8 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
         c.border = Border(
             top=medium,
             bottom=medium,
-            left=medium if col == 1 else thin,
-            right=medium if col == 11 else thin,
+            left=medium,
+            right=medium,
         )
     ws.row_dimensions[10].height = 17.25
 
@@ -412,27 +412,39 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     cell_summary = ws.cell(summary_row, 1, "견적 총 합계")
     cell_summary.font = font_bold_11
     cell_summary.alignment = align_center
-    cell_summary.fill = fill_blue
+    cell_summary.border = Border(top=medium, bottom=medium, left=medium)
 
     # 총 수량
     total_qty = sum(r.get("compare", 1) for r in resources)
     ws.cell(summary_row, 5, total_qty)
     ws.cell(summary_row, 5).alignment = align_center
-
+    ws.cell(summary_row, 5).border = Border(top=medium, bottom=medium)
     # Set
     ws.cell(summary_row, 6, "Set")
     ws.cell(summary_row, 6).alignment = align_center
+    ws.cell(summary_row, 6).border = Border(top=medium, bottom=medium)
+    # 단가
+    ws.cell(summary_row, 7, "")
+    ws.cell(summary_row, 7).alignment = align_center
+    ws.cell(summary_row, 7).border = Border(top=medium, bottom=medium)
 
-    # 공급가액 (H:I 병합)
+
+    # 합계 (H:I 병합)
     ws.merge_cells(f"H{summary_row}:I{summary_row}")
-    cell_total = ws.cell(summary_row, 8, total_price)
+    total_subtotal = sum(r.get("subtotal", 0) for r in resources)
+    cell_total = ws.cell(summary_row, 8, total_subtotal)
     cell_total.font = font_bold_11
-    cell_total.fill = fill_blue
     cell_total.number_format = "#,##0"
     cell_total.alignment = align_right
+    cell_total.border = Border(top=medium, bottom=medium)
 
     ws.row_dimensions[summary_row].height = 17.25
     curr_row += 1
+
+    # 빈 셀들에 테두리 적용
+    ws.merge_cells(f"J{summary_row}:K{summary_row}")
+    ws.cell(summary_row, 10).border = Border(top=medium, right=medium, bottom=medium)
+
 
     # ========================================================================
     # 비고 (특이사항) - 동적 위치
@@ -441,7 +453,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     cell_note_title = ws.cell(curr_row, 1, "비    고 ( 특이사항 )")
     cell_note_title.font = font_bold_11
     cell_note_title.alignment = align_center
-    cell_note_title.fill = fill_yellow
+    cell_note_title.border = Border(top=medium, left=medium, right=medium, bottom=medium)
     curr_row += 1
 
     ws.merge_cells(f"A{curr_row}:K{curr_row}")
@@ -449,6 +461,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     ws.cell(curr_row, 1, special_remarks)
     ws.cell(curr_row, 1).font = font_data
     ws.cell(curr_row, 1).alignment = align_left
+    ws.cell(curr_row, 1).border = Border(left=medium, right=medium)
     curr_row += 1
 
     # ========================================================================
@@ -466,7 +479,6 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     cell_total_label = ws.cell(curr_row, 1, "Total")
     cell_total_label.font = font_bold_12
     cell_total_label.alignment = align_center
-    cell_total_label.fill = fill_yellow
     cell_total_label.border = Border(top=medium, left=medium, bottom=thin)
 
     # Total 행 전체 테두리
@@ -488,7 +500,6 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     cell_nego_label = ws.cell(curr_row, 1, "Best nego Total")
     cell_nego_label.font = font_red_12
     cell_nego_label.alignment = align_center
-    cell_nego_label.fill = fill_pink
     cell_nego_label.border = Border(top=thin, left=medium)
 
     # Best nego 행 전체 테두리
@@ -515,7 +526,6 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     cell_remarks_label = ws.cell(curr_row, 1, "비 고")
     cell_remarks_label.font = font_bold_11
     cell_remarks_label.alignment = align_center
-    cell_remarks_label.fill = fill_yellow
     cell_remarks_label.border = Border(top=medium, left=medium, bottom=medium)
 
     ws.cell(curr_row, 2).border = Border(top=medium, right=medium, bottom=medium)
@@ -531,7 +541,7 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
     # 비고 내용
     description_2 = data.get(
         "description_2",
-        "- 납기 : 협의사항\n- 지불조건 : 선급금 30%, 중도금 50%, 잔금 20%\n- 기타 : 견적유효기간 10 일",
+        "- 납기 : 협의사항\n- 지불조건 : 선급금 30%, 중도금 50%, 잔금 20%\n- 기타 : 견적유효기간 10 일",  # noqa: E501
     )
     remarks_lines = description_2.split("\n")[:5]
     while len(remarks_lines) < 5:
@@ -560,6 +570,60 @@ def create_excel(data: dict[str, Any]) -> BytesIO:
             )
 
         curr_row += 1
+
+    # ========================================================================
+    # 두꺼운 테두리 적용
+    # ========================================================================
+    # A2:K(마지막 행) 전체에 두꺼운 외곽 테두리
+    last_row = curr_row - 1
+    for row in range(2, last_row + 1):
+        for col in range(1, 12):  # A(1) ~ K(11)
+            cell = ws.cell(row, col)
+            current_border = cell.border
+
+            # 기존 테두리 유지하면서 외곽만 두껍게
+            new_border = Border(
+                left=medium if col == 1 else current_border.left,
+                right=medium if col == 11 else current_border.right,
+                top=medium if row == 2 else current_border.top,
+                bottom=medium if row == last_row else current_border.bottom
+            )
+            cell.border = new_border
+
+    # B3:D7에 두꺼운 테두리
+    for row in range(3, 8):  # 3~7
+        for col in range(2, 5):  # B(2) ~ D(4)
+            cell = ws.cell(row, col)
+            current_border = cell.border
+
+            new_border = Border(
+                left=medium if col == 2 else current_border.left,
+                right=medium if col == 4 else current_border.right,
+                top=medium if row == 3 else current_border.top,
+                bottom=medium if row == 7 else current_border.bottom
+            )
+            cell.border = new_border
+
+    # F3:J7에 두꺼운 테두리
+    for row in range(3, 8):  # 3~7
+        for col in range(6, 11):  # F(6) ~ J(10)
+            cell = ws.cell(row, col)
+            current_border = cell.border
+
+            new_border = Border(
+                left=medium if col == 6 else current_border.left,
+                right=medium if col == 10 else current_border.right,
+                top=medium if row == 3 else current_border.top,
+                bottom=medium if row == 7 else current_border.bottom
+            )
+            cell.border = new_border
+
+    # K3, K7의 상단/하단 두꺼운 테두리 제거 (기존 테두리 유지)
+    k3_cell = ws.cell(3, 11)
+    k3_cell.border = Border(top=medium, right=medium)  # 상단은 A2:K2 전체 테두리와 일치
+
+    k7_cell = ws.cell(7, 11)
+    k7_cell.border = Border(right=medium)  # 하단 두꺼운 테두리 제거
 
     # ========================================================================
     # Excel 파일 생성 및 반환

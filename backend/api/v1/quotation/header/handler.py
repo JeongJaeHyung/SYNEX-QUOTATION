@@ -47,6 +47,7 @@ def create_header(header_data: schemas.HeaderCreate, db: Session = Depends(get_d
     - folder_id: 폴더 ID (필수)
     - detailed_id: 을지 ID (필수)
     - title: 갑지 제목 (필수)
+    - quotation_number: 견적번호 (선택)
     - creator: 작성자 (필수)
     - client: 고객사 (필수)
     - manufacturer: 장비사 (선택)
@@ -66,6 +67,7 @@ def create_header(header_data: schemas.HeaderCreate, db: Session = Depends(get_d
             folder_id=header_data.folder_id,
             detailed_id=header_data.detailed_id,
             title=header_data.title,
+            quotation_number=header_data.quotation_number,
             creator=header_data.creator,
             client=header_data.client,
             manufacturer=header_data.manufacturer,
@@ -79,7 +81,9 @@ def create_header(header_data: schemas.HeaderCreate, db: Session = Depends(get_d
         return {
             "id": quotation.id,
             "title": quotation.title,
+            "quotation_number": quotation.quotation_number,
             "price": quotation.price,
+            "best_nego_total": quotation.best_nego_total,
             "creator": quotation.creator,
             "client": quotation.client,
             "manufacturer": quotation.manufacturer,
@@ -118,7 +122,9 @@ def get_header(
         return {
             "id": quotation.id,
             "title": quotation.title,
+            "quotation_number": quotation.quotation_number,
             "price": quotation.price,
+            "best_nego_total": quotation.best_nego_total,
             "creator": quotation.creator,
             "client": quotation.client,
             "manufacturer": quotation.manufacturer,
@@ -137,7 +143,9 @@ def get_header(
     return {
         "id": quotation.id,
         "title": quotation.title,
+        "quotation_number": quotation.quotation_number,
         "price": quotation.price,
+        "best_nego_total": quotation.best_nego_total,
         "creator": quotation.creator,
         "client": quotation.client,
         "manufacturer": quotation.manufacturer,
@@ -166,6 +174,7 @@ def update_header(
     - pic_position: 고객사 담당자 직급 (선택)
     - description_1: 설명1 (선택)
     - description_2: 설명2 (선택)
+    - price: 갑지 총가격 (선택, header_resources 미제공 시 필수)
     - header_resources: HeaderResources 전체 교체 (선택)
     """
     # resources 데이터 변환
@@ -173,11 +182,12 @@ def update_header(
     if header_update.header_resources:
         resources_data = [r.dict() for r in header_update.header_resources]
 
-    # 수정 ✅ header_resources로 파라미터명 수정!
+    # 수정
     updated_quotation = crud.update_header(
         db=db,
         header_id=header_id,
         title=header_update.title,
+        quotation_number=header_update.quotation_number,
         creator=header_update.creator,
         client=header_update.client,
         manufacturer=header_update.manufacturer,
@@ -185,7 +195,9 @@ def update_header(
         pic_position=header_update.pic_position,
         description_1=header_update.description_1,
         description_2=header_update.description_2,
-        header_resources=resources_data,  # ✅ quotation_resources → header_resources
+        best_nego_total=header_update.best_nego_total,
+        price=header_update.price,
+        header_resources=resources_data,
     )
 
     if not updated_quotation:
@@ -198,6 +210,7 @@ def update_header(
         "id": updated_quotation.id,
         "title": updated_quotation.title,
         "price": updated_quotation.price,
+        "best_nego_total": updated_quotation.best_nego_total,
         "creator": updated_quotation.creator,
         "client": updated_quotation.client,
         "manufacturer": updated_quotation.manufacturer,

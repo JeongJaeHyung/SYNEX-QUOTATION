@@ -1,6 +1,5 @@
 # backend/api/v1/quotation/header/crud.py
 from collections import defaultdict
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import func
@@ -24,6 +23,7 @@ def create_header(
     folder_id: UUID,
     detailed_id: UUID,
     title: str,
+    quotation_number: str | None,
     creator: str,
     client: str,
     manufacturer: str | None,
@@ -90,6 +90,7 @@ def create_header(
     header = Header(
         folder_id=folder_id,
         title=title,
+        quotation_number=quotation_number,
         creator=creator,
         client=client,
         manufacturer=manufacturer,
@@ -133,20 +134,6 @@ def create_header(
             )
         )
 
-    # 경비 (출장 경비 전체 합산)
-    header_resources_list.append(
-        HeaderResources(
-            header_id=header.id,
-            machine=" ",  # 공백으로 설정
-            name="경비",
-            solo_price=travel_expense_total,
-            compare=1,
-            unit="원",
-            spac="",
-            description="",
-        )
-    )
-
     # 6. PriceCompareResources에서 관리비 합산 (단가 * 수량)
     price_compare_resources = (
         db.query(PriceCompareResources)
@@ -162,7 +149,21 @@ def create_header(
         for resource in price_compare_resources
     )
 
-    # 안전관리비 및 기업이윤
+    # 경비 (출장 경비 전체 합산) - 하단으로 이동
+    header_resources_list.append(
+        HeaderResources(
+            header_id=header.id,
+            machine=" ",  # 공백으로 설정
+            name="경비",
+            solo_price=travel_expense_total,
+            compare=1,
+            unit="원",
+            spac="",
+            description="",
+        )
+    )
+
+    # 안전관리비 및 기업이윤 - 최하단
     header_resources_list.append(
         HeaderResources(
             header_id=header.id,
@@ -224,6 +225,7 @@ def update_header(
     db: Session,
     header_id: UUID,
     title: str | None = None,
+    quotation_number: str | None = None,
     creator: str | None = None,
     client: str | None = None,
     manufacturer: str | None = None,
@@ -231,6 +233,8 @@ def update_header(
     pic_position: str | None = None,
     description_1: str | None = None,
     description_2: str | None = None,
+    best_nego_total: int | None = None,
+    price: int | None = None,
     header_resources: list[dict] | None = None,
 ) -> Header | None:
     """
@@ -238,7 +242,7 @@ def update_header(
 
     - 기본 정보 수정
     - header_resources 전체 교체 (선택)
-    - price 자동 재계산
+    - price: 클라이언트에서 직접 지정하거나, header_resources 제공 시 자동 계산
     """
     header = get_header_by_id(db, header_id)
     if not header:
@@ -247,6 +251,8 @@ def update_header(
     # 기본 정보 수정
     if title is not None:
         header.title = title
+    if quotation_number is not None:
+        header.quotation_number = quotation_number
     if creator is not None:
         header.creator = creator
     if client is not None:
@@ -261,6 +267,8 @@ def update_header(
         header.description_1 = description_1
     if description_2 is not None:
         header.description_2 = description_2
+    if best_nego_total is not None:
+        header.best_nego_total = best_nego_total
 
     # HeaderResources 수정 (제공된 경우)
     if header_resources is not None:
@@ -268,7 +276,7 @@ def update_header(
         db.query(HeaderResources).filter(
             HeaderResources.header_id == header_id
         ).delete()
-        db.flush()  # ✅ 삭제를 즉시 반영!
+        db.flush()
 
         # 새 resources 추가
         for resource in header_resources:
@@ -284,8 +292,14 @@ def update_header(
             )
             db.add(hr)
 
-        # price 재계산
-        header.price = sum(r["solo_price"] * r["compare"] for r in header_resources)
+        # price: 클라이언트에서 명시적으로 지정하지 않으면 자동 계산
+        if price is None:
+            header.price = sum(r["solo_price"] * r["compare"] for r in header_resources)
+        else:
+            header.price = price
+    elif price is not None:
+        # header_resources 없이 price만 수정
+        header.price = price
 
     db.commit()
     db.refresh(header)

@@ -117,7 +117,7 @@ async def save_pdf_endpoint(request: PDFSaveRequest):
 @handler.get("/folder/{folder_id}")
 async def export_folder_pdf(folder_id: UUID, db: Session = Depends(get_db)):
     """
-    폴더의 모든 견적서를 하나의 PDF 파일로 통합 다운로드
+    폴더의 모든 견적서를 하나의 PDF 파일로 통합 저장
     순서: 갑지(Header), 을지(Detailed), 내정가비교서(PriceCompare)
     각 문서는 PyPDF2를 사용하여 병합됨
     """
@@ -127,6 +127,7 @@ async def export_folder_pdf(folder_id: UUID, db: Session = Depends(get_db)):
             get_folder_by_id,
             get_folder_resources,
         )
+        from backend.models.general import General
 
         folder = get_folder_by_id(db, folder_id)
         if not folder:
@@ -145,6 +146,13 @@ async def export_folder_pdf(folder_id: UUID, db: Session = Depends(get_db)):
             (r for r in resources if r["table_name"] == "내정가 비교"), None
         )
 
+        # 리소스가 하나도 없으면 에러 반환
+        if not header_resource and not detailed_resource and not price_compare_resource:
+            raise HTTPException(
+                status_code=400,
+                detail="폴더에 생성된 견적서가 없습니다. 갑지, 을지, 또는 내정가비교서를 먼저 생성해주세요.",
+            )
+
         # 3. PyPDF2를 사용하여 PDF 병합
         from PyPDF2 import PdfMerger
 
@@ -161,6 +169,8 @@ async def export_folder_pdf(folder_id: UUID, db: Session = Depends(get_db)):
                 merger.append(BytesIO(header_pdf))
             except Exception as e:
                 print(f"갑지 PDF 생성 오류: {e}")
+                import traceback
+                traceback.print_exc()
 
         # 4-2. 을지 PDF
         if detailed_resource:
@@ -170,6 +180,8 @@ async def export_folder_pdf(folder_id: UUID, db: Session = Depends(get_db)):
                 merger.append(BytesIO(detailed_pdf))
             except Exception as e:
                 print(f"을지 PDF 생성 오류: {e}")
+                import traceback
+                traceback.print_exc()
 
         # 4-3. 내정가비교서 PDF
         if price_compare_resource:
@@ -179,30 +191,85 @@ async def export_folder_pdf(folder_id: UUID, db: Session = Depends(get_db)):
                 merger.append(BytesIO(pc_pdf))
             except Exception as e:
                 print(f"내정가비교서 PDF 생성 오류: {e}")
+                import traceback
+                traceback.print_exc()
 
-        # 5. 병합된 PDF 저장
+        # 5. 병합된 PDF 생성
         output = BytesIO()
         merger.write(output)
         merger.close()
         output.seek(0)
 
-        # 6. 파일명 생성
-        timestamp = datetime.now().strftime("%Y%m%d")
-        filename = f"{folder.title}_통합견적서_{timestamp}.pdf"
+        # 6. 저장 경로 및 파일명 결정
+        settings = load_settings()
+        base_path = settings.get("pdfSavePath") or str(
+            Path.home() / "Documents" / "JLT_견적서"
+        )
+        ask_location = settings.get("askSaveLocation", False)
 
-        # 7. StreamingResponse로 반환
-        return StreamingResponse(
-            output,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename*=UTF-8''{filename}",
-                "Access-Control-Expose-Headers": "Content-Disposition",
-            },
+        # 파일명 생성 및 안전한 이름 변환
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        raw_filename = f"{folder.title}_통합견적서_{timestamp}.pdf"
+        safe_filename = sanitize_filename(raw_filename)
+
+        # 견적서(일반)명과 폴더명 가져오기
+        general_name = None
+        folder_title = folder.title
+
+        general = db.query(General).filter(General.id == folder.general_id).first()
+        if general:
+            general_name = general.name
+
+        if ask_location:
+            # Windows 대화상자 사용
+            loop = asyncio.get_event_loop()
+            file_path = await loop.run_in_executor(
+                None, lambda: get_save_file_path(safe_filename, base_path)
+            )
+
+            if not file_path:
+                return JSONResponse(
+                    {"success": False, "message": "저장이 취소되었습니다."}
+                )
+
+            # 확장자가 없으면 자동으로 붙여줌
+            if not file_path.lower().endswith(".pdf"):
+                file_path += ".pdf"
+        else:
+            # 💡 폴더 export: /{general.name}/{folder.title}/ (PDF 하위 폴더 없음)
+            if general_name and folder_title:
+                safe_general_name = sanitize_filename(general_name, "견적서")
+                safe_folder_title = sanitize_filename(folder_title, "폴더")
+                save_dir = Path(base_path) / safe_general_name / safe_folder_title
+                # 폴더가 없으면 생성
+                save_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                # 폴더 정보가 없으면 기존 방식대로 저장
+                save_dir = Path(base_path) / "통합견적서"
+                save_dir.mkdir(parents=True, exist_ok=True)
+
+            file_path = str(save_dir / safe_filename)
+
+        # 7. 파일 물리적 저장
+        with open(file_path, "wb") as f:
+            f.write(output.getvalue())
+
+        # 8. 탐색기 열기 (위치 질문이 아닐 때만)
+        if not ask_location:
+            open_file_in_explorer(file_path)
+
+        # 9. 응답 반환 (JSON)
+        return JSONResponse(
+            {
+                "success": True,
+                "path": file_path,
+                "message": "성공적으로 저장되었습니다.",
+            }
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Folder PDF export error: {str(e)}"
-        )
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"success": False, "message": f"File save error: {str(e)}"})
