@@ -40,14 +40,9 @@ async function loadPriceCompareData(id) {
 
         initUIByMode();
         renderComparisonTable(priceCompareData.price_compare_resources);
-        
-        const sideMenu = document.getElementById('sideActionMenu');
-        const notesSection = document.getElementById('notesSection');
-        const footer = document.getElementById('actionFooter');
 
-        if (sideMenu) sideMenu.style.display = (pageMode === 'edit') ? 'none' : 'flex';
+        const notesSection = document.getElementById('notesSection');
         if (notesSection) notesSection.style.display = 'block';
-        if (footer) footer.style.display = 'flex';
 
     } catch (error) {
         console.error('Load Error:', error);
@@ -197,21 +192,28 @@ function initUIByMode() {
 
     if (controls) controls.style.display = isEdit ? 'flex' : 'none';
 
-    // 하단 footer는 편집 모드일 때만 표시, view 모드에서는 숨김
+    // 하단 footer는 항상 숨김 (사이드바로 이동)
     if (footer) {
-        if (isEdit) {
-            footer.style.display = 'flex';
-            footer.innerHTML = `
-                <button class="btn btn-secondary btn-lg" onclick="location.href='?mode=view'">취소</button>
-                <button class="btn btn-primary btn-lg" onclick="saveChanges()">변경사항 저장</button>`;
-        } else {
-            footer.style.display = 'none';
-        }
+        footer.style.display = 'none';
     }
 
-    // 사이드 메뉴는 view 모드에서만 표시
+    // 사이드 메뉴는 항상 표시하되, 편집 모드에 따라 버튼 구성 변경
     if (sideMenu) {
-        sideMenu.style.display = isEdit ? 'none' : 'flex';
+        sideMenu.style.display = 'flex';
+        if (isEdit) {
+            // 편집 모드: 저장/취소 버튼만 표시
+            sideMenu.innerHTML = `
+                <button class="btn btn-secondary" onclick="location.href='?mode=view'">취소</button>
+                <button class="btn btn-primary" onclick="saveChanges()">저장</button>`;
+        } else {
+            // 보기 모드: 기존 버튼들 표시
+            sideMenu.innerHTML = `
+                <button class="btn btn-secondary" onclick="window.history.back()">목록으로</button>
+                <button class="btn btn-warning" onclick="toggleEditMode('edit')">수정하기</button>
+                <button class="btn btn-success" onclick="exportToExcel()">Excel 저장</button>
+                <button class="btn btn-outline" onclick="exportToPDF()">PDF 저장</button>
+                <button class="btn btn-outline" onclick="openDetailedCreateModal()">📑 을지 만들기</button>`;
+        }
     }
 }
 
@@ -392,9 +394,9 @@ function openDetailedCreateModal() {
     const modal = document.getElementById('detailedCreateModal');
     if (modal) {
         modal.style.display = 'flex';
-        // 입력 필드 초기화
-        document.getElementById('detailedTitle').value = '';
-        document.getElementById('detailedCreator').value = '';
+        // 제목과 작성자 자동 채우기
+        document.getElementById('detailedTitle').value = priceCompareData?.title || '';
+        document.getElementById('detailedCreator').value = priceCompareData?.creator || '';
         document.getElementById('detailedDescription').value = '';
     }
 }
@@ -466,7 +468,7 @@ async function createDetailedFromModal() {
         closeDetailedCreateModal();
 
         // 생성된 을지 상세 페이지로 이동
-        location.href = `/service/quotation/general/detailed/${result.detailed_id}`;
+        location.href = `/service/quotation/general/detailed/detail/${result.detailed_id}`;
     } catch (error) {
         console.error('을지 생성 오류:', error);
         alert('을지 생성 중 오류가 발생했습니다: ' + error.message);

@@ -137,7 +137,7 @@ def create_header(
     header_resources_list.append(
         HeaderResources(
             header_id=header.id,
-            machine="경비",  # ✅ machine 이름이 "경비"
+            machine=" ",  # 공백으로 설정
             name="경비",
             solo_price=travel_expense_total,
             compare=1,
@@ -147,22 +147,26 @@ def create_header(
         )
     )
 
-    # 6. PriceCompareResources에서 관리비 합산
-    total_admin_cost = (
-        db.query(func.sum(PriceCompareResources.quotation_solo_price))
+    # 6. PriceCompareResources에서 관리비 합산 (단가 * 수량)
+    price_compare_resources = (
+        db.query(PriceCompareResources)
         .filter(
             PriceCompareResources.price_compare_id == price_compare_id,
             PriceCompareResources.major == "관리비",
         )
-        .scalar()
-        or 0
+        .all()
+    )
+
+    total_admin_cost = sum(
+        resource.quotation_solo_price * resource.quotation_compare
+        for resource in price_compare_resources
     )
 
     # 안전관리비 및 기업이윤
     header_resources_list.append(
         HeaderResources(
             header_id=header.id,
-            machine="안전관리비 및 기업이윤",  # ✅ machine 이름
+            machine=" ",  # 공백으로 설정
             name="안전관리비 및 기업이윤",
             solo_price=int(total_admin_cost),
             compare=1,

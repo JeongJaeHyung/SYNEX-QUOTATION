@@ -343,9 +343,9 @@ function openHeaderCreateModal() {
     const modal = document.getElementById('headerCreateModal');
     if (modal) {
         modal.style.display = 'flex';
-        // 입력 필드 초기화
-        document.getElementById('headerTitle').value = '';
-        document.getElementById('headerCreator').value = '';
+        // 제목과 작성자 자동 채우기
+        document.getElementById('headerTitle').value = originalData?.title || '';
+        document.getElementById('headerCreator').value = originalData?.creator || '';
         document.getElementById('headerClient').value = '';
         document.getElementById('headerManufacturer').value = '';
         document.getElementById('headerPicName').value = '';
@@ -441,7 +441,7 @@ async function createHeaderFromModal() {
         closeHeaderCreateModal();
 
         // 생성된 갑지 상세 페이지로 이동
-        location.href = `/service/quotation/general/header/${result.id}`;
+        location.href = `/service/quotation/general/header/detail/${result.id}`;
     } catch (error) {
         console.error('갑지 생성 오류:', error);
         alert('갑지 생성 중 오류가 발생했습니다: ' + error.message);

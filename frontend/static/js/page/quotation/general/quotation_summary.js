@@ -146,17 +146,53 @@ function renderTable(resources) {
         return;
     }
 
-    resources.forEach((item, index) => {
-        const rowNumber = index + 1;
+    // 1. 경비와 안전관리비 및 기업이윤을 하단으로 이동하기 위해 정렬
+    const sortedResources = [...resources].sort((a, b) => {
+        const aIsBottom = a.name === '경비' || a.name === '안전관리비 및 기업이윤';
+        const bIsBottom = b.name === '경비' || b.name === '안전관리비 및 기업이윤';
+
+        if (aIsBottom && !bIsBottom) return 1;  // a를 뒤로
+        if (!aIsBottom && bIsBottom) return -1; // b를 뒤로
+
+        // 경비와 안전관리비 사이의 순서 (경비 먼저, 안전관리비 나중)
+        if (aIsBottom && bIsBottom) {
+            if (a.name === '경비') return -1;
+            if (b.name === '경비') return 1;
+        }
+
+        return 0; // 원래 순서 유지
+    });
+
+    // 2. 장비명별로 그룹화하여 rowspan 계산
+    const machineGroups = {};
+    sortedResources.forEach(item => {
+        const machine = item.machine || '';
+        if (!machineGroups[machine]) {
+            machineGroups[machine] = [];
+        }
+        machineGroups[machine].push(item);
+    });
+
+    // 3. 테이블 렌더링
+    let rowNumber = 1;
+    sortedResources.forEach((item, index) => {
+        const machine = item.machine || '';
         const quantity = item.compare || 1;
         const unit = item.unit || '식';
         const price = item.solo_price || 0;
         const subtotal = item.subtotal || (price * quantity);
-        
-        html += `<tr>`;
+
+        html += `<tr data-machine="${machine}" data-item-name="${item.name || ''}">`;
         html += `<td class="col-no col-center">${rowNumber}</td>`;
-        html += `<td class="col-machine col-center">${item.machine || ''}</td>`;
-        html += `<td class="col-name col-center">${item.name || ''}</td>`;
+
+        // 장비명 셀 - 같은 장비명의 첫 번째 행에만 표시하고 rowspan 적용
+        const isFirstInGroup = index === 0 || sortedResources[index - 1].machine !== machine;
+        if (isFirstInGroup) {
+            const groupSize = machineGroups[machine].length;
+            html += `<td class="col-machine col-center" rowspan="${groupSize}" style="vertical-align: middle;">${machine}</td>`;
+        }
+
+        html += `<td class="col-name col-center" data-original-name="${item.name || ''}">${item.name || ''}</td>`;
         html += `<td class="col-spec col-center" contenteditable="true">${item.spac || ''}</td>`;
         html += `<td class="col-quantity col-center" contenteditable="true">${quantity}</td>`;
         html += `<td class="col-unit col-center" contenteditable="true">${unit}</td>`;
@@ -164,8 +200,10 @@ function renderTable(resources) {
         html += `<td class="col-unit-price col-right">${formatNumber(subtotal)}</td>`;
         html += `<td class="col-remarks col-left" contenteditable="true">${item.description || ''}</td>`;
         html += `</tr>`;
+
+        rowNumber++;
     });
-    
+
     tbody.innerHTML = html;
 }
 
@@ -415,17 +453,27 @@ function collectTableData() {
 
     rows.forEach((row, index) => {
         const cells = row.querySelectorAll('td');
-        if (cells.length >= 9) {
-            const originalResource = headerData.header_resources[index];
-            
+        if (cells.length >= 8) {  // 장비명이 rowspan이라 셀 개수가 다를 수 있음
+            // data-machine 속성에서 장비명 가져오기
+            const machine = row.getAttribute('data-machine') || '';
+
+            // 셀 인덱스 조정 - 장비명 셀이 있는지 확인
+            const hasMachineCell = cells[1]?.classList.contains('col-machine');
+            const nameIndex = hasMachineCell ? 2 : 1;
+            const specIndex = hasMachineCell ? 3 : 2;
+            const quantityIndex = hasMachineCell ? 4 : 3;
+            const unitIndex = hasMachineCell ? 5 : 4;
+            const priceIndex = hasMachineCell ? 6 : 5;
+            const remarksIndex = hasMachineCell ? 8 : 7;
+
             items.push({
-                machine: originalResource?.machine || '',
-                name: cells[2].textContent.trim(),
-                spac: cells[3].textContent.trim(),
-                compare: parseInt(cells[4].textContent.replace(/[^0-9]/g, '')) || 1,
-                unit: cells[5].textContent.trim(),
-                solo_price: parseInt(cells[6].textContent.replace(/[^0-9]/g, '')) || 0,
-                description: cells[8].textContent.trim()
+                machine: machine,
+                name: cells[nameIndex].textContent.trim(),
+                spac: cells[specIndex].textContent.trim(),
+                compare: parseInt(cells[quantityIndex].textContent.replace(/[^0-9]/g, '')) || 1,
+                unit: cells[unitIndex].textContent.trim(),
+                solo_price: parseInt(cells[priceIndex].textContent.replace(/[^0-9]/g, '')) || 0,
+                description: cells[remarksIndex].textContent.trim()
             });
         }
     });

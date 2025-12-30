@@ -56,18 +56,14 @@ def create_detailed(
 
     # 3. DetailedResources 자동 생성
     for resource in price_compare_resources:
-        # solo_price 계산: upper가 0이면 1 곱하기
-        solo_price = resource.quotation_solo_price * (
-            resource.upper if resource.upper != 0 else 1
-        )
-
+        # solo_price는 quotation_solo_price를 그대로 사용 (upper 연산 제거)
         detailed_resource = DetailedResources(
             detailed_id=detailed.id,
             machine_name=resource.machine_name,
             major=resource.major,
             minor=resource.minor,
             unit=resource.quotation_unit,
-            solo_price=int(solo_price),  # Float를 Int로 변환
+            solo_price=resource.quotation_solo_price,
             compare=resource.quotation_compare,
             description=resource.description or "",
         )
