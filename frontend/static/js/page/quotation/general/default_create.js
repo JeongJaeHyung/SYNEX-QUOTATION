@@ -622,6 +622,12 @@ async function downloadResourcePDF(type, resourceId, folderTitle) {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
     const filename = `${docType}_${timestamp}.pdf`;
 
+    // 디버그: PDF export 파라미터 출력
+    console.log('[PDF Export] generalName:', generalName);
+    console.log('[PDF Export] folderTitle:', folderTitle);
+    console.log('[PDF Export] docType:', docType);
+    console.log('[PDF Export] filename:', filename);
+
     try {
         const response = await fetch('/api/save-pdf', {
             method: 'POST',

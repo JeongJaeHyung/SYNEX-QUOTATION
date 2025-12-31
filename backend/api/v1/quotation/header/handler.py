@@ -121,6 +121,7 @@ def get_header(
     if include_schema:
         return {
             "id": quotation.id,
+            "folder_id": quotation.folder_id,
             "title": quotation.title,
             "quotation_number": quotation.quotation_number,
             "price": quotation.price,
@@ -142,6 +143,7 @@ def get_header(
 
     return {
         "id": quotation.id,
+        "folder_id": quotation.folder_id,
         "title": quotation.title,
         "quotation_number": quotation.quotation_number,
         "price": quotation.price,

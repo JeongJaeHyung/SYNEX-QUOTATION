@@ -274,6 +274,12 @@ async def save_pdf_endpoint(request: PDFSaveRequest):
         )
         ask_location = settings.get("askSaveLocation", False)
 
+        # 디버그: 전달받은 파라미터 출력
+        print(f"[PDF DEBUG] generalName: '{request.generalName}'")
+        print(f"[PDF DEBUG] folderTitle: '{request.folderTitle}'")
+        print(f"[PDF DEBUG] docType: '{request.docType}'")
+        print(f"[PDF DEBUG] base_path: '{base_path}'")
+
         # 파일명에서 특수문자 제거
         safe_doctype = (
             re.sub(r'[\\/*?:"<>|]', "_", request.docType) if request.docType else "문서"
@@ -285,6 +291,10 @@ async def save_pdf_endpoint(request: PDFSaveRequest):
             re.sub(r'[\\/*?:"<>|]', "_", request.generalName) if request.generalName else ""
         )
         safe_filename = re.sub(r'[\\/*?:"<>|]', "_", request.filename)
+
+        print(f"[PDF DEBUG] safe_general_name: '{safe_general_name}'")
+        print(f"[PDF DEBUG] safe_folder_title: '{safe_folder_title}'")
+        print(f"[PDF DEBUG] safe_filename: '{safe_filename}'")
 
         if ask_location:
             # 수동 저장: 파일 대화상자 열기
@@ -302,15 +312,19 @@ async def save_pdf_endpoint(request: PDFSaveRequest):
             if safe_general_name and safe_folder_title:
                 # 개별 저장: /{general.name}/{folder.title}/PDF/
                 save_dir = Path(base_path) / safe_general_name / safe_folder_title / "PDF"
+                print(f"[PDF DEBUG] Using path: {safe_general_name}/{safe_folder_title}/PDF/")
             elif safe_general_name:
                 # Fallback: 폴더명 없는 경우 /{general.name}/PDF/
                 save_dir = Path(base_path) / safe_general_name / "PDF"
+                print(f"[PDF DEBUG] Using fallback path (no folder): {safe_general_name}/PDF/")
             else:
                 # Fallback: general.name도 없는 경우
                 save_dir = Path(base_path) / "PDF"
+                print(f"[PDF DEBUG] Using fallback path (no general name): PDF/")
 
             save_dir.mkdir(parents=True, exist_ok=True)
             file_path = str(save_dir / safe_filename)
+            print(f"[PDF DEBUG] Final file_path: {file_path}")
 
         print(f"[PDF] Starting: {request.url}")
 

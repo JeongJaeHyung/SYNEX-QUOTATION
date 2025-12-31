@@ -307,16 +307,29 @@ function setupEventListeners() {
     if (tbody) {
         tbody.addEventListener('input', (e) => {
             if (e.target.contentEditable === 'true') {
-                handleCellEdit(e);
+                // input 중에는 계산만 업데이트 (포맷팅하지 않음)
                 updateCalculations();
             }
         });
+
+        // blur 이벤트에서 포맷팅 처리
+        tbody.addEventListener('blur', (e) => {
+            if (e.target.contentEditable === 'true' && e.target.classList.contains('col-right')) {
+                handleCellFormat(e);
+                updateCalculations();
+            }
+        }, true);
     }
 
     const editableCells = document.querySelectorAll('[contenteditable="true"]');
     editableCells.forEach(cell => {
-        cell.addEventListener('input', handleCellEdit);
-        cell.addEventListener('blur', updateCalculations);
+        // blur에서만 포맷팅 처리
+        cell.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('col-right')) {
+                handleCellFormat(e);
+            }
+            updateCalculations();
+        });
     });
 
     editableCells.forEach((cell, index) => {
@@ -347,12 +360,14 @@ function setupEventListeners() {
     }
 }
 
-function handleCellEdit(e) {
+function handleCellFormat(e) {
     const cell = e.target;
     if (cell.classList.contains('col-right')) {
         const value = cell.textContent.replace(/[^0-9]/g, '');
         if (value) {
             cell.textContent = formatNumber(parseInt(value));
+        } else {
+            cell.textContent = '0';
         }
     }
 }

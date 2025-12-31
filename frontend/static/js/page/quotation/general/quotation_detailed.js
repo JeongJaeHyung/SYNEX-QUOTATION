@@ -24,7 +24,7 @@ function attachCalculationListeners() {
         const newTbody = tbody.cloneNode(true);
         tbody.parentNode.replaceChild(newTbody, tbody);
 
-        // Attach new listener
+        // input 이벤트: 계산만 업데이트 (포맷팅하지 않음)
         newTbody.addEventListener('input', function(e) {
             if (pageMode !== 'edit') return;
             const row = e.target.closest('.data-row');
@@ -33,6 +33,44 @@ function attachCalculationListeners() {
                 calculateGrandTotal();
             }
         });
+
+        // blur 이벤트: 숫자 필드 포맷팅
+        newTbody.addEventListener('blur', function(e) {
+            if (pageMode !== 'edit') return;
+            const cell = e.target;
+
+            // 단가 필드 포맷팅
+            if (cell.classList.contains('edit-price')) {
+                const value = cell.textContent.replace(/[^0-9]/g, '');
+                if (value) {
+                    cell.textContent = formatNumber(parseInt(value));
+                } else {
+                    cell.textContent = '0';
+                }
+                // 포맷팅 후 재계산
+                const row = cell.closest('.data-row');
+                if (row) {
+                    updateRowSubtotal(row);
+                    calculateGrandTotal();
+                }
+            }
+
+            // 수량 필드 포맷팅
+            if (cell.classList.contains('edit-qty')) {
+                const value = cell.textContent.replace(/[^0-9]/g, '');
+                if (value) {
+                    cell.textContent = value; // 수량은 쉼표 없이 표시
+                } else {
+                    cell.textContent = '0';
+                }
+                // 포맷팅 후 재계산
+                const row = cell.closest('.data-row');
+                if (row) {
+                    updateRowSubtotal(row);
+                    calculateGrandTotal();
+                }
+            }
+        }, true);
     }
 }
 
@@ -288,7 +326,34 @@ function updateRowSubtotal(row) {
 
 function calculateGrandTotal() {
     let total = 0;
-    document.querySelectorAll('.row-subtotal').forEach(cell => total += parseNumber(cell.textContent));
+
+    // 각 major 섹션별로 소계 계산 및 업데이트
+    const majorOrder = ['자재비', '인건비', '출장경비', '관리비'];
+    majorOrder.forEach(major => {
+        let majorTotal = 0;
+        const displayMajor = major === '출장경비' ? '출장 경비' : major;
+
+        // 해당 major의 모든 row-subtotal 합산
+        document.querySelectorAll(`.data-row[data-major="${major}"] .row-subtotal`).forEach(cell => {
+            majorTotal += parseNumber(cell.textContent);
+        });
+
+        // major-subtotal-row 찾아서 업데이트
+        const majorSubtotalRows = document.querySelectorAll('.major-subtotal-row');
+        majorSubtotalRows.forEach(row => {
+            const labelCell = row.querySelector('td:first-child');
+            if (labelCell && labelCell.textContent.includes(`${displayMajor} 총 합계`)) {
+                const amountCell = row.querySelector('td:nth-child(2)');
+                if (amountCell) {
+                    amountCell.textContent = formatNumber(majorTotal);
+                }
+            }
+        });
+
+        total += majorTotal;
+    });
+
+    // 전체 합계 업데이트
     const tfoot = document.querySelector('#detailedTable tfoot');
     if (tfoot) {
         tfoot.innerHTML = `<tr class="total-row"><td colspan="6" class="text-center">합 계 (VAT 별도)</td><td class="total-amount-cell text-right font-bold">${formatNumber(total)}</td><td></td></tr>`;
